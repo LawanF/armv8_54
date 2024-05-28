@@ -5,6 +5,8 @@
 #include "registers.h"
 #include "memory.h"
 
+extern void locate_non_zero_mem(void);
+
 /* A function that puts the final outputs of the registers, condition flags 
 and memory into stdout */
 
@@ -39,14 +41,14 @@ void print_output(MachineState *machine_state, char *filename) {
 	printf_with_err("Non-zero memory:");
 
 	// Locates non-zero memory and prints the data
-	locate_non-zero_mem();
+	locate_non_zero_mem();
 
 	if (filename != NULL) {
 		fclose(output);
 	}
 }
 
-void locate_non-zero_mem(void) {
+void locate_non_zero_mem(void) {
 	int mem_size = MEMORY_SIZE / 4;
 	for (int i = 4; i < mem_size; i += 4) {
 		uint32_t data = readmem32(i);
