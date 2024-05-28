@@ -15,6 +15,7 @@ void print_output(MachineState *machine_state, char *filename) {
 		output = freopen(filename, "a+", stdout);
 		if (output == NULL) {
 			fprintf(stderr, "print_output: can't open %s, errno %d\n", filename, errno);
+		}
 	}
 
 	// Printing register content
