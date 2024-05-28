@@ -51,6 +51,9 @@ char *store_file_to_arr(char *filename) {
 
     // Read file into arr.
     fread(arr, 1, size, fileptr);
+    if (ferror(fileptr)) {
+        fprintf(stderr, "store_file_to_arr: can't read %s, errno %d\n", filename, errno);
+    }
 
     // Close file.
     fclose(fileptr);
