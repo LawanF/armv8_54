@@ -1,4 +1,6 @@
 #include <stdlib.h>
+#include <errno.h>
+#include <stdio.h>
 #include "registers.h"
 #include "memory.h"
 
