@@ -13,10 +13,10 @@ typedef struct {
 } Register;
 
 typedef struct {
-    bool zero;
-    bool neg;
-    bool carry;
-    bool overflow;
+    bool zero    :1;
+    bool neg     :1;
+    bool carry   :1;
+    bool overflow:1;
 } ProcessorStateRegister;
 
 typedef struct {
