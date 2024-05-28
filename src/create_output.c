@@ -5,7 +5,15 @@
 /* A function that puts the final outputs of the registers, condition flags 
 and memory into stdout */
 
-void print_output(MachineState *machine_state) {
+void print_output(MachineState *machine_state, char *filename) {
+	// Write to the file if it exists
+	FILE *output;
+	if (filename != NULL) {
+		output = freopen(filename, "a+", stdout);
+		if (output == NULL) {
+			fprintf(stderr, "print_output: can't open %s, errno %d\n", filename, errno);
+	}
+
 	// Printing register content
 	printf("Registers:\n");
 
@@ -26,10 +34,21 @@ void print_output(MachineState *machine_state) {
 	// Printing non-zero memory
 	printf("Non-zero memory:");
 
-	// Locates non-zero memory
+	// Locates non-zero memory and prints the data
+	locate_non-zero_mem();
+
+	if (filename != NULL) {
+		fclose(output);
+	}
 }
 
-void locate-non-zero_mem() {
-	for (
+void locate_non-zero_mem(void) {
+	int mem_size = MEMORY_SIZE / 4;
+	for (int i = 4; i < mem_size; i += 4) {
+		uint32_t data = readmem32(i);
+		if (data != 0) {
+			printf("%08x: %08x\n", i, data);
+		}
+	}
 }
 
