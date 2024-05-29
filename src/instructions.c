@@ -23,7 +23,7 @@ typedef union {
 
 typedef enum { REGISTER_OFFSET; PRE_INDEX_OFFSET; POST_INDEX_OFFSET; UNSIGNED_OFFSET; } SDTOffsetType;
 typedef union {
-    char xm:4; // register offset
+    char xm:5; // register offset
     int16_t simm9:9; // pre or post index
     uint16_t imm12:12; // unsigned offset
 } SDTOffset;
@@ -110,6 +110,17 @@ DPImmOperand dp_imm_operand(DPImmOperandType operand_type, uint32_t inst_data) {
                                             .imm16 = BIT_MASK(inst_data, 5, 20) } };
     }
 }
+SDTOffset sdt_offset(SDTOffsetType offset_type, uint32_t inst_data) {
+    switch (offset_type) {
+        case PRE_INDEX_OFFSET: 
+        case POST_INDEX_OFFSET:
+            return { .simm9 = BIT_MASK(inst_data, 12, 20) };
+        case REGISTER_OFFSET:
+            return { .xm    = BIT_MASK(inst_data, 16, 20) };
+        case UNSIGNED_OFFSET:
+            return { .imm12 = BIT_MASK(inst_data, 10, 21) };
+    }
+}
 
 // Fills the fields of a new Instruction. A precondition is that the instruction falls into the specified type.
 Instruction decode_dp_imm(uint32_t inst_data) {
@@ -117,7 +128,7 @@ Instruction decode_dp_imm(uint32_t inst_data) {
     char opi = BIT_MASK(inst_data, 23, 25);
     switch (opi) {
         case 0x5: operand_type = ARITH_OPERAND; break;
-        case Ox2: operand_type = WIDE_MOVE_OPERAND; break;
+        case 0x2: operand_type = WIDE_MOVE_OPERAND; break;
         default: return UNKNOWN_INSTRUCTION;
     }
     return {
@@ -137,6 +148,7 @@ Instructon decode_dp_reg(uint32_t inst_data) {
         return UNKNOWN_INSTRUCTION;
     }
     return {
+        .command_format = DP_REG,
         .sf  = GET_BIT(inst_data, 31),
         .opc = BIT_MASK(inst_data, 29, 30),
         .rd  = BIT_MASK(inst_data, 0, 4),
@@ -145,10 +157,20 @@ Instructon decode_dp_reg(uint32_t inst_data) {
                     .operand = BIT_MASK(inst_data, 10, 15), 
                     .rn = BIT_MASK(inst_data, 5, 9) } };
 }
-/* Instruction decode_single_data_transfer(uint32_t inst_data) {
+Instruction 
+Instruction decode_single_data_transfer(uint32_t inst_data) {
+    SDTOffsetType offset_type;
+    // bits 10-21 1XXXXX011010
+    if (GET_BIT(
     return {
+        .command_format = SINGLE_DATA_TRANSFER,
         .sf = GET_BIT(inst_data, 30),
-        .u = */
+        .rt = BIT_MASK(inst_data, 0, 4),
+        .u  = GET_BIT(inst_data, 24),
+        .single_data_transfer = { .u = GET_BIT(inst_data, 24),
+                                  .l = GET_BIT(inst_data, 22),
+                                  .xn = BIT_MASK(inst_data, 10, 21),
+                                  }
 
 void execute(Instruction *inst) {
     if (inst == NULL) return;
