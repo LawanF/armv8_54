@@ -1,5 +1,9 @@
 #include <stdint.h>
 
+// binary representation of HALT instruction
+#define HALT_BIN 0x8a000000
+#define ARITH_OPI 0x2
+#define WIDE_MOVE_OPI 0x5
 // Returns 1 if the i'th bit of n is 1 and 0 otherwise
 #define GET_BIT(n, i) (((n) >> (i)) & 0x1) 
 // Applies a bitmask and returns bits from i (inclusive) to j (inclusive) of n, where i<=j
@@ -112,8 +116,8 @@ Instruction decode_dp_imm(uint32_t inst_data) {
     // instruction is of format [ sf:1 ][ opc:2 ]100[ opi:3 ][ operand:18 ][ rd:5 ]
     char opi = BIT_MASK(inst_data, 23, 25);
     switch (opi) {
-        case 0x5: operand_type = ARITH_OPERAND; break;
-        case 0x2: operand_type = WIDE_MOVE_OPERAND; break;
+        case ARITH_OPI: operand_type = ARITH_OPERAND; break;
+        case WIDE_MOVE_OPI: operand_type = WIDE_MOVE_OPERAND; break;
         default: return UNKNOWN_INSTRUCTION;
     }
     return {
@@ -230,7 +234,7 @@ Instruction decode_branch(uint32_t inst_data) {
 }
 
 CommandFormat decode_format(uint32_t inst_data) {
-    if (inst_data == 0x8a000000) return HALT;
+    if (inst_data == HALT_BIN) return HALT;
     // bits 26-28 100
     if (BIT_MASK(inst_data, 26, 28) == 0x4) return DP_IMM;
     // bits 25-27 101
@@ -253,6 +257,29 @@ Instruction decode(uint32_t inst_data) {
         case LOAD_LITERAL:         return decode_load_literal(inst_data);
         case BRANCH:               return decode_branch(inst_data);
         case UNKNOWN:              return UNKNOWN_INSTRUCTION;
+    }
+}
+
+uint32_t instruction_to_binary(Instruction *inst) {
+    switch (inst->command_type) {
+        case HALT: return HALT_BIN;
+        case DP_IMM: {
+            // instruction has format [ XXX1 00XX XXXX XXXX XXXX XXXX XXXX XXXX ]
+            uint32_t res = 0x10000000;
+            // shift fields by their respective positions
+            res |= inst->sf << 31;
+            res |= inst->opc << 29;
+            uint16_t operand;
+            switch (inst->dp_imm.operand_type) {
+                case ARITH_OPERAND: {
+                    res |= ARITH_OPI << 23;
+                    operand |= // TODO
+                    break;
+                case WIDE_MOVE_OPERAND: res |= WIDE_MOVE_OPI << 23; // TODO
+            }
+            
+        }
+        case UNKNOWN: return 0;
     }
 }
 
