@@ -67,30 +67,12 @@ typedef struct {
     }
 } Instruction
 
-CommandFormat decode_format(uint32_t inst_data) {
-    // [ 1000 1010 0000 0000 0000 0000 0000 0000 ] determines a halt
-    if (inst_data == 0x8a000000) return HALT;
-    // [ XXX1 00XX XXXX XXXX XXXX XXXX XXXX XXXX ] gives DP (immediate)
-    // bits 26-28 100
-    if (BIT_MASK(inst_data, 26, 28) == 0x4) return DP_IMM;
-    // [ XXXX 101X XXXX XXXX XXXX XXXX XXXX XXXX ] gives DP (register)
-    // bits 25-27 101
-    if (BIT_MASK(inst_data, 25, 27) == 0x5) return DP_REG;
-    // [ 1X11 1100 X0XX XXXX XXXX XXXX XXXX XXXX ] gives single data transfer 
-    // bits 25-29 11100, bit 23 0 and bit 31 1
-    if (BIT_MASK(inst_data, 25, 29) == 0x1C 
-        && !GET_BIT(inst_data, 23)
-        && GET_BIT(inst_data, 31)) return SINGLE_DATA_TRANSFER;
-    // [ 0X01 1000 XXXX XXXX XXXX XXXX XXXX XXXX ] gives load literal
-    if (BIT_MASK(inst_data, 24, 29) == Ox18 && !GET_BIT(inst_data, 31)) return LOAD_LITERAL;
-    // [ XX01 01XX XXXX XXXX XXXX XXXX XXXX XXXX ] gives branch
-    if (BIT_MASK(inst_data, 26, 29) == Ox5) return BRANCH;
-    return UNKNOWN;
-}
+#define UNKNOWN_INSTRUCTION { .command_format = UNKNOWN }
 
-#define UNKNOWN_INSTRUCTION { .command_format = UNKNOWN, .empty_instruction = {} }
+/* Decoding operands
+ * These functions assume that the instruction is in the correct group,
+ * and the instructions are valid. */
 
-// Returns an operand of the given type. A precondition is that the instruction is in the correct group.
 DPImmOperand dp_imm_operand(DPImmOperandType operand_type, uint32_t inst_data) {
     switch (operand_type) {
         // operand uses bits 5-22
@@ -105,6 +87,7 @@ DPImmOperand dp_imm_operand(DPImmOperandType operand_type, uint32_t inst_data) {
                                             .imm16 = BIT_MASK(inst_data, 5, 20) } };
     }
 }
+
 SDTOffset sdt_offset(SDTOffsetType offset_type, uint32_t inst_data) {
     // operand uses bits 10-21
     switch (offset_type) {
@@ -120,7 +103,10 @@ SDTOffset sdt_offset(SDTOffsetType offset_type, uint32_t inst_data) {
             return { .imm12 = BIT_MASK(inst_data, 10, 21) };
     }
 }
-// Fills the fields of a new Instruction. A precondition is that the instruction falls into the specified type.
+
+/* Decoding instructions
+ * A precondition is that the instructions are of the correct group. */
+
 Instruction decode_dp_imm(uint32_t inst_data) {
     DPImmOperandType operand_type;
     // instruction is of format [ sf:1 ][ opc:2 ]100[ opi:3 ][ operand:18 ][ rd:5 ]
@@ -138,6 +124,7 @@ Instruction decode_dp_imm(uint32_t inst_data) {
         .dp_imm = { .operand_type = operand_type, .operand = dp_imm_operand(opi, inst_data) }
     };
 }
+
 Instructon decode_dp_reg(uint32_t inst_data) {
     // instruction is of format
     // [ sf:1 ][ opc:2 ][ M:1 ]101[ opr:4 ][ rm:5 ][ operand: 6][ rn:5 ][ rd:5 ]
@@ -160,6 +147,7 @@ Instructon decode_dp_reg(uint32_t inst_data) {
             .rn = BIT_MASK(inst_data, 5, 9) } 
         };
 }
+
 Instruction decode_single_data_transfer(uint32_t inst_data) {
     // instruction is of format 1[ sf:1 ]11100[ u:1 ]0[ l:1 ][ offset:12 ][ xn:5 ][ rt:5 ]
     SDTOffsetType offset_type;
@@ -190,6 +178,7 @@ Instruction decode_single_data_transfer(uint32_t inst_data) {
         }
     };
 }
+
 Instruction decode_load_literal(uint32_t inst_data) {
     // instruction of format 0[ sf:1 ]011000[ simm19:19 ][ rt:5 ]
     return {
@@ -199,6 +188,7 @@ Instruction decode_load_literal(uint32_t inst_data) {
         .load_literal = { .simm19 = BIT_MASK(inst_data, 5, 23) }
     };
 }
+
 Instruction decode_branch(uint32_t inst_data) {
     BranchOperandType operand_type;
     // unconditional branch has format 000101[         simm26:26         ]
@@ -237,6 +227,33 @@ Instruction decode_branch(uint32_t inst_data) {
     }
     branch_inst.branch.operand = branch_operand;
     return branch_inst;
+}
+
+CommandFormat decode_format(uint32_t inst_data) {
+    if (inst_data == 0x8a000000) return HALT;
+    // bits 26-28 100
+    if (BIT_MASK(inst_data, 26, 28) == 0x4) return DP_IMM;
+    // bits 25-27 101
+    if (BIT_MASK(inst_data, 25, 27) == 0x5) return DP_REG;
+    // bits 23-29 11100X0 and bit 31 1
+    if (BIT_MASK(inst_data, 25, 29) == 0x1C
+        && !GET_BIT(inst_data, 23)
+        && GET_BIT(inst_data, 31)) return SINGLE_DATA_TRANSFER;
+    if (BIT_MASK(inst_data, 24, 29) == Ox18 && !GET_BIT(inst_data, 31)) return LOAD_LITERAL;
+    if (BIT_MASK(inst_data, 26, 29) == Ox5) return BRANCH;
+    return UNKNOWN;
+}
+
+Instruction decode(uint32_t inst_data) {
+    switch (decode_format(inst_data)) {
+        case HALT:                 return { .command_type = HALT };
+        case DP_IMM:               return decode_dp_imm(inst_data);
+        case DP_REG:               return decode_dp_reg(inst_data);
+        case SINGLE_DATA_TRANSFER: return decode_single_data_transfer(inst_data);
+        case LOAD_LITERAL:         return decode_load_literal(inst_data);
+        case BRANCH:               return decode_branch(inst_data);
+        case UNKNOWN:              return UNKNOWN_INSTRUCTION;
+    }
 }
 
 void offset_program_counter(MachineState *alter_machine_state, int32_t enc_address) {
