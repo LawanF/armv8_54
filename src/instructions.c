@@ -165,7 +165,7 @@ Instruction decode_single_data_transfer(uint32_t inst_data) {
     SDTOffsetType offset_type;
     char u = GET_BIT(inst_data, 24);
     // offset uses bits 10-21
-    // when U=1, offset is used for imm12
+    // when U=1, offset is used for imm12 (unsigned)
     if (u) {
         offset_type = UNSIGNED_OFFSET;
     }
@@ -191,7 +191,9 @@ Instruction decode_single_data_transfer(uint32_t inst_data) {
     };
 }
 Instruction decode_load_literal(uint32_t inst_data) {
+    // instruction of format 0[ sf:1 ]011000[ simm19:19 ][ rt:5 ]
     return {
+        .command_format = LOAD_LITERAL;
         .sf = GET_BIT(inst_data, 30),
         .rt = BIT_MASK(inst_data, 0, 4),
         .load_literal = { .simm19 = BIT_MASK(inst_data, 5, 23) }
@@ -199,15 +201,18 @@ Instruction decode_load_literal(uint32_t inst_data) {
 }
 Instruction decode_branch(uint32_t inst_data) {
     BranchOperandType operand_type;
+    // unconditional branch has format 000101[         simm26:26         ]
     // bits 26-21 000101
     if (BIT_MASK(inst_data, 26, 31) == 0x5) {
         operand_type = UNCOND_BRANCH;
     }
+    // conditional branch has format   01010100[  simm19:19  ]0[ cond: 3 ]
     // bits 24-31 01010100 and bit 4 0
     else if (BIT_MASK(inst_data, 24, 31) == 0x54 && !GET_BIT(inst_data, 4)) {
         operand_type = COND_BRANCH;
     }
-    // bits 0-4 00000 and bits 10-31 11 0101 1000 0111 1100 0000
+    // register branch has format      1101011000011111000000[ xn:5 ]00000
+    // bits 0-4 00000 and bits 10-31 are 11 0101 1000 0111 1100 0000
     else if (BIT_MASK(inst_data, 0, 4) == 0x0
              && BIT_MASK(inst_data, 10, 31) == 0x3587C0) {
         operand_type = REGISTER_BRANCH;
