@@ -52,11 +52,11 @@ typedef struct {
             SDTOffset offset;
         } single_data_transfer;
         struct {
-            char load_literal_simm19:19;
+            int32_t simm19:19;
         } load_literal;
         struct {
             union {
-                char simm26:26;
+                int32_t simm26:26;
                 char branch_xn:5;
                 struct {
                     char branch_simm19:19;
