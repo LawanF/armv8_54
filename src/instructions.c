@@ -65,6 +65,7 @@ typedef struct {
             char rn:5;
         } dp_reg;
         struct {
+            char u:1;
             char l:1;
             char xn:5;
             SDTOffsetType offset_type;
@@ -82,9 +83,14 @@ typedef struct {
 
 CommandFormat decode_format(uint32_t inst_data) {
     if (inst_data == 0x8a000000) return HALT;
+    // bits 26-28 100
     if (BIT_MASK(inst_data, 26, 28) == 0x4) return DP_IMM;
+    // bits 25-27 101
     if (BIT_MASK(inst_data, 25, 27) == 0x5) return DP_REG;
-    if (BIT_MASK(inst_data, 23, 29) == 0xE2 && GET_BIT(inst_data, 31)) return SINGLE_DATA_TRANSFER;
+    // bits 23-29 11100X0 and bit 31 1
+    if (BIT_MASK(inst_data, 25, 29) == 0x1C 
+        && !GET_BIT(inst_data, 23)
+        && GET_BIT(inst_data, 31)) return SINGLE_DATA_TRANSFER;
     if (BIT_MASK(inst_data, 24, 29) == Ox18 && !GET_BIT(inst_data, 31)) return LOAD_LITERAL;
     if (BIT_MASK(inst_data, 26, 29) == Ox5) return BRANCH;
     return UNKNOWN;
@@ -139,6 +145,10 @@ Instructon decode_dp_reg(uint32_t inst_data) {
                     .operand = BIT_MASK(inst_data, 10, 15), 
                     .rn = BIT_MASK(inst_data, 5, 9) } };
 }
+/* Instruction decode_single_data_transfer(uint32_t inst_data) {
+    return {
+        .sf = GET_BIT(inst_data, 30),
+        .u = */
 
 void execute(Instruction *inst) {
     if (inst == NULL) return;
