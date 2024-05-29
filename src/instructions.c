@@ -216,57 +216,64 @@ void execute(Instruction *inst) {
 	    
 	    MachineState *machine_state = read_machine_state();
 
-	    if ((inst->branch).operand.uncond_branch != NULL) {
-		offset_program_counter(*machine_state, (inst->branch).operand.uncond_branch.simm26);
-		// use machine state function to write PC = PC + simm26*4 (sign extend to 64 bit)
-	    }
-	    if ((inst->branch).operand.register_branch != NULL) {
-                // use machine state function to read register branch_xn
-                // if xn is 11111 then ignore
-	        // then write address in branch_xn to PC
-		int8_t xn = (inst->branch).operand.register_branch.xn;
-		if (xn != 31) {
-			write_machine_state(program_counter, (machine_state->general_registers)[xn]);
-		}
-	    }
-	    if ((inst->branch).operand.cond_branch != NULL) {
-	    	int8_t eval_cond = (inst->branch).operand.cond_branch.cond;
-		ProcessorStateRegister branch_pstate = (machine_state->pstate);
-		switch (eval_cond) {
-		    case 0: {
-	    		if (branch_pstate.zero == 1) { 
-			    offset_program_counter(*machine_state, (inst->branch).operand.cond_branch.simm19);
-			}				
+	    enum BRANCH_OPERAND_TYPE branch_operand_type = (inst->branch).operand_type;
+
+	    switch (branch_operand_type) {
+
+		    case UNCOND_BRANCH: {
+			offset_program_counter(*machine_state, (inst->branch).operand.uncond_branch.simm26);
+			break;
+			// use machine state function to write PC = PC + simm26*4 (sign extend to 64 bit)
 		    }
-                    case 1: {
-		        if (branch_pstate.zero == 0) {
-                            offset_program_counter(*machine_state, (inst->branch).operand.cond_branch.simm19);
+		    case REGISTER_BRANCH: {
+			// use machine state function to read register branch_xn
+			// if xn is 11111 then ignore
+			// then write address in branch_xn to PC
+			int8_t xn = (inst->branch).operand.register_branch.xn;
+			if (xn != 31) {
+				write_machine_state(program_counter, (machine_state->general_registers)[xn]);
 			}
-	            }
-		    case 10: {
-                        if (branch_pstate.neg == branch_pstate.overflow) {
-                            offset_program_counter(*machine_state, (inst->branch).operand.cond_branch.simm19);
+			break;
+		    }
+		    case COND_BRANCH: {
+			int8_t eval_cond = (inst->branch).operand.cond_branch.cond;
+			ProcessorStateRegister branch_pstate = (machine_state->pstate);
+			switch (eval_cond) {
+			    case 0: {
+				if (branch_pstate.zero == 1) { 
+				    offset_program_counter(*machine_state, (inst->branch).operand.cond_branch.simm19);
+				}				
+			    }
+			    case 1: {
+				if (branch_pstate.zero == 0) {
+				    offset_program_counter(*machine_state, (inst->branch).operand.cond_branch.simm19);
+				}
+			    }
+			    case 10: {
+				if (branch_pstate.neg == branch_pstate.overflow) {
+				    offset_program_counter(*machine_state, (inst->branch).operand.cond_branch.simm19);
+				}
+			    }	    
+			    case 11: {
+				if (branch_pstate.neg != branch_pstate.overflow) {
+				    offset_program_counter(*machine_state, (inst->branch).operand.cond_branch.simm19);
+				}
+			    }	     
+			    case 12: {
+				if (branch_pstate.zero == 0 && branch_pstate.neg == branch_pstate.overflow) {
+				    offset_program_counter(*machine_state, (inst->branch).operand.cond_branch.simm19);
+				}
+			    }	     
+			    case 13: {
+				if (!(branch_pstate.zero == 0 && branch_pstate.neg == branch_pstate.overflow)) {
+				    offset_program_counter(*machine_state, (inst->branch).operand.cond_branch.simm19);
+				}
+			    }
+			    case 14: {
+				offset_program_counter(*machine_state, (inst->branch).operand.cond_branch.simm19);
+			    }	     
 			}
-                    }	    
-		    case 11: {
-                        if (branch_pstate.neg != branch_pstate.overflow) {
-                            offset_program_counter(*machine_state, (inst->branch).operand.cond_branch.simm19);
-			}
-                    }	     
-		    case 12: {
-                        if (branch_pstate.zero == 0 && branch_pstate.neg == branch_pstate.overflow) {
-                            offset_program_counter(*machine_state, (inst->branch).operand.cond_branch.simm19);
-			}
-                    }	     
-		    case 13: {
-                        if (!(branch_pstate.zero == 0 && branch_pstate.neg == branch_pstate.overflow)) {
-                            offset_program_counter(*machine_state, (inst->branch).operand.cond_branch.simm19);
-			}
-                    }
-		    case 14: {
-                        offset_program_counter(*machine_state, (inst->branch).operand.cond_branch.simm19);
-                    }	     
-		}
+			break;
 	    }
 	    break;
         }
