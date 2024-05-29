@@ -1,9 +1,17 @@
 // enum for specifying type of instruction
-typedef enum { HALT; DP_IMM; DP_REG; SINGLE_DATA_TRANSFER; LOAD_LITERAL; BRANCH; } CommandFormat;
+typedef enum { UNKNOWN; HALT; DP_IMM; DP_REG; SINGLE_DATA_TRANSFER; LOAD_LITERAL; BRANCH; } CommandFormat;
 
 typedef union {
-    enum ImmOperandType {IMM_ARITH; IMM_}
-}
+    struct {
+        char sh:1;
+        uint16_t imm12:12;
+        char rn:5;
+    } arith_operand;
+    struct {
+        char hw:2;
+        uint16_t imm16;
+    } wide_move_operand;
+} DPImmOperand;
 
 // generic instruction struct - unions for specific instruction data
 typedef struct {
@@ -15,7 +23,7 @@ typedef struct {
         char rt:5;
     };
     union {
-        struct {} halt;
+        struct {} empty_inst;
         struct {
             char opi:3;
             char dp_imm_operand:18;
