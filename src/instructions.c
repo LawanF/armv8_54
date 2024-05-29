@@ -23,15 +23,9 @@ typedef union {
 
 typedef enum { REGISTER_OFFSET; PRE_INDEX_OFFSET; POST_INDEX_OFFSET; UNSIGNED_OFFSET; } SDTOffsetType;
 typedef union {
-    struct {
-        char xm:4;
-    } register_offset;
-    struct {
-        int16_t simm9:9;
-    } pre_post_index;
-    struct {
-        uint16_t imm12:12;
-    } unsigned_offset;
+    char xm:4; // register offset
+    int16_t simm9:9; // pre or post index
+    uint16_t imm12:12; // unsigned offset
 } SDTOffset;
 
 typedef enum { UNCOND_BRANCH; REGISTER_BRANCH; COND_BRANCH; } BranchOperandType;
