@@ -8,6 +8,7 @@
 // enum for specifying type of instruction
 typedef enum { UNKNOWN; HALT; DP_IMM; DP_REG; SINGLE_DATA_TRANSFER; LOAD_LITERAL; BRANCH; } CommandFormat;
 
+typedef enum { ARITH_OPERAND; WIDE_MOVE_OPERAND; } DPImmOperandType;
 typedef union {
     struct {
         char sh:1;
@@ -20,6 +21,7 @@ typedef union {
     } wide_move_operand;
 } DPImmOperand;
 
+typedef enum { REGISTER_OFFSET; PRE_INDEX_OFFSET; POST_INDEX_OFFSET; UNSIGNED_OFFSET; } SDTOffsetType;
 typedef union {
     struct {
         char xm:4;
@@ -32,6 +34,7 @@ typedef union {
     } unsigned_offset;
 } SDTOffset;
 
+typedef enum { UNCOND_BRANCH; REGISTER_BRANCH; COND_BRANCH; } BranchOperandType;
 typedef union {
     struct {
         int32_t simm26:26;
@@ -57,7 +60,7 @@ typedef struct {
     union {
         struct {} empty_inst;
         struct {
-            char opi:3;
+            DPImmOperandType operand_type;
             DPImmOperand operand;
         } dp_imm;
         struct {
@@ -69,12 +72,14 @@ typedef struct {
         struct {
             char l:1;
             char xn:5;
+            SDTOffsetType offset_type;
             SDTOffset offset;
         } single_data_transfer;
         struct {
             int32_t simm19:19;
         } load_literal;
         struct {
+            BranchOperandType operand_type;
             BranchOperand operand;
         } branch;
     }
@@ -88,7 +93,29 @@ CommandFormat decode_format(uint32_t inst_data) {
     if (BIT_MASK(inst_data, 24, 29) == Ox18 && !GET_BIT(inst_data, 31)) return LOAD_LITERAL;
     if (BIT_MASK(inst_data, 26, 29) == Ox5) return BRANCH;
     return UNKNOWN;
-}    
+}
+
+const Instruction unknown_instruction = { .command_format = UNKNOWN, .empty_instruction = {} };
+
+// Returns an operand of the given type. A precondition is that the instruction is in the correct group.
+/*
+DPImmOperand dp_imm_operand(char opi, uint32_t inst_data) {
+    if (opi == 0x2) {
+        // arithmetic instruction format
+        return { .arith_operand = { .sh = */
+
+// Fills the fields of a new Instruction. A precondition is that the instruction falls into the specified type.
+Instruction decode_dp_imm(uint32_t inst_data) {
+    char opi = BIT_MASK(inst_data, 23, 25);
+    if (opi != 0x5 && opi != 0x2) return unknown_instruction;
+    return {
+        .command_format = DP_IMM,
+        .sf  = GET_BIT(inst_data, 31),
+        .opc = BIT_MASK(inst_data, 29, 30),
+        .rd  = BIT_MASK(inst_data, 0, 4),
+        .dp_imm = { .opi = opi, .operand = dp_imm_operand(opi, inst_data) }
+    }
+}
 
 void execute(Instruction *inst) {
     if (inst == NULL) return;
