@@ -58,6 +58,7 @@ typedef struct {
             DPImmOperand operand;
         } dp_imm;
         struct {
+            char m:1;
             char opr:4;
             char rm:5;
             char operand:6;
@@ -106,15 +107,37 @@ DPImmOperand dp_imm_operand(DPImmOperandType operand_type, uint32_t inst_data) {
 
 // Fills the fields of a new Instruction. A precondition is that the instruction falls into the specified type.
 Instruction decode_dp_imm(uint32_t inst_data) {
+    DPImmOperandType operand_type;
     char opi = BIT_MASK(inst_data, 23, 25);
-    if (opi != 0x5 && opi != 0x2) return UNKNOWN_INSTRUCTION;
+    switch (opi) {
+        case 0x5: operand_type = ARITH_OPERAND; break;
+        case Ox2: operand_type = WIDE_MOVE_OPERAND; break;
+        default: return UNKNOWN_INSTRUCTION;
+    }
     return {
         .command_format = DP_IMM,
         .sf  = GET_BIT(inst_data, 31),
         .opc = BIT_MASK(inst_data, 29, 30),
         .rd  = BIT_MASK(inst_data, 0, 4),
-        .dp_imm = { .opi = opi, .operand = dp_imm_operand(opi, inst_data) }
+        .dp_imm = { .operand_type = operand_type, .operand = dp_imm_operand(opi, inst_data) }
+    };
+}
+Instructon decode_dp_reg(uint32_t inst_data) {
+    char opr = BIT_MASK(inst_data, 21, 24);
+    char m = GET_BIT(inst_data, 28);
+    /* instructions of the form (M,opr) = (0,1xx0),(0,0xxx),(1,1000) are all recognised,
+     * leaving (1,0xxx) and (0,1xx1) as unrecognised. */
+    if ((m && !GET_BIT(opr, 3)) || (!m && GET_BIT(opr, 0) && GET_BIT(opr, 3))) {
+        return UNKNOWN_INSTRUCTION;
     }
+    return {
+        .sf  = GET_BIT(inst_data, 31),
+        .opc = BIT_MASK(inst_data, 29, 30),
+        .rd  = BIT_MASK(inst_data, 0, 4),
+        .dp_reg = { .m = m,
+                    .opr = opr, 
+                    .operand = BIT_MASK(inst_data, 10, 15), 
+                    .rn = BIT_MASK(inst_data, 5, 9) } };
 }
 
 void execute(Instruction *inst) {
