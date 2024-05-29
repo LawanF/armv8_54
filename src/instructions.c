@@ -13,6 +13,18 @@ typedef union {
     } wide_move_operand;
 } DPImmOperand;
 
+typedef union {
+    struct {
+        char xm:4;
+    } register_offset;
+    struct {
+        int16_t simm9:9;
+    } pre_post_index;
+    struct {
+        uint16_t imm12:12;
+    } unsigned_offset;
+} SDTOffset;
+
 // generic instruction struct - unions for specific instruction data
 typedef struct {
     CommandFormat command_format;
@@ -26,19 +38,18 @@ typedef struct {
         struct {} empty_inst;
         struct {
             char opi:3;
-            char dp_imm_operand:18;
+            DPImmOperand operand;
         } dp_imm;
         struct {
             char opr:4;
             char rm:5;
-            char dp_reg_operand:6;
+            char operand:6;
             char rn:5;
         } dp_reg;
         struct {
             char l:1;
-            char offset:12;
-            char single_data_transfer_xn:5
-
+            char xn:5;
+            SDTOffset offset;
         } single_data_transfer;
         struct {
             char load_literal_simm19:19;
