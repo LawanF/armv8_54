@@ -10,7 +10,14 @@ typedef enum { UNKNOWN; HALT; DP_IMM; DP_REG; SINGLE_DATA_TRANSFER; LOAD_LITERAL
 
 typedef enum { ARITH_OPERAND; WIDE_MOVE_OPERAND; } DPImmOperandType;
 typedef union {
+    /* arithmetic instruction:
+       - sh determines whether to left shift the immediate value by 12 bits
+       - imm12 is an unsigned immediate value of 12 bits
+       - rn is a register which is added or subtracted to for setting into rd */
     struct { char sh:1; uint16_t imm12:12; char rn:5; } arith_operand;
+    /* wide move instruction: 
+       - hw determines a left shift by multiple of 16
+       - imm16 is an unsigned immediate value of 16 bits */
     struct { char hw:2; uint16_t imm16; } wide_move_operand;
 } DPImmOperand;
 
@@ -31,32 +38,52 @@ typedef union {
 // generic instruction struct - unions for specific instruction data
 typedef struct {
     CommandFormat command_format;
+    // sign flag (for all types except branch)
     char sf:1;
+    // opcode (for DP instructions)
     char opc:2;
+    // destination (DP) or target (SDT or load literal) register index
     union { char rd:5; char rt:5; };
     union {
-        struct {} empty_inst;
+        // DP (immediate)
         struct { DPImmOperandType operand_type; DPImmOperand operand; } dp_imm;
+        /* DP (register):
+           - M and opr determine the type of instruction
+           - rm is the multiplier (for multiply instructions)
+           - rn is the multiplicand (for multiply instructions) or the left hand side of bitwise operations
+           - operand contains data such as an immediate value or shift */
         struct { char m:1; char opr:4; char rm:5; char operand:6; char rn:5; } dp_reg;
+        /* single data transfer:
+           - u is the unsigned offset flag
+           - l determines a load rather than a store
+           - xn is the base register */
         struct { char u:1; char l:1; char xn:5;
             SDTOffsetType offset_type; SDTOffset offset;
         } single_data_transfer;
+        // load literal: simm19 is a signed immediate value
         struct { int32_t simm19:19; } load_literal;
+        // branch
         struct { BranchOperandType operand_type; BranchOperand operand; } branch;
     }
 } Instruction
 
 CommandFormat decode_format(uint32_t inst_data) {
+    // [ 1000 1010 0000 0000 0000 0000 0000 0000 ] determines a halt
     if (inst_data == 0x8a000000) return HALT;
+    // [ XXX1 00XX XXXX XXXX XXXX XXXX XXXX XXXX ] gives DP (immediate)
     // bits 26-28 100
     if (BIT_MASK(inst_data, 26, 28) == 0x4) return DP_IMM;
+    // [ XXXX 101X XXXX XXXX XXXX XXXX XXXX XXXX ] gives DP (register)
     // bits 25-27 101
     if (BIT_MASK(inst_data, 25, 27) == 0x5) return DP_REG;
-    // bits 23-29 11100X0 and bit 31 1
+    // [ 1X11 1100 X0XX XXXX XXXX XXXX XXXX XXXX ] gives single data transfer 
+    // bits 25-29 11100, bit 23 0 and bit 31 1
     if (BIT_MASK(inst_data, 25, 29) == 0x1C 
         && !GET_BIT(inst_data, 23)
         && GET_BIT(inst_data, 31)) return SINGLE_DATA_TRANSFER;
+    // [ 0X01 1000 XXXX XXXX XXXX XXXX XXXX XXXX ] gives load literal
     if (BIT_MASK(inst_data, 24, 29) == Ox18 && !GET_BIT(inst_data, 31)) return LOAD_LITERAL;
+    // [ XX01 01XX XXXX XXXX XXXX XXXX XXXX XXXX ] gives branch
     if (BIT_MASK(inst_data, 26, 29) == Ox5) return BRANCH;
     return UNKNOWN;
 }
@@ -66,29 +93,37 @@ CommandFormat decode_format(uint32_t inst_data) {
 // Returns an operand of the given type. A precondition is that the instruction is in the correct group.
 DPImmOperand dp_imm_operand(DPImmOperandType operand_type, uint32_t inst_data) {
     switch (operand_type) {
+        // operand uses bits 5-22
         case ARITH_OPERAND:
+            // operand has format [ sh:1 ][ imm12:12 ][ rn:5 ]
             return { .arith_operand = { .sh    = GET_BIT(inst_data, 22),
                                         .imm12 = BIT_MASK(inst_data, 10, 21),
                                         .rn    = BIT_MASK(inst_data, 5, 9) } };
         case WIDE_MOVE_OPERAND:
+            // operand has format [ hw:2    ][ imm16:16      ]
             return { .wide_move_operand = { .hw    = BIT_MASK(inst_data, 21, 22),
                                             .imm16 = BIT_MASK(inst_data, 5, 20) } };
     }
 }
 SDTOffset sdt_offset(SDTOffsetType offset_type, uint32_t inst_data) {
+    // operand uses bits 10-21
     switch (offset_type) {
         case PRE_INDEX_OFFSET: 
         case POST_INDEX_OFFSET:
+            // operand has format 0[ simm9:9  ]X1
             return { .simm9 = BIT_MASK(inst_data, 12, 20) };
         case REGISTER_OFFSET:
+            // operand has format 1[ xm:5 ]011010
             return { .xm    = BIT_MASK(inst_data, 16, 20) };
         case UNSIGNED_OFFSET:
+            // operand has format [ imm12:12    ]
             return { .imm12 = BIT_MASK(inst_data, 10, 21) };
     }
 }
 // Fills the fields of a new Instruction. A precondition is that the instruction falls into the specified type.
 Instruction decode_dp_imm(uint32_t inst_data) {
     DPImmOperandType operand_type;
+    // instruction is of format [ sf:1 ][ opc:2 ]100[ opi:3 ][ operand:18 ][ rd:5 ]
     char opi = BIT_MASK(inst_data, 23, 25);
     switch (opi) {
         case 0x5: operand_type = ARITH_OPERAND; break;
@@ -104,6 +139,8 @@ Instruction decode_dp_imm(uint32_t inst_data) {
     };
 }
 Instructon decode_dp_reg(uint32_t inst_data) {
+    // instruction is of format
+    // [ sf:1 ][ opc:2 ][ M:1 ]101[ opr:4 ][ rm:5 ][ operand: 6][ rn:5 ][ rd:5 ]
     char opr = BIT_MASK(inst_data, 21, 24);
     char m = GET_BIT(inst_data, 28);
     /* instructions of the form (M,opr) = (0,1xx0),(0,0xxx),(1,1000) are all recognised,
@@ -124,26 +161,32 @@ Instructon decode_dp_reg(uint32_t inst_data) {
         };
 }
 Instruction decode_single_data_transfer(uint32_t inst_data) {
+    // instruction is of format 1[ sf:1 ]11100[ u:1 ]0[ l:1 ][ offset:12 ][ xn:5 ][ rt:5 ]
     SDTOffsetType offset_type;
-    // bits 10-21 1XXXXX011010
-    if (GET_BIT(inst_data, 21) && BIT_MASK(inst_data, 10, 15) == 0x1A) {
+    char u = GET_BIT(inst_data, 24);
+    // offset uses bits 10-21
+    // when U=1, offset is used for imm12
+    if (u) {
+        offset_type = UNSIGNED_OFFSET;
+    }
+    // offset 1XXXXX011010 gives register offset: 1[ xm:5      ]011010
+    else if (GET_BIT(inst_data, 21) && BIT_MASK(inst_data, 10, 15) == 0x1A) {
         offset_type = REGISTER_OFFSET;
-    // bits 10-21 0XXXXXXXXXI1
+    // offset 0XXXXXXXXXI1 gives pre/post-index:  0[ simm9:9 ][ i:1 ]1
     } else if (!GET_BIT(inst_data, 21) && GET_BIT(inst_data, 10)) {
         // if I = 1, pre-indexed, otherwise post-indexed
         offset_type = GET_BIT(inst_data, 11) ? PRE_INDEXED_OFFSET : POST_INDEXED_OFFSET;
-    } else offset_type = UNSIGNED_OFFSET;
+    } else return UNKNOWN_INSTRUCTION;
     return {
         .command_format = SINGLE_DATA_TRANSFER,
         .sf = GET_BIT(inst_data, 30),
         .rt = BIT_MASK(inst_data, 0, 4),
-        .u  = GET_BIT(inst_data, 24),
         .single_data_transfer = {
-            .u = GET_BIT(inst_data, 24),
+            .u = u,
             .l = GET_BIT(inst_data, 22),
             .xn = BIT_MASK(inst_data, 10, 21),
             .offset_type = offset_type,
-            .offset = sdt_offset(offset_type, inst_data)
+            .offset      = sdt_offset(offset_type, inst_data)
         }
     };
 }
