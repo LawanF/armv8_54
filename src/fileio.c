@@ -9,7 +9,7 @@
     Takes a FILE *fileptr and a long int *size.
     Stores the size of file (in bytes) in size.
 */
-void filesize(FILE *fileptr, long int *size) {
+static void filesize(FILE *fileptr, long int *size) {
     if (fseek(fileptr, 0, SEEK_END)) {
         fprintf(stderr, "filesize: fseek error, errno %d\n", errno);
         exit(1);
@@ -69,7 +69,7 @@ char *store_file_to_arr(char *filename) {
     A function that executes printf but flags errors (to help with
     file writing errors)
 */
-void printf_with_err(char *output, va_list args) {
+static void printf_with_err(char *output, va_list args) {
     int ret = printf(output, args);
     if (ret < 0) {
 	fprintf(stderr, "printf_with_err: couldn't print instruction of format %s", output);
@@ -80,9 +80,8 @@ void printf_with_err(char *output, va_list args) {
     A function that locates memory locations with non-zero data
     and prints them for the output file
 */
-void locate_non_zero_mem(void) {
-    int mem_size = MEMORY_SIZE / 4;
-    for (int i = 4; i < mem_size; i += 4) {
+static void locate_non_zero_mem(void) {
+    for (int i = 0; i < MEMORY_SIZE; i += 4) {
         uint32_t data = readmem32(i);
         if (data != 0) {
             printf_with_err("%08x: %08x\n", i, data);
