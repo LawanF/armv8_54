@@ -1,3 +1,5 @@
+#include <stdint.h>
+
 // Returns 1 if the i'th bit of n is 1 and 0 otherwise
 #define GET_BIT(n, i) (((n) >> (i)) & 0x1) 
 // Applies a bitmask and returns bits from i (inclusive) to j (inclusive) of n, where i<=j
@@ -104,8 +106,24 @@ void execute(Instruction *inst) {
             break;
         }
         case BRANCH: {
-	    
-			     break;
+	    // rewrite if statement for different branch format
+	    // decrement pc when editing		     
+	    if ((inst->branch).operand != NULL) {
+		MachineState machine_state = read_machine_state()
+		uint64_t offset = simm26*4 + (machine_state 	
+		write_machine_state(	
+	
+		// use machine state function to write PC = PC + simm26*4 (sign extend to 64 bit)
+	    }
+	    if ((inst->branch).branch_xn != NULL) {
+                // use machine state function to read register branch_xn
+                // if xn is 11111 then ignore
+	        // then write address in branch_xn to PC
+	    }
+	    if ((inst->branch).conditional != NULL) {
+	    	
+	    }
+	    break;
         }
     }
 }
