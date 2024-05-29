@@ -95,19 +95,25 @@ CommandFormat decode_format(uint32_t inst_data) {
     return UNKNOWN;
 }
 
-const Instruction unknown_instruction = { .command_format = UNKNOWN, .empty_instruction = {} };
+#define UNKNOWN_INSTRUCTION { .command_format = UNKNOWN, .empty_instruction = {} }
 
 // Returns an operand of the given type. A precondition is that the instruction is in the correct group.
-/*
-DPImmOperand dp_imm_operand(char opi, uint32_t inst_data) {
-    if (opi == 0x2) {
-        // arithmetic instruction format
-        return { .arith_operand = { .sh = */
+DPImmOperand dp_imm_operand(DPImmOperandType operand_type, uint32_t inst_data) {
+    switch (operand_type) {
+        case ARITH_OPERAND:
+            return { .arith_operand = { .sh    = GET_BIT(inst_data, 22),
+                                        .imm12 = BIT_MASK(inst_data, 10, 21),
+                                        .rn    = BIT_MASK(inst_data, 5, 9) } };
+        case WIDE_MOVE_OPERAND:
+            return { .wide_move_operand = { .hw    = BIT_MASK(inst_data, 21, 22),
+                                            .imm16 = BIT_MASK(inst_data, 5, 20) } };
+    }
+}
 
 // Fills the fields of a new Instruction. A precondition is that the instruction falls into the specified type.
 Instruction decode_dp_imm(uint32_t inst_data) {
     char opi = BIT_MASK(inst_data, 23, 25);
-    if (opi != 0x5 && opi != 0x2) return unknown_instruction;
+    if (opi != 0x5 && opi != 0x2) return UNKNOWN_INSTRUCTION;
     return {
         .command_format = DP_IMM,
         .sf  = GET_BIT(inst_data, 31),
