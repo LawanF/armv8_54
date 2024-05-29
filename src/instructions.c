@@ -1,3 +1,5 @@
+#include <stdint.h>
+
 // enum for specifying type of instruction
 typedef enum { HALT; DP_IMM; DP_REG; SINGLE_DATA_TRANSFER; LOAD_LITERAL; BRANCH; } CommandFormat;
 
@@ -74,8 +76,24 @@ void execute(Instruction *inst) {
             break;
         }
         case BRANCH: {
-	    
-			     break;
+	    // rewrite if statement for different branch format
+	    // decrement pc when editing		     
+	    if ((inst->branch).operand != NULL) {
+		MachineState machine_state = read_machine_state()
+		uint64_t offset = simm26*4 + (machine_state 	
+		write_machine_state(	
+	
+		// use machine state function to write PC = PC + simm26*4 (sign extend to 64 bit)
+	    }
+	    if ((inst->branch).branch_xn != NULL) {
+                // use machine state function to read register branch_xn
+                // if xn is 11111 then ignore
+	        // then write address in branch_xn to PC
+	    }
+	    if ((inst->branch).conditional != NULL) {
+	    	
+	    }
+	    break;
         }
     }
 }
