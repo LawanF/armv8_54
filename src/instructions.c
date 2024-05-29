@@ -121,7 +121,6 @@ SDTOffset sdt_offset(SDTOffsetType offset_type, uint32_t inst_data) {
             return { .imm12 = BIT_MASK(inst_data, 10, 21) };
     }
 }
-
 // Fills the fields of a new Instruction. A precondition is that the instruction falls into the specified type.
 Instruction decode_dp_imm(uint32_t inst_data) {
     DPImmOperandType operand_type;
@@ -157,11 +156,16 @@ Instructon decode_dp_reg(uint32_t inst_data) {
                     .operand = BIT_MASK(inst_data, 10, 15), 
                     .rn = BIT_MASK(inst_data, 5, 9) } };
 }
-Instruction 
 Instruction decode_single_data_transfer(uint32_t inst_data) {
     SDTOffsetType offset_type;
     // bits 10-21 1XXXXX011010
-    if (GET_BIT(
+    if (GET_BIT(inst_data, 21) && BIT_MASK(inst_data, 10, 15) == 0x1A) {
+        offset_type = REGISTER_OFFSET;
+    // bits 10-21 0XXXXXXXXXI1
+    } else if (!GET_BIT(inst_data, 21) && GET_BIT(inst_data, 10)) {
+        // if I = 1, pre-indexed, otherwise post-indexed
+        offset_type = GET_BIT(inst_data, 11) ? PRE_INDEXED_OFFSET : POST_INDEXED_OFFSET;
+    } else offset_type = UNSIGNED_OFFSET;
     return {
         .command_format = SINGLE_DATA_TRANSFER,
         .sf = GET_BIT(inst_data, 30),
@@ -170,7 +174,10 @@ Instruction decode_single_data_transfer(uint32_t inst_data) {
         .single_data_transfer = { .u = GET_BIT(inst_data, 24),
                                   .l = GET_BIT(inst_data, 22),
                                   .xn = BIT_MASK(inst_data, 10, 21),
-                                  }
+                                  .offset_type = offset_type,
+                                  .offset = sdt_offset(offset_type, inst_data)
+                                  } };
+}
 
 void execute(Instruction *inst) {
     if (inst == NULL) return;
