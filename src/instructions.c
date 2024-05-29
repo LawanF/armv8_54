@@ -32,14 +32,14 @@ typedef union {
 
 typedef union {
     struct {
-        int32_t simm26;
+        int32_t simm26:26;
     } uncond_branch;
     struct {
         char xn:6;
     } register_branch;
     struct {
         char cond:4;
-        int32_t simm19;
+        int32_t simm19:19;
     } cond_branch;
 } BranchOperand;
 
