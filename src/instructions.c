@@ -80,6 +80,15 @@ typedef struct {
     }
 } Instruction
 
+CommandFormat decode_format(uint32_t inst_data) {
+    if (inst_data == 0x8a000000) return HALT;
+    if (BIT_MASK(inst_data, 26, 28) == 0x4) return DP_IMM;
+    if (BIT_MASK(inst_data, 25, 27) == 0x5) return DP_REG;
+    if (BIT_MASK(inst_data, 23, 29) == 0xE2 && GET_BIT(inst_data, 31)) return SINGLE_DATA_TRANSFER;
+    if (BIT_MASK(inst_data, 24, 29) == Ox18 && !GET_BIT(inst_data, 31)) return LOAD_LITERAL;
+    if (BIT_MASK(inst_data, 26, 29) == Ox5) return BRANCH;
+    return UNKNOWN;
+}    
 
 void execute(Instruction *inst) {
     if (inst == NULL) return;
