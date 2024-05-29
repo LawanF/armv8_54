@@ -24,7 +24,7 @@ typedef union {
 typedef enum { UNCOND_BRANCH; REGISTER_BRANCH; COND_BRANCH; } BranchOperandType;
 typedef union {
     struct { int32_t simm26:26; } uncond_branch;
-    struct { char xn:6; } register_branch;
+    struct { char xn:5; } register_branch;
     struct { char cond:4; int32_t simm19:19; } cond_branch;
 } BranchOperand;
 
@@ -116,10 +116,12 @@ Instructon decode_dp_reg(uint32_t inst_data) {
         .sf  = GET_BIT(inst_data, 31),
         .opc = BIT_MASK(inst_data, 29, 30),
         .rd  = BIT_MASK(inst_data, 0, 4),
-        .dp_reg = { .m = m,
-                    .opr = opr, 
-                    .operand = BIT_MASK(inst_data, 10, 15), 
-                    .rn = BIT_MASK(inst_data, 5, 9) } };
+        .dp_reg = {
+            .m = m,
+            .opr = opr, 
+            .operand = BIT_MASK(inst_data, 10, 15), 
+            .rn = BIT_MASK(inst_data, 5, 9) } 
+        };
 }
 Instruction decode_single_data_transfer(uint32_t inst_data) {
     SDTOffsetType offset_type;
@@ -144,6 +146,49 @@ Instruction decode_single_data_transfer(uint32_t inst_data) {
             .offset = sdt_offset(offset_type, inst_data)
         }
     };
+}
+Instruction decode_load_literal(uint32_t inst_data) {
+    return {
+        .sf = GET_BIT(inst_data, 30),
+        .rt = BIT_MASK(inst_data, 0, 4),
+        .load_literal = { .simm19 = BIT_MASK(inst_data, 5, 23) }
+    };
+}
+Instruction decode_branch(uint32_t inst_data) {
+    BranchOperandType operand_type;
+    // bits 26-21 000101
+    if (BIT_MASK(inst_data, 26, 31) == 0x5) {
+        operand_type = UNCOND_BRANCH;
+    }
+    // bits 24-31 01010100 and bit 4 0
+    else if (BIT_MASK(inst_data, 24, 31) == 0x54 && !GET_BIT(inst_data, 4)) {
+        operand_type = COND_BRANCH;
+    }
+    // bits 0-4 00000 and bits 10-31 11 0101 1000 0111 1100 0000
+    else if (BIT_MASK(inst_data, 0, 4) == 0x0
+             && BIT_MASK(inst_data, 10, 31) == 0x3587C0) {
+        operand_type = REGISTER_BRANCH;
+    } else return UNKNOWN_INSTRUCTION;
+    Instruction branch_inst = { 
+        .command_format = BRANCH, 
+        .branch = { .operand_type = operand_type }
+    };
+    BranchOperand branch_operand;
+    switch (operand_type) {
+        case UNCOND_BRANCH: 
+            branch_operand = { .uncond_branch = { .simm26 = BIT_MASK(inst_data, 0, 25) } };
+            break;
+        case COND_BRANCH:
+            branch_operand = { .cond_branch = { 
+                .cond = BIT_MASK(inst_data, 0, 3), .simm19 = BIT_MASK(inst_data, 5, 23)
+            } };
+            break;
+        case REGISTEER_BRANCH:
+            branch_operand = { .register_branch = { .xn = BIT_MASK(inst_data, 5, 9) } };
+            break;
+    }
+    branch_inst.branch.operand = branch_operand;
+    return branch_inst;
 }
 
 void offset_program_counter(MachineState *alter_machine_state, int32_t enc_address) {
