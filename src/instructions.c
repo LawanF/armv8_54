@@ -10,15 +10,8 @@ typedef enum { UNKNOWN; HALT; DP_IMM; DP_REG; SINGLE_DATA_TRANSFER; LOAD_LITERAL
 
 typedef enum { ARITH_OPERAND; WIDE_MOVE_OPERAND; } DPImmOperandType;
 typedef union {
-    struct {
-        char sh:1;
-        uint16_t imm12:12;
-        char rn:5;
-    } arith_operand;
-    struct {
-        char hw:2;
-        uint16_t imm16;
-    } wide_move_operand;
+    struct { char sh:1; uint16_t imm12:12; char rn:5; } arith_operand;
+    struct { char hw:2; uint16_t imm16; } wide_move_operand;
 } DPImmOperand;
 
 typedef enum { REGISTER_OFFSET; PRE_INDEX_OFFSET; POST_INDEX_OFFSET; UNSIGNED_OFFSET; } SDTOffsetType;
@@ -30,16 +23,9 @@ typedef union {
 
 typedef enum { UNCOND_BRANCH; REGISTER_BRANCH; COND_BRANCH; } BranchOperandType;
 typedef union {
-    struct {
-        int32_t simm26:26;
-    } uncond_branch;
-    struct {
-        char xn:6;
-    } register_branch;
-    struct {
-        char cond:4;
-        int32_t simm19:19;
-    } cond_branch;
+    struct { int32_t simm26:26; } uncond_branch;
+    struct { char xn:6; } register_branch;
+    struct { char cond:4; int32_t simm19:19; } cond_branch;
 } BranchOperand;
 
 // generic instruction struct - unions for specific instruction data
@@ -47,37 +33,16 @@ typedef struct {
     CommandFormat command_format;
     char sf:1;
     char opc:2;
-    union {
-        char rd:5;
-        char rt:5;
-    };
+    union { char rd:5; char rt:5; };
     union {
         struct {} empty_inst;
-        struct {
-            DPImmOperandType operand_type;
-            DPImmOperand operand;
-        } dp_imm;
-        struct {
-            char m:1;
-            char opr:4;
-            char rm:5;
-            char operand:6;
-            char rn:5;
-        } dp_reg;
-        struct {
-            char u:1;
-            char l:1;
-            char xn:5;
-            SDTOffsetType offset_type;
-            SDTOffset offset;
+        struct { DPImmOperandType operand_type; DPImmOperand operand; } dp_imm;
+        struct { char m:1; char opr:4; char rm:5; char operand:6; char rn:5; } dp_reg;
+        struct { char u:1; char l:1; char xn:5;
+            SDTOffsetType offset_type; SDTOffset offset;
         } single_data_transfer;
-        struct {
-            int32_t simm19:19;
-        } load_literal;
-        struct {
-            BranchOperandType operand_type;
-            BranchOperand operand;
-        } branch;
+        struct { int32_t simm19:19; } load_literal;
+        struct { BranchOperandType operand_type; BranchOperand operand; } branch;
     }
 } Instruction
 
@@ -171,12 +136,14 @@ Instruction decode_single_data_transfer(uint32_t inst_data) {
         .sf = GET_BIT(inst_data, 30),
         .rt = BIT_MASK(inst_data, 0, 4),
         .u  = GET_BIT(inst_data, 24),
-        .single_data_transfer = { .u = GET_BIT(inst_data, 24),
-                                  .l = GET_BIT(inst_data, 22),
-                                  .xn = BIT_MASK(inst_data, 10, 21),
-                                  .offset_type = offset_type,
-                                  .offset = sdt_offset(offset_type, inst_data)
-                                  } };
+        .single_data_transfer = {
+            .u = GET_BIT(inst_data, 24),
+            .l = GET_BIT(inst_data, 22),
+            .xn = BIT_MASK(inst_data, 10, 21),
+            .offset_type = offset_type,
+            .offset = sdt_offset(offset_type, inst_data)
+        }
+    };
 }
 
 void offset_program_counter(MachineState *alter_machine_state, int32_t enc_address) {
