@@ -25,6 +25,19 @@ typedef union {
     } unsigned_offset;
 } SDTOffset;
 
+typedef union {
+    struct {
+        int32_t simm26;
+    } uncond_branch;
+    struct {
+        char xn:6;
+    } register_branch;
+    struct {
+        char cond:4;
+        int32_t simm19;
+    } cond_branch;
+} BranchOperand;
+
 // generic instruction struct - unions for specific instruction data
 typedef struct {
     CommandFormat command_format;
@@ -55,14 +68,7 @@ typedef struct {
             int32_t simm19:19;
         } load_literal;
         struct {
-            union {
-                int32_t simm26:26;
-                char branch_xn:5;
-                struct {
-                    char branch_simm19:19;
-                    char cond:4;
-                } conditional;
-            }
+            BranchOperand operand;
         } branch;
     }
 } Instruction
