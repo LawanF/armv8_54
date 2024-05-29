@@ -80,6 +80,12 @@ typedef struct {
     }
 } Instruction
 
+void offset_program_counter(MachineState *alter_machine_state, int32_t enc_address) {
+	int64_t offset = enc_address*4;
+	offset += (machine_state->program_counter.data);
+        offset -= 4;
+        write_machine_state(program_counter, offset);
+}	
 
 void execute(Instruction *inst) {
     if (inst == NULL) return;
@@ -106,22 +112,62 @@ void execute(Instruction *inst) {
             break;
         }
         case BRANCH: {
-	    // rewrite if statement for different branch format
-	    // decrement pc when editing		     
-	    if ((inst->branch).operand != NULL) {
-		MachineState machine_state = read_machine_state()
-		uint64_t offset = simm26*4 + (machine_state 	
-		write_machine_state(	
-	
+	    // decrement pc when editing
+	    // how to specify PC when writing to machine state
+	    
+	    MachineState *machine_state = read_machine_state();
+
+	    if ((inst->branch).operand.uncond_branch != NULL) {
+		offset_program_counter(*machine_state, (inst->branch).operand.uncond_branch.simm26);
 		// use machine state function to write PC = PC + simm26*4 (sign extend to 64 bit)
 	    }
-	    if ((inst->branch).branch_xn != NULL) {
+	    if ((inst->branch).operand.register_branch != NULL) {
                 // use machine state function to read register branch_xn
                 // if xn is 11111 then ignore
 	        // then write address in branch_xn to PC
+		int8_t xn = (inst->branch).operand.register_branch.xn;
+		if (xn != 31) {
+			write_machine_state(program_counter, (machine_state->general_registers)[xn]);
+		}
 	    }
-	    if ((inst->branch).conditional != NULL) {
-	    	
+	    if ((inst->branch).operand.cond_branch != NULL) {
+	    	int8_t eval_cond = (inst->branch).operand.cond_branch.cond;
+		ProcessorStateRegister branch_pstate = (machine_state->pstate);
+		switch (eval_cond) {
+		    case 0: {
+	    		if (branch_pstate.zero == 1) { 
+			    offset_program_counter(*machine_state, (inst->branch).operand.cond_branch.simm19);
+			}				
+		    }
+                    case 1: {
+		        if (branch_pstate.zero == 0) {
+                            offset_program_counter(*machine_state, (inst->branch).operand.cond_branch.simm19);
+			}
+	            }
+		    case 10: {
+                        if (branch_pstate.neg == branch_pstate.overflow) {
+                            offset_program_counter(*machine_state, (inst->branch).operand.cond_branch.simm19);
+			}
+                    }	    
+		    case 11: {
+                        if (branch_pstate.neg != branch_pstate.overflow) {
+                            offset_program_counter(*machine_state, (inst->branch).operand.cond_branch.simm19);
+			}
+                    }	     
+		    case 12: {
+                        if (branch_pstate.zero == 0 && branch_pstate.neg == branch_pstate.overflow) {
+                            offset_program_counter(*machine_state, (inst->branch).operand.cond_branch.simm19);
+			}
+                    }	     
+		    case 13: {
+                        if (!(branch_pstate.zero == 0 && branch_pstate.neg == branch_pstate.overflow)) {
+                            offset_program_counter(*machine_state, (inst->branch).operand.cond_branch.simm19);
+			}
+                    }
+		    case 14: {
+                        offset_program_counter(*machine_state, (inst->branch).operand.cond_branch.simm19);
+                    }	     
+		}
 	    }
 	    break;
         }
