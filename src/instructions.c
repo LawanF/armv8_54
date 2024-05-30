@@ -182,16 +182,18 @@ uint32_t encode_sdt_offset(Instruction *inst) {
 #define RD_RT_START 0
 #define RD_RT_END   4
 
-// instruction is of format [ sf:1 ][ opc:2 ]100[ opi:3 ][ operand:18 ][ rd:5 ]
-#define DP_IMM_MASK      0x10000000UL // 0001 0000 0000 0000 0000 0000 0000 0000
-#define DP_IMM_OPI_START 23
-#define DP_IMM_OPI_END   25
-#define DP_IMM_OPC_START 29
-#define DP_IMM_OPC_END   30
-#define DP_IMM_SF_BIT    31
-
 /* Decoding instructions
  * A precondition is that the instructions are of the correct group. */
+
+// instruction is of format [ sf:1 ][ opc:2 ]100[ opi:3 ][ operand:18 ][ rd:5 ]
+#define DP_IMM_MASK       0x10000000UL // 0001 0000 0000 0000 0000 0000 0000 0000
+#define DP_IMM_OPI_START  23
+#define DP_IMM_OPI_END    25
+#define DP_IMM_MASK_START 26
+#define DP_IMM_MASK_END   28
+#define DP_IMM_OPC_START  29
+#define DP_IMM_OPC_END    30
+#define DP_IMM_SF_BIT     31
 
 Instruction decode_dp_imm(uint32_t inst_data) {
     DPImmOperandType operand_type;
@@ -208,6 +210,21 @@ Instruction decode_dp_imm(uint32_t inst_data) {
         .rd  = BITMASK(inst_data, RD_RT_START, RD_RT_END),
         .dp_imm = { .operand_type = operand_type, .operand = decode_dp_imm_operand(opi, inst_data) }
     };
+}
+
+uint32_t encode_dp_imm(Instruction *inst) {
+    DPImmOperand operand = inst->dp_imm.operand;
+    char opi;
+    switch (inst->dp_imm.operand_type) {
+        case ARITH_OPERAND:     opi = ARITH_OPI;     break;
+        case WIDE_MOVE_OPERAND: opi = WIDE_MOVE_OPI; break;
+    }
+    return DP_IMM_MASK
+           | (uint32_t) inst->sf  << DP_IMM_SF_BIT
+           | (uint32_t) inst->opc << DP_IMM_OPC_START
+           | (uint32_t) opi       << DP_IMM_OPI_START
+           | encode_dp_imm_operand(inst)
+           | (uint32_t) inst->rd  << RD_RT_START;
 }
 
 Instruction decode_dp_reg(uint32_t inst_data) {
