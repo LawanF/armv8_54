@@ -185,15 +185,19 @@ uint32_t encode_sdt_offset(Instruction *inst) {
 /* Decoding instructions
  * A precondition is that the instructions are of the correct group. */
 
-// instruction is of format [ sf:1 ][ opc:2 ]100[ opi:3 ][ operand:18 ][ rd:5 ]
+// for DP registers, the sign bits are in position 31
+// OPC is stored in bits 29 and 30
+#define DP_SF_BIT 31
+#define DP_OPC_START  29
+#define DP_OPC_END    30
+
+// for DP (immediate),
+// the instruction is of format [ sf:1 ][ opc:2 ]100[ opi:3 ][ operand:18 ][ rd:5 ]
 #define DP_IMM_MASK       0x10000000UL // 0001 0000 0000 0000 0000 0000 0000 0000
 #define DP_IMM_OPI_START  23
 #define DP_IMM_OPI_END    25
 #define DP_IMM_MASK_START 26
 #define DP_IMM_MASK_END   28
-#define DP_IMM_OPC_START  29
-#define DP_IMM_OPC_END    30
-#define DP_IMM_SF_BIT     31
 
 Instruction decode_dp_imm(uint32_t inst_data) {
     DPImmOperandType operand_type;
@@ -205,8 +209,8 @@ Instruction decode_dp_imm(uint32_t inst_data) {
     }
     return (Instruction) {
         .command_format = DP_IMM,
-        .sf  = GET_BIT(inst_data, DP_IMM_SF_BIT),
-        .opc = BITMASK(inst_data, DP_IMM_OPC_START, DP_IMM_OPC_END),
+        .sf  = GET_BIT(inst_data, DP_SF_BIT),
+        .opc = BITMASK(inst_data, DP_OPC_START, DP_OPC_END),
         .rd  = BITMASK(inst_data, RD_RT_START, RD_RT_END),
         .dp_imm = { .operand_type = operand_type, .operand = decode_dp_imm_operand(opi, inst_data) }
     };
@@ -220,33 +224,46 @@ uint32_t encode_dp_imm(Instruction *inst) {
         case WIDE_MOVE_OPERAND: opi = WIDE_MOVE_OPI; break;
     }
     return DP_IMM_MASK
-           | (uint32_t) inst->sf  << DP_IMM_SF_BIT
-           | (uint32_t) inst->opc << DP_IMM_OPC_START
+           | (uint32_t) inst->sf  << DP_SF_BIT
+           | (uint32_t) inst->opc << DP_OPC_START
            | (uint32_t) opi       << DP_IMM_OPI_START
            | encode_dp_imm_operand(inst)
            | (uint32_t) inst->rd  << RD_RT_START;
 }
 
+// for DP (register),
+// the instruction is of format [ sf:1 ][ opc:2 ][ M:1 ]101[ opr:4 ][ rm:5 ][ operand: 6 ][ rn:5 ][ rd:5 ]
+#define DP_REG_MASK          0x0A000000UL // 0000 1010 0000 0000 0000 0000 0000 0000
+#define DP_REG_RN_START      5
+#define DP_REG_RN_END        9
+#define DP_REG_OPERAND_START 10
+#define DP_REG_OPERAND_END   15
+#define DP_REG_RM_START      16
+#define DP_REG_RM_END        20
+#define DP_REG_OPR_START     21
+#define DP_REG_OPR_END       24
+#define DP_REG_M_BIT         28
+
 Instruction decode_dp_reg(uint32_t inst_data) {
-    // instruction is of format
-    // [ sf:1 ][ opc:2 ][ M:1 ]101[ opr:4 ][ rm:5 ][ operand: 6 ][ rn:5 ][ rd:5 ]
-    char opr = BITMASK(inst_data, 21, 24);
-    char m = GET_BIT(inst_data, 28);
+    char opr = BITMASK(inst_data, DP_REG_OPR_START, DP_REG_OPR_END);
+    char m = GET_BIT(inst_data, DP_REG_M_BIT);
     /* instructions of the form (M,opr) = (0,1xx0),(0,0xxx),(1,1000) are all recognised,
      * leaving (1,0xxx) and (0,1xx1) as unrecognised. */
     if ((m && !GET_BIT(opr, 3)) || (!m && GET_BIT(opr, 0) && GET_BIT(opr, 3))) {
         return UNKNOWN_INSTRUCTION;
     }
-    return {
+    return (Instruction) {
         .command_format = DP_REG,
-        .sf  = GET_BIT(inst_data, 31),
-        .opc = BITMASK(inst_data, 29, 30),
-        .rd  = BITMASK(inst_data, 0, 4),
+        .sf  = GET_BIT(inst_data, DP_SF_BIT),
+        .opc = BITMASK(inst_data, DP_OPC_START, DP_OPC_END),
+        .rd  = BITMASK(inst_data, RD_RT_START, RD_RT_END),
         .dp_reg = {
             .m = m,
             .opr = opr, 
-            .operand = BITMASK(inst_data, 10, 15),
-            .rn = BITMASK(inst_data, 5, 9) }
+            .rm = BITMASK(inst_data, DP_REG_RM_START, DP_REG_RM_END),
+            .operand = BITMASK(inst_data, DP_REG_OPERAND_START, DP_REG_OPERAND_END),
+            .rn = BITMASK(inst_data, DP_REG_RN_START, DP_REG_RN_END)
+        }
     };
 }
 
