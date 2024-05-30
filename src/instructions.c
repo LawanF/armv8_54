@@ -131,7 +131,7 @@ Instruction decode_dp_imm(uint32_t inst_data) {
     };
 }
 
-Instructon decode_dp_reg(uint32_t inst_data) {
+Instruction decode_dp_reg(uint32_t inst_data) {
     // instruction is of format
     // [ sf:1 ][ opc:2 ][ M:1 ]101[ opr:4 ][ rm:5 ][ operand: 6 ][ rn:5 ][ rd:5 ]
     char opr = BIT_MASK(inst_data, 21, 24);
@@ -151,7 +151,7 @@ Instructon decode_dp_reg(uint32_t inst_data) {
             .opr = opr, 
             .operand = BIT_MASK(inst_data, 10, 15), 
             .rn = BIT_MASK(inst_data, 5, 9) } 
-        };
+    };
 }
 
 Instruction decode_single_data_transfer(uint32_t inst_data) {
