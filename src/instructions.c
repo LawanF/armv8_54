@@ -281,11 +281,19 @@ uint32_t encode_dp_reg(Instruction *inst) {
 
 // for both single data transfer types (including load literal),
 // the sign flag is stored in bit 30 (instead of 31 for DP)
+#define SDT_SF_BIT 30
 // for single data transfer that is not a load literal,
 // the instruction is of format 1[ sf:1 ]11100[ u:1 ]0[ l:1 ][ offset:12 ][ xn:5 ][ rt:5 ]
-#define SDT_XN_START 10
-#define SDT_XN_END   21
+#define SDT_XN_START 5
+#define SDT_XN_END   9
+#define SDT_L_BIT    22
 #define SDT_U_BIT    24
+// test instruction matches    [1   X    11100   X   0   X   XXXXXXXXXXXX  XXXXX   XXXXX ]
+#define SDT_MASK_UPPER_BIT 31
+#define SDT_MASK_LOWER_BIT 23
+#define SDT_MASK_MIDDLE       0x1C
+#define SDT_MASK_MIDDLE_START 25
+#define SDT_MASK_MIDDLE_END   29
 // offset uses bits 10-21
 // offset 1XXXXX011010 gives register offset: 1[ xm:5      ]011010
 // (i.e. combining lower mask and upper bit)
@@ -317,16 +325,28 @@ Instruction decode_single_data_transfer(uint32_t inst_data) {
     } else return UNKNOWN_INSTRUCTION;
     return (Instruction) {
         .command_format = SINGLE_DATA_TRANSFER,
-        .sf = GET_BIT(inst_data, 30),
-        .rt = BITMASK(inst_data, 0, 4),
+        .sf = GET_BIT(inst_data, SDT_SF_BIT),
+        .rt = BITMASK(inst_data, RD_RT_START, RD_RT_END),
         .single_data_transfer = {
             .u = u,
-            .l = GET_BIT(inst_data, 22),
-            .xn = BITMASK(inst_data, 10, 21),
+            .l = GET_BIT(inst_data, SDT_L_BIT),
+            .xn = BITMASK(inst_data, SDT_XN_START, SDT_XN_END),
             .offset_type = offset_type,
             .offset      = decode_sdt_offset(offset_type, inst_data)
         }
     };
+}
+
+uint32_t encode_single_data_transfer(Instruction *inst) {
+    return FILL_BIT(SDT_REGISTER_MASK_UPPER_BIT)
+           | ((uint32_t) SDT_MASK_MIDDLE << SDT_MASK_MIDDLE_START)
+           // no need to add the mask lower bit as it is zero
+           | ((uint32_t) inst->rt << RD_RT_START)
+           | ((uint32_t) inst->single_data_transfer.xn << SDT_XN_START)
+           | encode_sdt_offset(inst)
+           | ((uint32_t) inst->single_data_transfer.l << SDT_L_BIT)
+           | ((uint32_t) inst->single_data_transfer.u << SDT_XN_START)
+           | ((uint32_t) inst->sf << SDT_SF_BIT);
 }
 
 Instruction decode_load_literal(uint32_t inst_data) {
