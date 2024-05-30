@@ -363,16 +363,13 @@ uint32_t encode_single_data_transfer(Instruction *inst) {
 #define LOAD_LITERAL_UPPER_MASK_BIT 31
 
 Instruction decode_load_literal(uint32_t inst_data) {
-    int32_t simm19 = (int32_t) BITMASK(inst_data, 5, 23);
-    if (GET_BIT(simm19, 18)) {
-        // sign extend simm19: remaining bits 19-31 are 1
-        simm19 |= 0xFFF80000UL;
-    }
     return (Instruction) {
         .command_format = LOAD_LITERAL,
         .sf = GET_BIT(inst_data, SDT_SF_BIT),
         .rt = BITMASK(inst_data, RD_RT_START, RD_RT_END),
-        .load_literal = { .simm19 = simm19 }
+        .load_literal = {
+            .simm19 = BITMASK(inst_data, LOAD_LITERAL_SIMM19_START, LOAD_LITERAL_SIMM19_END)
+        }
     };
 }
 
@@ -392,6 +389,7 @@ uint32_t encode_load_literal(Instruction *inst) {
 #define BRANCH_COMMON_MASK_END   29
 // unconditional branch has format 000101[         simm26:26         ]
 // bits 26-21 000101
+// simm26 takes lower 26 bits
 #define BRANCH_UNCOND_MASK 0x14000000UL // 0001 0100 0000 0000 0000 0000 0000 0000
 #define BRANCH_UNCOND_SIMM26_START 0
 #define BRANCH_UNCOND_SIMM26_END   25
@@ -399,16 +397,19 @@ uint32_t encode_load_literal(Instruction *inst) {
 #define BRANCH_UNCOND_MASK_END     31
 // conditional branch has format   01010100[  simm19:19  ]0[ cond: 4 ]
 // bits 24-31 01010100 and bit 4 0
-#define BRANCH_COND_UPPER_MASK 0x54000000UL // 0101 0100 0000 0000 0000 0000 0000 0000
+// cond uses lower 4 bits and simm19 bits 5-23
+#define BRANCH_COND_MASK 0x54000000UL // 0101 0100 0000 0000 0000 0000 0000 0000
 #define BRANCH_COND_UPPER_MASK_START 24
 #define BRANCH_COND_UPPER_MASK_END   31
 #define BRANCH_COND_LOWER_MASK_BIT   4
 #define BRANCH_COND_COND_START       0
 #define BRANCH_COND_COND_END         3
+
 #define BRANCH_COND_SIMM19_START     5
 #define BRANCH_COND_SIMM19_END       23
 // register branch has format      1101011000011111000000[ xn:5 ]00000
 // bits 0-4 00000 and bits 10-31 are 11 0101 1000 0111 1100 0000
+// xn uses bits 5-9
 #define BRANCH_REG_MASK 0xD61F0000UL // 1101 0110 0001 1111 0000 0000 0000 0000
 #define BRANCH_REG_MASK_LOWER_START 0
 #define BRANCH_REG_MASK_LOWER_END   4
@@ -425,7 +426,7 @@ Instruction decode_branch(uint32_t inst_data) {
         operand_type = UNCOND_BRANCH;
     }
     else if ((BITMASK(inst_data, BRANCH_COND_UPPER_MASK_START, BRANCH_COND_UPPER_MASK_END)
-             == BRANCH_COND_UPPER_MASK >> BRANCH_COND_UPPER_MASK_START)
+             == BRANCH_COND_MASK >> BRANCH_COND_UPPER_MASK_START)
              && !GET_BIT(inst_data, BRANCH_COND_LOWER_MASK_BIT)) {
         operand_type = COND_BRANCH;
     }
@@ -441,22 +442,19 @@ Instruction decode_branch(uint32_t inst_data) {
     BranchOperand branch_operand;
     switch (operand_type) {
         case UNCOND_BRANCH: 
-            // simm26 takes lower 26 bits
             branch_operand = (BranchOperand) { .uncond_branch =
                 { .simm26 = BITMASK(inst_data, BRANCH_UNCOND_SIMM26_START, BRANCH_UNCOND_SIMM26_END) }
             };
             break;
         case COND_BRANCH:
-            // cond uses lower 4 bits and simm19 bits 5-23
             branch_operand = (BranchOperand) { .cond_branch =
                 {
-                    .cond = BITMASK(inst_data, 0, 3),
-                    .simm19 = BITMASK(inst_data, 5, 23)
+                    .cond = BITMASK(inst_data, BRANCH_COND_COND_START, BRANCH_COND_COND_END),
+                    .simm19 = BITMASK(inst_data, BRANCH_COND_SIMM19_START, BRANCH_COND_SIMM19_END)
                 }
             };
             break;
         case REGISTER_BRANCH:
-            // xn uses bits 5-9
             branch_operand = (BranchOperand) { .register_branch =
                 { .xn = BITMASK(inst_data, BRANCH_REG_XN_START, BRANCH_REG_XN_END) }
             };
@@ -464,6 +462,29 @@ Instruction decode_branch(uint32_t inst_data) {
     }
     branch_inst.branch.operand = branch_operand;
     return branch_inst;
+}
+
+uint32_t encode_branch(Instruction *inst) {
+    switch (inst->branch.operand_type) {
+        case UNCOND_BRANCH: {
+            // need to remove leading 1 bits in case simm26 is negative
+            uint32_t simm26_masked = BITMASK(inst->branch.operand.uncond_branch.simm26, 0, 25);
+            return BRANCH_UNCOND_MASK
+                   | (simm26_masked << BRANCH_UNCOND_SIMM26_START);
+        }
+        case COND_BRANCH: {
+            uint32_t cond = inst->branch.operand.cond_branch.cond;
+            uint32_t simm19_masked = BITMASK(inst->branch.operand.cond_branch.simm19, 0, 18);
+            return BRANCH_COND_MASK
+                   | (simm19_masked << BRANCH_COND_SIMM19_START)
+                   | (cond << BRANCH_COND_COND_START);
+        }
+        case REGISTER_BRANCH: {
+            uint32_t xn = inst->branch.operand.register_branch.xn;
+            return BRANCH_REG_MASK
+                   | (xn << BRANCH_REG_XN_START);
+        }
+    }
 }
 
 CommandFormat decode_format(uint32_t inst_data) {
