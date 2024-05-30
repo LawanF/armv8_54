@@ -418,6 +418,8 @@ void execute(Instruction *inst) {
 			    // set all bits to one except imm16 bits (which these are will vary depending on if the imm16 was shifted earlier)
 			    // in 32 bit case upper 32 bits are all 0 (i.e. zero extended)
 			    // set rd to op
+			    uint32_t not_bit_mask = 4294967295
+			    wide_move_operand = wide_move_operand ^ not_bit_mask 
 			    write_general_registers(dp_imm_rd, wide_move_hw);
                             break;
                         }             
