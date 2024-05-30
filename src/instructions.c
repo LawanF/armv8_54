@@ -131,7 +131,7 @@ Instruction decode_dp_imm(uint32_t inst_data) {
 
 Instructon decode_dp_reg(uint32_t inst_data) {
     // instruction is of format
-    // [ sf:1 ][ opc:2 ][ M:1 ]101[ opr:4 ][ rm:5 ][ operand: 6][ rn:5 ][ rd:5 ]
+    // [ sf:1 ][ opc:2 ][ M:1 ]101[ opr:4 ][ rm:5 ][ operand: 6 ][ rn:5 ][ rd:5 ]
     char opr = BIT_MASK(inst_data, 21, 24);
     char m = GET_BIT(inst_data, 28);
     /* instructions of the form (M,opr) = (0,1xx0),(0,0xxx),(1,1000) are all recognised,
@@ -200,7 +200,7 @@ Instruction decode_branch(uint32_t inst_data) {
     if (BIT_MASK(inst_data, 26, 31) == 0x5) {
         operand_type = UNCOND_BRANCH;
     }
-    // conditional branch has format   01010100[  simm19:19  ]0[ cond: 3 ]
+    // conditional branch has format   01010100[  simm19:19  ]0[ cond: 4 ]
     // bits 24-31 01010100 and bit 4 0
     else if (BIT_MASK(inst_data, 24, 31) == 0x54 && !GET_BIT(inst_data, 4)) {
         operand_type = COND_BRANCH;
@@ -218,14 +218,17 @@ Instruction decode_branch(uint32_t inst_data) {
     BranchOperand branch_operand;
     switch (operand_type) {
         case UNCOND_BRANCH: 
+            // simm26 takes lower 26 bits
             branch_operand = { .uncond_branch = { .simm26 = BIT_MASK(inst_data, 0, 25) } };
             break;
         case COND_BRANCH:
+            // cond uses lower 4 bits and simm19 bits 5-23
             branch_operand = { .cond_branch = { 
                 .cond = BIT_MASK(inst_data, 0, 3), .simm19 = BIT_MASK(inst_data, 5, 23)
             } };
             break;
-        case REGISTEER_BRANCH:
+        case REGISTER_BRANCH:
+            // xn uses bits 5-9
             branch_operand = { .register_branch = { .xn = BIT_MASK(inst_data, 5, 9) } };
             break;
     }
@@ -243,7 +246,9 @@ CommandFormat decode_format(uint32_t inst_data) {
     if (BIT_MASK(inst_data, 25, 29) == 0x1C
         && !GET_BIT(inst_data, 23)
         && GET_BIT(inst_data, 31)) return SINGLE_DATA_TRANSFER;
+    // bits 24-29 011000 and bit 31 0
     if (BIT_MASK(inst_data, 24, 29) == Ox18 && !GET_BIT(inst_data, 31)) return LOAD_LITERAL;
+    // bits 26-29 0101
     if (BIT_MASK(inst_data, 26, 29) == Ox5) return BRANCH;
     return UNKNOWN;
 }
