@@ -185,7 +185,7 @@ uint32_t encode_sdt_offset(Instruction *inst) {
 /* Decoding instructions
  * A precondition is that the instructions are of the correct group. */
 
-// for DP registers, the sign bits are in position 31
+// for DP instructions, the sign bits are in position 31
 // OPC is stored in bits 29 and 30
 #define DP_SF_BIT 31
 #define DP_OPC_START  29
@@ -279,24 +279,43 @@ uint32_t encode_dp_reg(Instruction *inst) {
            | ((uint32_t) inst->sf             << DP_SF_BIT);
 }
 
+// for both single data transfer types (including load literal),
+// the sign flag is stored in bit 30 (instead of 31 for DP)
+// for single data transfer that is not a load literal,
+// the instruction is of format 1[ sf:1 ]11100[ u:1 ]0[ l:1 ][ offset:12 ][ xn:5 ][ rt:5 ]
+#define SDT_XN_START 10
+#define SDT_XN_END   21
+#define SDT_U_BIT    24
+// offset uses bits 10-21
+// offset 1XXXXX011010 gives register offset: 1[ xm:5      ]011010
+// (i.e. combining lower mask and upper bit)
+#define SDT_REGISTER_MASK_LOWER       0x1A // 011010
+#define SDT_REGISTER_MASK_LOWER_START SDT_XN_START
+#define SDT_REGISTER_MASK_LOWER_END   15
+#define SDT_REGISTER_MASK_UPPER_BIT   21
+// offset 0XXXXXXXXXI1 gives pre/post-index:  0[ simm9:9 ][ i:1 ]1
+#define SDT_INDEX_MASK_LOWER_BIT SDT_XN_START
+#define SDT_INDEX_MASK_UPPER_BIT SDT_XN_END
+
 Instruction decode_single_data_transfer(uint32_t inst_data) {
-    // instruction is of format 1[ sf:1 ]11100[ u:1 ]0[ l:1 ][ offset:12 ][ xn:5 ][ rt:5 ]
     SDTOffsetType offset_type;
-    char u = GET_BIT(inst_data, 24);
+    char u = GET_BIT(inst_data, SDT_U_BIT);
     // offset uses bits 10-21
     // when U=1, offset is used for imm12 (unsigned)
     if (u) {
         offset_type = UNSIGNED_OFFSET;
     }
-    // offset 1XXXXX011010 gives register offset: 1[ xm:5      ]011010
-    else if (GET_BIT(inst_data, 21) && BITMASK(inst_data, 10, 15) == 0x1A) {
+    else if (GET_BIT(inst_data, SDT_REGISTER_MASK_UPPER_BIT)
+             && (BITMASK(inst_data, SDT_REGISTER_MASK_LOWER_START, SDT_REGISTER_MASK_LOWER_END)
+                 == SDT_REGISTER_MASK_LOWER)) {
         offset_type = REGISTER_OFFSET;
-    // offset 0XXXXXXXXXI1 gives pre/post-index:  0[ simm9:9 ][ i:1 ]1
-    } else if (!GET_BIT(inst_data, 21) && GET_BIT(inst_data, 10)) {
+    } else if (!GET_BIT(inst_data, SDT_INDEX_MASK_UPPER_BIT)
+               && GET_BIT(inst_data, SDT_INDEX_MASK_LOWER_BIT)) {
         // if I = 1, pre-indexed, otherwise post-indexed
-        offset_type = GET_BIT(inst_data, 11) ? PRE_INDEX_OFFSET : POST_INDEX_OFFSET;
+        char i = GET_BIT(inst_data, SDT_INDEX_I_BIT);
+        offset_type = i ? PRE_INDEX_OFFSET : POST_INDEX_OFFSET;
     } else return UNKNOWN_INSTRUCTION;
-    return {
+    return (Instruction) {
         .command_format = SINGLE_DATA_TRANSFER,
         .sf = GET_BIT(inst_data, 30),
         .rt = BITMASK(inst_data, 0, 4),
