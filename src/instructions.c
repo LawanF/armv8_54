@@ -351,13 +351,24 @@ uint32_t encode_single_data_transfer(Instruction *inst) {
            | ((uint32_t) inst->sf << SDT_SF_BIT);
 }
 
+// instruction of format 0[ sf:1 ]011000[ simm19:19 ][ rt:5 ]
+#define LOAD_LITERAL_MASK 0x18000000UL // 0001 1000 0000 0000 0000 0000 0000 0000
+#define LOAD_LITERAL_MASK_START   24
+#define LOAD_LITERAL_MASK_END     29
+#define LOAD_LITERAL_SIMM19_START 5
+#define LOAD_LITERAL_SIMM19_END   23
+
 Instruction decode_load_literal(uint32_t inst_data) {
-    // instruction of format 0[ sf:1 ]011000[ simm19:19 ][ rt:5 ]
+    int32_t simm19 = (int32_t) BITMASK(inst_data, 5, 23);
+    if (GET_BIT(simm19, 19)) {
+        // sign extend simm19: remaining bits 19-31 are 1
+        simm19 |= 0xFFF00000UL;
+    }
     return (Instruction) {
         .command_format = LOAD_LITERAL,
-        .sf = GET_BIT(inst_data, 30),
-        .rt = BITMASK(inst_data, 0, 4),
-        .load_literal = { .simm19 = BITMASK(inst_data, 5, 23) }
+        .sf = GET_BIT(inst_data, SDT_SF_BIT),
+        .rt = BITMASK(inst_data, RD_RT_START, RD_RT_END),
+        .load_literal = { .simm19 = simm19 }
     };
 }
 
