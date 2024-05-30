@@ -7,7 +7,7 @@
 // Returns 1 if the i'th bit of n is 1 and 0 otherwise
 #define GET_BIT(n, i) (((n) >> (i)) & 0x1) 
 // Applies a bitmask and returns bits from i (inclusive) to j (inclusive) of n, where i<=j
-#define BIT_MASK(n, i, j) (((n) >> (i)) & (0x1 << ((j) - (i) + 1) - 1))
+#define BIT_MASK(n, i, j) (((n) >> (i)) & ((0x1 << ((j) - (i) + 1)) - 1))
 
 // enum for specifying type of instruction
 typedef enum { UNKNOWN, HALT, DP_IMM, DP_REG, SINGLE_DATA_TRANSFER, LOAD_LITERAL, BRANCH } CommandFormat;
