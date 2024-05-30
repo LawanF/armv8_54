@@ -10,9 +10,9 @@
 #define BIT_MASK(n, i, j) (((n) >> (i)) & (0x1 << ((j) - (i) + 1) - 1))
 
 // enum for specifying type of instruction
-typedef enum { UNKNOWN; HALT; DP_IMM; DP_REG; SINGLE_DATA_TRANSFER; LOAD_LITERAL; BRANCH; } CommandFormat;
+typedef enum { UNKNOWN, HALT, DP_IMM, DP_REG, SINGLE_DATA_TRANSFER, LOAD_LITERAL, BRANCH } CommandFormat;
 
-typedef enum { ARITH_OPERAND; WIDE_MOVE_OPERAND; } DPImmOperandType;
+typedef enum { ARITH_OPERAND, WIDE_MOVE_OPERAND } DPImmOperandType;
 typedef union {
     /* arithmetic instruction:
        - sh determines whether to left shift the immediate value by 12 bits
@@ -25,14 +25,14 @@ typedef union {
     struct { char hw:2; uint16_t imm16; } wide_move_operand;
 } DPImmOperand;
 
-typedef enum { REGISTER_OFFSET; PRE_INDEX_OFFSET; POST_INDEX_OFFSET; UNSIGNED_OFFSET; } SDTOffsetType;
+typedef enum { REGISTER_OFFSET, PRE_INDEX_OFFSET, POST_INDEX_OFFSET, UNSIGNED_OFFSET } SDTOffsetType;
 typedef union {
     char xm:5; // register offset
     int16_t simm9:9; // pre or post index
     uint16_t imm12:12; // unsigned offset
 } SDTOffset;
 
-typedef enum { UNCOND_BRANCH; REGISTER_BRANCH; COND_BRANCH; } BranchOperandType;
+typedef enum { UNCOND_BRANCH, REGISTER_BRANCH, COND_BRANCH, } BranchOperandType;
 typedef union {
     struct { int32_t simm26:26; } uncond_branch;
     struct { char xn:5; } register_branch;
@@ -68,8 +68,8 @@ typedef struct {
         struct { int32_t simm19:19; } load_literal;
         // branch
         struct { BranchOperandType operand_type; BranchOperand operand; } branch;
-    }
-} Instruction
+    };
+} Instruction;
 
 #define UNKNOWN_INSTRUCTION { .command_format = UNKNOWN }
 
@@ -110,6 +110,8 @@ SDTOffset sdt_offset(SDTOffsetType offset_type, uint32_t inst_data) {
 
 /* Decoding instructions
  * A precondition is that the instructions are of the correct group. */
+
+#define SF_MASK 0x11
 
 Instruction decode_dp_imm(uint32_t inst_data) {
     DPImmOperandType operand_type;
