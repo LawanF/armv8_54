@@ -389,7 +389,7 @@ uint32_t encode_load_literal(Instruction *inst) {
 // are bits 26-29 101:             ---101-----------------------------
 #define BRANCH_COMMON_MASK       0x5UL
 #define BRANCH_COMMON_MASK_START 26
-#define BRANCH_COMMON_MASK_END   28
+#define BRANCH_COMMON_MASK_END   29
 // unconditional branch has format 000101[         simm26:26         ]
 // bits 26-21 000101
 #define BRANCH_UNCOND_MASK 0x14000000UL // 0001 0100 0000 0000 0000 0000 0000 0000
@@ -475,7 +475,8 @@ CommandFormat decode_format(uint32_t inst_data) {
     if (BITMASK(inst_data, DP_REG_MASK_START, DP_REG_MASK_END)
         == DP_REG_MASK >> DP_REG_MASK_START) return DP_REG;
     // bits 23-29 11100X0 and bit 31 1
-    if (BITMASK(inst_data, SDT_MASK_MIDDLE_START, SDT_MASK_MIDDLE_END) == SDT_MASK_MIDDLE
+    if ((BITMASK(inst_data, SDT_MASK_MIDDLE_START, SDT_MASK_MIDDLE_END)
+         == SDT_MASK_MIDDLE)
         && !GET_BIT(inst_data, SDT_MASK_LOWER_BIT)
         && GET_BIT(inst_data, SDT_MASK_UPPER_BIT)) return SINGLE_DATA_TRANSFER;
     // bits 24-29 011000 and bit 31 0
@@ -483,7 +484,8 @@ CommandFormat decode_format(uint32_t inst_data) {
          == LOAD_LITERAL_MASK >> LOAD_LITERAL_MASK_START)
         && !GET_BIT(inst_data, LOAD_LITERAL_UPPER_MASK_BIT)) return LOAD_LITERAL;
     // bits 26-29 0101
-    if (BITMASK(inst_data, 26, 29) == 0x5) return BRANCH;
+    if (BITMASK(inst_data, BRANCH_COMMON_MASK_START, BRANCH_COMMON_MASK_END)
+        == BRANCH_COMMON_MASK) return BRANCH;
     return UNKNOWN;
 }
 
