@@ -116,29 +116,64 @@ uint32_t encode_dp_imm_operand(Instruction *inst) {
         // operand uses bits 5-22
         case ARITH_OPERAND:
             return ARITH_OPI
-                   | (operand.arith_operand.sh ? FILL_BIT(ARITH_OP_SH_BIT) : 0)
-                   | BITMASK(operand.arith_operand.imm12, ARITH_OP_IMM12_START, ARITH_OP_IMM12_END) << ARITH_OP_IMM12_START
-                   | BITMASK(operand.arith_operand.rn,    ARITH_OP_RN_START,    ARITH_OP_RN_END)    << ARITH_OP_RN_START;
+                   | ((uint32_t) operand.arith_operand.sh ? FILL_BIT(ARITH_OP_SH_BIT) : 0)
+                   | ((uint32_t) operand.arith_operand.imm12 << ARITH_OP_IMM12_START)
+                   | ((uint32_t) operand.arith_operand.rn    << ARITH_OP_RN_START);
         case WIDE_MOVE_OPERAND:
             return WIDE_MOVE_OPI
-                   | BITMASK(operand.wide_move_operand.hw,    WIDE_MOVE_HW_START,    WIDE_MOVE_HW_END)    << WIDE_MOVE_HW_START
-                   | BITMASK(operand.wide_move_operand.imm16, WIDE_MOVE_IMM16_START, WIDE_MOVE_IMM16_END) << ARITH_OP_IMM12_START;
+                   | ((uint32_t) operand.wide_move_operand.hw    << WIDE_MOVE_HW_START)
+                   | ((uint32_t) operand.wide_move_operand.imm16 << WIDE_MOVE_IMM16_START);
     }
 }
 
-SDTOffset sdt_offset(SDTOffsetType offset_type, uint32_t inst_data) {
-    // operand uses bits 10-21
+// SDT operand uses bits 10-21
+// operand has format 0[ simm9:9  ]X1
+#define SDT_OPERAND_START 10
+#define SDT_OPERAND_END   21
+// for pre- and post-index offsets,
+// operand has format 0[ simm9:9  ]X1
+#define SDT_INDEX_I_BIT       11
+#define SDT_INDEX_MASK        FILL_BIT(10)
+#define SDT_INDEX_SIMM9_START 12
+#define SDT_INDEX_SIMM9_END   20
+// for register offsets,
+// operand has format 1[ xm:5 ]011010
+#define SDT_REGISTER_MASK     0x81A // 1000 0001 1010
+#define SDT_REGISTER_XM_START 16
+#define SDT_REGISTER_XM_END   20
+// for unsigned offsets,
+// operand has format [  imm12:12   ] (so uses the whole operand)
+#define SDT_UNSIGNED_IMM12_START SDT_OPERAND_START
+#define SDT_UNSIGNED_IMM12_END   SDT_OPERAND_END
+
+SDTOffset decode_sdt_offset(SDTOffsetType offset_type, uint32_t inst_data) {
     switch (offset_type) {
         case PRE_INDEX_OFFSET: 
         case POST_INDEX_OFFSET:
-            // operand has format 0[ simm9:9  ]X1
-            return (SDTOffset) { .simm9 = BITMASK(inst_data, 12, 20) };
+            return (SDTOffset) { .simm9 = BITMASK(inst_data, SDT_INDEX_SIMM9_START, SDT_INDEX_SIMM9_END) };
         case REGISTER_OFFSET:
-            // operand has format 1[ xm:5 ]011010
-            return (SDTOffset) { .xm    = BITMASK(inst_data, 16, 20) };
+            return (SDTOffset) { .xm    = BITMASK(inst_data, SDT_REGISTER_XM_START, SDT_REGISTER_XM_END) };
         case UNSIGNED_OFFSET:
-            // operand has format [ imm12:12    ]
-            return (SDTOffset) { .imm12 = BITMASK(inst_data, 10, 21) };
+            return (SDTOffset) { .imm12 = BITMASK(inst_data, SDT_UNSIGNED_IMM12_START, SDT_UNSIGNED_IMM12_END) };
+    }
+}
+
+uint32_t encode_sdt_offset(Instruction *inst) {
+    SDTOffsetType offset_type = inst->single_data_transfer.offset_type;
+    SDTOffset offset = inst->single_data_transfer.offset;
+    char i = 0; // if i = 1, then pre-indexed, otherwise post_indexed
+    switch (offset_type) {
+        case PRE_INDEX_OFFSET: i = 1;
+        case POST_INDEX_OFFSET:
+            return SDT_INDEX_MASK
+                   | (i ? FILL_BIT(SDT_INDEX_I_BIT) : 0)
+                   // since the value is signed, we need to apply a mask to remove negated bits
+                   | BITMASK((uint32_t) offset.simm9 << SDT_INDEX_SIMM9_START,    0, SDT_INDEX_SIMM9_END);
+        case REGISTER_OFFSET:
+            return SDT_REGISTER_MASK
+                   | (uint32_t) offset.xm << SDT_REGISTER_XM_START;
+        case UNSIGNED_OFFSET:
+            return (uint32_t) offset.imm12 << SDT_UNSIGNED_IMM12_START;
     }
 }
 
@@ -212,7 +247,7 @@ Instruction decode_single_data_transfer(uint32_t inst_data) {
             .l = GET_BIT(inst_data, 22),
             .xn = BITMASK(inst_data, 10, 21),
             .offset_type = offset_type,
-            .offset      = sdt_offset(offset_type, inst_data)
+            .offset      = decode_sdt_offset(offset_type, inst_data)
         }
     };
 }
