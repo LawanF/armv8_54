@@ -5,9 +5,12 @@
 #define ARITH_OPI 0x2
 #define WIDE_MOVE_OPI 0x5
 // Returns 1 if the i'th bit of n is 1 and 0 otherwise
-#define GET_BIT(n, i) (((n) >> (i)) & 0x1) 
+// Uses an unsigned long to work with 32 bits
+#define GET_BIT(n, i) (((n) >> (i)) & 0x1UL)
 // Applies a bitmask and returns bits from i (inclusive) to j (inclusive) of n, where i<=j
-#define BIT_MASK(n, i, j) (((n) >> (i)) & ((0x1 << ((j) - (i) + 1)) - 1))
+#define BITMASK(n, i, j) (((n) >> (i)) & ((0x1UL << ((j) - (i) + 1)) - 1))
+// Returns a 1 bit with i zeros to the right of it
+#define FILL_BIT(i) (0x1UL << (i))
 
 // enum for specifying type of instruction
 typedef enum { UNKNOWN, HALT, DP_IMM, DP_REG, SINGLE_DATA_TRANSFER, LOAD_LITERAL, BRANCH } CommandFormat;
@@ -71,24 +74,55 @@ typedef struct {
     };
 } Instruction;
 
-#define UNKNOWN_INSTRUCTION { .command_format = UNKNOWN }
+#define UNKNOWN_INSTRUCTION ((Instruction) { .command_format = UNKNOWN })
 
 /* Decoding operands
  * These functions assume that the instruction is in the correct group,
  * and the instructions are valid. */
 
-DPImmOperand dp_imm_operand(DPImmOperandType operand_type, uint32_t inst_data) {
+// DP immediate operands use bits 5-22
+// arithmetic has format [ sh:1 ][ imm12:12 ][ rn:5 ]
+#define ARITH_OP_RN_START    5
+#define ARITH_OP_RN_END      9
+#define ARITH_OP_IMM12_START 10
+#define ARITH_OP_IMM12_END   21
+#define ARITH_OP_SH_BIT      22
+// wide move has format  [ hw:2    ][ imm16:16      ]
+#define WIDE_MOVE_IMM16_START 5
+#define WIDE_MOVE_IMM16_END   20
+#define WIDE_MOVE_HW_START    21
+#define WIDE_MOVE_HW_END      22
+
+DPImmOperand decode_dp_imm_operand(DPImmOperandType operand_type, uint32_t inst_data) {
+    switch (operand_type) {
+        case ARITH_OPERAND:
+            return (DPImmOperand) { .arith_operand = {
+                .sh    = GET_BIT(inst_data, ARITH_OP_SH_BIT),
+                .imm12 = BITMASK(inst_data, ARITH_OP_IMM12_START, ARITH_OP_IMM12_END),
+                .rn    = BITMASK(inst_data, ARITH_OP_RN_START,    ARITH_OP_RN_END)
+            } };
+        case WIDE_MOVE_OPERAND:
+            return (DPImmOperand) { .wide_move_operand = {
+                .hw    = BITMASK(inst_data, WIDE_MOVE_HW_START,    WIDE_MOVE_HW_END),
+                .imm16 = BITMASK(inst_data, WIDE_MOVE_IMM16_START, WIDE_MOVE_IMM16_END) }
+            };
+    }
+}
+
+uint32_t encode_dp_imm_operand(Instruction *inst) {
+    DPImmOperandType operand_type = inst->dp_imm.operand_type;
+    DPImmOperand operand = inst->dp_imm.operand;
     switch (operand_type) {
         // operand uses bits 5-22
         case ARITH_OPERAND:
-            // operand has format [ sh:1 ][ imm12:12 ][ rn:5 ]
-            return { .arith_operand = { .sh    = GET_BIT(inst_data, 22),
-                                        .imm12 = BIT_MASK(inst_data, 10, 21),
-                                        .rn    = BIT_MASK(inst_data, 5, 9) } };
+            return ARITH_OPI
+                   | (operand.arith_operand.sh ? FILL_BIT(ARITH_OP_SH_BIT) : 0)
+                   | BITMASK(operand.arith_operand.imm12, ARITH_OP_IMM12_START, ARITH_OP_IMM12_END) << ARITH_OP_IMM12_START
+                   | BITMASK(operand.arith_operand.rn,    ARITH_OP_RN_START,    ARITH_OP_RN_END)    << ARITH_OP_RN_START;
         case WIDE_MOVE_OPERAND:
-            // operand has format [ hw:2    ][ imm16:16      ]
-            return { .wide_move_operand = { .hw    = BIT_MASK(inst_data, 21, 22),
-                                            .imm16 = BIT_MASK(inst_data, 5, 20) } };
+            return WIDE_MOVE_OPI
+                   | BITMASK(operand.wide_move_operand.hw,    WIDE_MOVE_HW_START,    WIDE_MOVE_HW_END)    << WIDE_MOVE_HW_START
+                   | BITMASK(operand.wide_move_operand.imm16, WIDE_MOVE_IMM16_START, WIDE_MOVE_IMM16_END) << ARITH_OP_IMM12_START;
     }
 }
 
@@ -98,43 +132,41 @@ SDTOffset sdt_offset(SDTOffsetType offset_type, uint32_t inst_data) {
         case PRE_INDEX_OFFSET: 
         case POST_INDEX_OFFSET:
             // operand has format 0[ simm9:9  ]X1
-            return { .simm9 = BIT_MASK(inst_data, 12, 20) };
+            return (SDTOffset) { .simm9 = BITMASK(inst_data, 12, 20) };
         case REGISTER_OFFSET:
             // operand has format 1[ xm:5 ]011010
-            return { .xm    = BIT_MASK(inst_data, 16, 20) };
+            return (SDTOffset) { .xm    = BITMASK(inst_data, 16, 20) };
         case UNSIGNED_OFFSET:
             // operand has format [ imm12:12    ]
-            return { .imm12 = BIT_MASK(inst_data, 10, 21) };
+            return (SDTOffset) { .imm12 = BITMASK(inst_data, 10, 21) };
     }
 }
 
 /* Decoding instructions
  * A precondition is that the instructions are of the correct group. */
 
-#define SF_MASK 0x11
-
 Instruction decode_dp_imm(uint32_t inst_data) {
     DPImmOperandType operand_type;
     // instruction is of format [ sf:1 ][ opc:2 ]100[ opi:3 ][ operand:18 ][ rd:5 ]
-    char opi = BIT_MASK(inst_data, 23, 25);
+    char opi = BITMASK(inst_data, 23, 25);
     switch (opi) {
         case ARITH_OPI: operand_type = ARITH_OPERAND; break;
         case WIDE_MOVE_OPI: operand_type = WIDE_MOVE_OPERAND; break;
         default: return UNKNOWN_INSTRUCTION;
     }
-    return {
+    return (Instruction) {
         .command_format = DP_IMM,
         .sf  = GET_BIT(inst_data, 31),
-        .opc = BIT_MASK(inst_data, 29, 30),
-        .rd  = BIT_MASK(inst_data, 0, 4),
-        .dp_imm = { .operand_type = operand_type, .operand = dp_imm_operand(opi, inst_data) }
+        .opc = BITMASK(inst_data, 29, 30),
+        .rd  = BITMASK(inst_data, 0, 4),
+        .dp_imm = { .operand_type = operand_type, .operand = decode_dp_imm_operand(opi, inst_data) }
     };
 }
 
 Instruction decode_dp_reg(uint32_t inst_data) {
     // instruction is of format
     // [ sf:1 ][ opc:2 ][ M:1 ]101[ opr:4 ][ rm:5 ][ operand: 6 ][ rn:5 ][ rd:5 ]
-    char opr = BIT_MASK(inst_data, 21, 24);
+    char opr = BITMASK(inst_data, 21, 24);
     char m = GET_BIT(inst_data, 28);
     /* instructions of the form (M,opr) = (0,1xx0),(0,0xxx),(1,1000) are all recognised,
      * leaving (1,0xxx) and (0,1xx1) as unrecognised. */
@@ -144,13 +176,13 @@ Instruction decode_dp_reg(uint32_t inst_data) {
     return {
         .command_format = DP_REG,
         .sf  = GET_BIT(inst_data, 31),
-        .opc = BIT_MASK(inst_data, 29, 30),
-        .rd  = BIT_MASK(inst_data, 0, 4),
+        .opc = BITMASK(inst_data, 29, 30),
+        .rd  = BITMASK(inst_data, 0, 4),
         .dp_reg = {
             .m = m,
             .opr = opr, 
-            .operand = BIT_MASK(inst_data, 10, 15), 
-            .rn = BIT_MASK(inst_data, 5, 9) } 
+            .operand = BITMASK(inst_data, 10, 15),
+            .rn = BITMASK(inst_data, 5, 9) }
     };
 }
 
@@ -164,7 +196,7 @@ Instruction decode_single_data_transfer(uint32_t inst_data) {
         offset_type = UNSIGNED_OFFSET;
     }
     // offset 1XXXXX011010 gives register offset: 1[ xm:5      ]011010
-    else if (GET_BIT(inst_data, 21) && BIT_MASK(inst_data, 10, 15) == 0x1A) {
+    else if (GET_BIT(inst_data, 21) && BITMASK(inst_data, 10, 15) == 0x1A) {
         offset_type = REGISTER_OFFSET;
     // offset 0XXXXXXXXXI1 gives pre/post-index:  0[ simm9:9 ][ i:1 ]1
     } else if (!GET_BIT(inst_data, 21) && GET_BIT(inst_data, 10)) {
@@ -174,11 +206,11 @@ Instruction decode_single_data_transfer(uint32_t inst_data) {
     return {
         .command_format = SINGLE_DATA_TRANSFER,
         .sf = GET_BIT(inst_data, 30),
-        .rt = BIT_MASK(inst_data, 0, 4),
+        .rt = BITMASK(inst_data, 0, 4),
         .single_data_transfer = {
             .u = u,
             .l = GET_BIT(inst_data, 22),
-            .xn = BIT_MASK(inst_data, 10, 21),
+            .xn = BITMASK(inst_data, 10, 21),
             .offset_type = offset_type,
             .offset      = sdt_offset(offset_type, inst_data)
         }
@@ -190,8 +222,8 @@ Instruction decode_load_literal(uint32_t inst_data) {
     return {
         .command_format = LOAD_LITERAL;
         .sf = GET_BIT(inst_data, 30),
-        .rt = BIT_MASK(inst_data, 0, 4),
-        .load_literal = { .simm19 = BIT_MASK(inst_data, 5, 23) }
+        .rt = BITMASK(inst_data, 0, 4),
+        .load_literal = { .simm19 = BITMASK(inst_data, 5, 23) }
     };
 }
 
@@ -199,18 +231,18 @@ Instruction decode_branch(uint32_t inst_data) {
     BranchOperandType operand_type;
     // unconditional branch has format 000101[         simm26:26         ]
     // bits 26-21 000101
-    if (BIT_MASK(inst_data, 26, 31) == 0x5) {
+    if (BITMASK(inst_data, 26, 31) == 0x5) {
         operand_type = UNCOND_BRANCH;
     }
     // conditional branch has format   01010100[  simm19:19  ]0[ cond: 4 ]
     // bits 24-31 01010100 and bit 4 0
-    else if (BIT_MASK(inst_data, 24, 31) == 0x54 && !GET_BIT(inst_data, 4)) {
+    else if (BITMASK(inst_data, 24, 31) == 0x54 && !GET_BIT(inst_data, 4)) {
         operand_type = COND_BRANCH;
     }
     // register branch has format      1101011000011111000000[ xn:5 ]00000
     // bits 0-4 00000 and bits 10-31 are 11 0101 1000 0111 1100 0000
-    else if (BIT_MASK(inst_data, 0, 4) == 0x0
-             && BIT_MASK(inst_data, 10, 31) == 0x3587C0) {
+    else if (BITMASK(inst_data, 0, 4) == 0x0
+             && BITMASK(inst_data, 10, 31) == 0x3587C0) {
         operand_type = REGISTER_BRANCH;
     } else return UNKNOWN_INSTRUCTION;
     Instruction branch_inst = { 
@@ -221,17 +253,17 @@ Instruction decode_branch(uint32_t inst_data) {
     switch (operand_type) {
         case UNCOND_BRANCH: 
             // simm26 takes lower 26 bits
-            branch_operand = { .uncond_branch = { .simm26 = BIT_MASK(inst_data, 0, 25) } };
+            branch_operand = { .uncond_branch = { .simm26 = BITMASK(inst_data, 0, 25) } };
             break;
         case COND_BRANCH:
             // cond uses lower 4 bits and simm19 bits 5-23
             branch_operand = { .cond_branch = { 
-                .cond = BIT_MASK(inst_data, 0, 3), .simm19 = BIT_MASK(inst_data, 5, 23)
+                .cond = BITMASK(inst_data, 0, 3), .simm19 = BITMASK(inst_data, 5, 23)
             } };
             break;
         case REGISTER_BRANCH:
             // xn uses bits 5-9
-            branch_operand = { .register_branch = { .xn = BIT_MASK(inst_data, 5, 9) } };
+            branch_operand = { .register_branch = { .xn = BITMASK(inst_data, 5, 9) } };
             break;
     }
     branch_inst.branch.operand = branch_operand;
@@ -241,17 +273,17 @@ Instruction decode_branch(uint32_t inst_data) {
 CommandFormat decode_format(uint32_t inst_data) {
     if (inst_data == HALT_BIN) return HALT;
     // bits 26-28 100
-    if (BIT_MASK(inst_data, 26, 28) == 0x4) return DP_IMM;
+    if (BITMASK(inst_data, 26, 28) == 0x4) return DP_IMM;
     // bits 25-27 101
-    if (BIT_MASK(inst_data, 25, 27) == 0x5) return DP_REG;
+    if (BITMASK(inst_data, 25, 27) == 0x5) return DP_REG;
     // bits 23-29 11100X0 and bit 31 1
-    if (BIT_MASK(inst_data, 25, 29) == 0x1C
+    if (BITMASK(inst_data, 25, 29) == 0x1C
         && !GET_BIT(inst_data, 23)
         && GET_BIT(inst_data, 31)) return SINGLE_DATA_TRANSFER;
     // bits 24-29 011000 and bit 31 0
-    if (BIT_MASK(inst_data, 24, 29) == Ox18 && !GET_BIT(inst_data, 31)) return LOAD_LITERAL;
+    if (BITMASK(inst_data, 24, 29) == Ox18 && !GET_BIT(inst_data, 31)) return LOAD_LITERAL;
     // bits 26-29 0101
-    if (BIT_MASK(inst_data, 26, 29) == Ox5) return BRANCH;
+    if (BITMASK(inst_data, 26, 29) == Ox5) return BRANCH;
     return UNKNOWN;
 }
 
