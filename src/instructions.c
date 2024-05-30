@@ -138,7 +138,7 @@ uint32_t encode_dp_imm_operand(Instruction *inst) {
 #define SDT_INDEX_SIMM9_END   20
 // for register offsets,
 // operand has format 1[ xm:5 ]011010
-#define SDT_REGISTER_MASK     0x81A // 1000 0001 1010
+#define SDT_REGISTER_MASK     ((uint32_t) 0x81A << SDT_OPERAND_START) // 1000 0001 1010
 #define SDT_REGISTER_XM_START 16
 #define SDT_REGISTER_XM_END   20
 // for unsigned offsets,
@@ -168,7 +168,7 @@ uint32_t encode_sdt_offset(Instruction *inst) {
             return SDT_INDEX_MASK
                    | (i ? FILL_BIT(SDT_INDEX_I_BIT) : 0)
                    // since the value is signed, we need to apply a mask to remove negated bits
-                   | BITMASK((uint32_t) offset.simm9 << SDT_INDEX_SIMM9_START,    0, SDT_INDEX_SIMM9_END);
+                   | BITMASK((uint32_t) offset.simm9 << SDT_INDEX_SIMM9_START, 0, SDT_INDEX_SIMM9_END);
         case REGISTER_OFFSET:
             return SDT_REGISTER_MASK
                    | (uint32_t) offset.xm << SDT_REGISTER_XM_START;
@@ -177,13 +177,25 @@ uint32_t encode_sdt_offset(Instruction *inst) {
     }
 }
 
+// shared between different instructions
+// start and end of RD or RT
+#define RD_RT_START 0
+#define RD_RT_END   4
+
+// instruction is of format [ sf:1 ][ opc:2 ]100[ opi:3 ][ operand:18 ][ rd:5 ]
+#define DP_IMM_MASK      0x10000000UL // 0001 0000 0000 0000 0000 0000 0000 0000
+#define DP_IMM_OPI_START 23
+#define DP_IMM_OPI_END   25
+#define DP_IMM_OPC_START 29
+#define DP_IMM_OPC_END   30
+#define DP_IMM_SF_BIT    31
+
 /* Decoding instructions
  * A precondition is that the instructions are of the correct group. */
 
 Instruction decode_dp_imm(uint32_t inst_data) {
     DPImmOperandType operand_type;
-    // instruction is of format [ sf:1 ][ opc:2 ]100[ opi:3 ][ operand:18 ][ rd:5 ]
-    char opi = BITMASK(inst_data, 23, 25);
+    char opi = BITMASK(inst_data, DP_IMM_OPI_START, DP_IMM_OPI_END);
     switch (opi) {
         case ARITH_OPI: operand_type = ARITH_OPERAND; break;
         case WIDE_MOVE_OPI: operand_type = WIDE_MOVE_OPERAND; break;
@@ -191,9 +203,9 @@ Instruction decode_dp_imm(uint32_t inst_data) {
     }
     return (Instruction) {
         .command_format = DP_IMM,
-        .sf  = GET_BIT(inst_data, 31),
-        .opc = BITMASK(inst_data, 29, 30),
-        .rd  = BITMASK(inst_data, 0, 4),
+        .sf  = GET_BIT(inst_data, DP_IMM_SF_BIT),
+        .opc = BITMASK(inst_data, DP_IMM_OPC_START, DP_IMM_OPC_END),
+        .rd  = BITMASK(inst_data, RD_RT_START, RD_RT_END),
         .dp_imm = { .operand_type = operand_type, .operand = decode_dp_imm_operand(opi, inst_data) }
     };
 }
