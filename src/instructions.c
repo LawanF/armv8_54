@@ -112,7 +112,7 @@ DPImmOperand decode_dp_imm_operand(DPImmOperandType operand_type, uint32_t inst_
     }
 }
 
-uint32_t encode_dp_imm_operand(Instruction *inst) {
+uint32_t encode_dp_imm_operand(const Instruction *inst) {
     DPImmOperandType operand_type = inst->dp_imm.operand_type;
     DPImmOperand operand = inst->dp_imm.operand;
     switch (operand_type) {
@@ -161,7 +161,7 @@ SDTOffset decode_sdt_offset(SDTOffsetType offset_type, uint32_t inst_data) {
     }
 }
 
-uint32_t encode_sdt_offset(Instruction *inst) {
+uint32_t encode_sdt_offset(const Instruction *inst) {
     SDTOffsetType offset_type = inst->single_data_transfer.offset_type;
     SDTOffset offset = inst->single_data_transfer.offset;
     char i = 0; // if i = 1, then pre-indexed, otherwise post_indexed
@@ -219,7 +219,7 @@ Instruction decode_dp_imm(uint32_t inst_data) {
     };
 }
 
-uint32_t encode_dp_imm(Instruction *inst) {
+uint32_t encode_dp_imm(const Instruction *inst) {
     DPImmOperand operand = inst->dp_imm.operand;
     char opi;
     switch (inst->dp_imm.operand_type) {
@@ -342,7 +342,7 @@ Instruction decode_single_data_transfer(uint32_t inst_data) {
     };
 }
 
-uint32_t encode_single_data_transfer(Instruction *inst) {
+uint32_t encode_single_data_transfer(const Instruction *inst) {
     return FILL_BIT(SDT_REGISTER_MASK_UPPER_BIT)
            | ((uint32_t) SDT_MASK_MIDDLE << SDT_MASK_MIDDLE_START)
            // no need to add the mask lower bit as it is zero
@@ -373,7 +373,7 @@ Instruction decode_load_literal(uint32_t inst_data) {
     };
 }
 
-uint32_t encode_load_literal(Instruction *inst) {
+uint32_t encode_load_literal(const Instruction *inst) {
     // mask simm19 to remove leading 1 bits for negative values
     uint32_t simm19_masked = BITMASK(inst->load_literal.simm19, 0, 18);
     return LOAD_LITERAL_MASK
@@ -464,7 +464,7 @@ Instruction decode_branch(uint32_t inst_data) {
     return branch_inst;
 }
 
-uint32_t encode_branch(Instruction *inst) {
+uint32_t encode_branch(const Instruction *inst) {
     switch (inst->branch.operand_type) {
         case UNCOND_BRANCH: {
             // need to remove leading 1 bits in case simm26 is negative
