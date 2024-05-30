@@ -282,7 +282,7 @@ Instruction decode_single_data_transfer(uint32_t inst_data) {
     // offset 0XXXXXXXXXI1 gives pre/post-index:  0[ simm9:9 ][ i:1 ]1
     } else if (!GET_BIT(inst_data, 21) && GET_BIT(inst_data, 10)) {
         // if I = 1, pre-indexed, otherwise post-indexed
-        offset_type = GET_BIT(inst_data, 11) ? PRE_INDEXED_OFFSET : POST_INDEXED_OFFSET;
+        offset_type = GET_BIT(inst_data, 11) ? PRE_INDEX_OFFSET : POST_INDEX_OFFSET;
     } else return UNKNOWN_INSTRUCTION;
     return {
         .command_format = SINGLE_DATA_TRANSFER,
