@@ -234,6 +234,8 @@ uint32_t encode_dp_imm(Instruction *inst) {
 // for DP (register),
 // the instruction is of format [ sf:1 ][ opc:2 ][ M:1 ]101[ opr:4 ][ rm:5 ][ operand: 6 ][ rn:5 ][ rd:5 ]
 #define DP_REG_MASK          0x0A000000UL // 0000 1010 0000 0000 0000 0000 0000 0000
+#define DP_REG_MASK_START    25
+#define DP_REG_MASK_END      27
 #define DP_REG_RN_START      5
 #define DP_REG_RN_END        9
 #define DP_REG_OPERAND_START 10
@@ -351,8 +353,8 @@ uint32_t encode_single_data_transfer(Instruction *inst) {
 
 Instruction decode_load_literal(uint32_t inst_data) {
     // instruction of format 0[ sf:1 ]011000[ simm19:19 ][ rt:5 ]
-    return {
-        .command_format = LOAD_LITERAL;
+    return (Instruction) {
+        .command_format = LOAD_LITERAL,
         .sf = GET_BIT(inst_data, 30),
         .rt = BITMASK(inst_data, 0, 4),
         .load_literal = { .simm19 = BITMASK(inst_data, 5, 23) }
@@ -405,17 +407,19 @@ Instruction decode_branch(uint32_t inst_data) {
 CommandFormat decode_format(uint32_t inst_data) {
     if (inst_data == HALT_BIN) return HALT;
     // bits 26-28 100
-    if (BITMASK(inst_data, 26, 28) == 0x4) return DP_IMM;
+    if (BITMASK(inst_data, DP_IMM_MASK_START, DP_IMM_MASK_END)
+        == DP_IMM_MASK >> DP_IMM_MASK_START) return DP_IMM;
     // bits 25-27 101
-    if (BITMASK(inst_data, 25, 27) == 0x5) return DP_REG;
+    if (BITMASK(inst_data, DP_REG_MASK_START, DP_REG_MASK_END)
+        == DP_REG_MASK >> DP_REG_MASK_START) return DP_REG;
     // bits 23-29 11100X0 and bit 31 1
-    if (BITMASK(inst_data, 25, 29) == 0x1C
-        && !GET_BIT(inst_data, 23)
-        && GET_BIT(inst_data, 31)) return SINGLE_DATA_TRANSFER;
+    if (BITMASK(inst_data, SDT_MASK_MIDDLE_START, SDT_MASK_MIDDLE_END) == SDT_MASK_MIDDLE
+        && !GET_BIT(inst_data, SDT_MASK_LOWER_BIT)
+        && GET_BIT(inst_data, SDT_MASK_UPPER_BIT)) return SINGLE_DATA_TRANSFER;
     // bits 24-29 011000 and bit 31 0
-    if (BITMASK(inst_data, 24, 29) == Ox18 && !GET_BIT(inst_data, 31)) return LOAD_LITERAL;
+    if (BITMASK(inst_data, 24, 29) == 0x18 && !GET_BIT(inst_data, 31)) return LOAD_LITERAL;
     // bits 26-29 0101
-    if (BITMASK(inst_data, 26, 29) == Ox5) return BRANCH;
+    if (BITMASK(inst_data, 26, 29) == 0x5) return BRANCH;
     return UNKNOWN;
 }
 
