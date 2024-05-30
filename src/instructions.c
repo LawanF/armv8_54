@@ -375,6 +375,15 @@ Instruction decode_load_literal(uint32_t inst_data) {
     };
 }
 
+uint32_t encode_load_literal(Instruction *inst) {
+    // mask simm19 to remove leading 1 bits for negative values
+    uint32_t simm19_masked = BITMASK(inst->load_literal.simm19, 0, 18);
+    return LOAD_LITERAL_MASK
+           | ((uint32_t) inst->rt << RD_RT_START)
+           | (simm19_masked << LOAD_LITERAL_SIMM19_START)
+           | ((uint32_t) inst->sf << SDT_SF_BIT);
+}
+
 Instruction decode_branch(uint32_t inst_data) {
     BranchOperandType operand_type;
     // unconditional branch has format 000101[         simm26:26         ]
