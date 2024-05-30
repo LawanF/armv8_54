@@ -116,7 +116,7 @@ uint32_t encode_dp_imm_operand(Instruction *inst) {
         // operand uses bits 5-22
         case ARITH_OPERAND:
             return ARITH_OPI
-                   | ((uint32_t) operand.arith_operand.sh ? FILL_BIT(ARITH_OP_SH_BIT) : 0)
+                   | ((uint32_t) operand.arith_operand.sh << ARITH_OP_SH_BIT)
                    | ((uint32_t) operand.arith_operand.imm12 << ARITH_OP_IMM12_START)
                    | ((uint32_t) operand.arith_operand.rn    << ARITH_OP_RN_START);
         case WIDE_MOVE_OPERAND:
@@ -166,12 +166,12 @@ uint32_t encode_sdt_offset(Instruction *inst) {
         case PRE_INDEX_OFFSET: i = 1;
         case POST_INDEX_OFFSET:
             return SDT_INDEX_MASK
-                   | (i ? FILL_BIT(SDT_INDEX_I_BIT) : 0)
+                   | ((uint32_t) i << SDT_INDEX_I_BIT)
                    // since the value is signed, we need to apply a mask to remove negated bits
                    | BITMASK((uint32_t) offset.simm9 << SDT_INDEX_SIMM9_START, 0, SDT_INDEX_SIMM9_END);
         case REGISTER_OFFSET:
             return SDT_REGISTER_MASK
-                   | (uint32_t) offset.xm << SDT_REGISTER_XM_START;
+                   | ((uint32_t) offset.xm << SDT_REGISTER_XM_START);
         case UNSIGNED_OFFSET:
             return (uint32_t) offset.imm12 << SDT_UNSIGNED_IMM12_START;
     }
@@ -224,11 +224,11 @@ uint32_t encode_dp_imm(Instruction *inst) {
         case WIDE_MOVE_OPERAND: opi = WIDE_MOVE_OPI; break;
     }
     return DP_IMM_MASK
-           | (uint32_t) inst->sf  << DP_SF_BIT
-           | (uint32_t) inst->opc << DP_OPC_START
-           | (uint32_t) opi       << DP_IMM_OPI_START
+           | ((uint32_t) inst->sf  << DP_SF_BIT)
+           | ((uint32_t) inst->opc << DP_OPC_START)
+           | ((uint32_t) opi       << DP_IMM_OPI_START)
            | encode_dp_imm_operand(inst)
-           | (uint32_t) inst->rd  << RD_RT_START;
+           | ((uint32_t) inst->rd  << RD_RT_START);
 }
 
 // for DP (register),
@@ -260,11 +260,23 @@ Instruction decode_dp_reg(uint32_t inst_data) {
         .dp_reg = {
             .m = m,
             .opr = opr, 
-            .rm = BITMASK(inst_data, DP_REG_RM_START, DP_REG_RM_END),
+            .rm      = BITMASK(inst_data, DP_REG_RM_START,      DP_REG_RM_END),
             .operand = BITMASK(inst_data, DP_REG_OPERAND_START, DP_REG_OPERAND_END),
-            .rn = BITMASK(inst_data, DP_REG_RN_START, DP_REG_RN_END)
+            .rn      = BITMASK(inst_data, DP_REG_RN_START,      DP_REG_RN_END)
         }
     };
+}
+
+uint32_t encode_dp_reg(Instruction *inst) {
+    return DP_REG_MASK
+           | ((uint32_t) inst->rd             << RD_RT_START)
+           | ((uint32_t) inst->dp_reg.rn      << DP_REG_RN_START)
+           | ((uint32_t) inst->dp_reg.operand << DP_REG_OPERAND_START)
+           | ((uint32_t) inst->dp_reg.rm      << DP_REG_RM_START)
+           | ((uint32_t) inst->dp_reg.opr     << DP_REG_OPR_START)
+           | ((uint32_t) inst->dp_reg.m       << DP_REG_M_BIT)
+           | ((uint32_t) inst->opc            << DP_OPC_START)
+           | ((uint32_t) inst->sf             << DP_SF_BIT);
 }
 
 Instruction decode_single_data_transfer(uint32_t inst_data) {
