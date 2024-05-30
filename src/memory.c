@@ -1,6 +1,5 @@
 #include <stdint.h>
 #include <string.h>
-#include <stdio.h>
 
 #define MEMORY_SIZE 2097152
 
@@ -33,9 +32,8 @@ uint32_t readmem32(uint32_t address) {
     uint32_t data = 0;
 
     // Fetch each byte, shifting them accordingly.
-    for (int i = 0; i < sizeof(uint32_t); i++) {
-        data <<= 8;
-        data |= startbyte[i];
+    for (int i = 0; i < 4; i++) {
+        data |= startbyte[i] << (8 * i);
     }
 
     return data;
@@ -52,7 +50,7 @@ uint64_t readmem64(uint32_t address) {
     // Fetch each data from memory using readmem32.
     for (int i = 0; i < 8; i += 4) {
         data <<= 32;
-        data |= readmem32(address + 8 - i);
+        data |= readmem32(address + 4 - i);
     }
 
     return data;
@@ -67,8 +65,8 @@ void writemem32(uint32_t address, uint32_t data) {
     unsigned char *startbyte = fetchbyte(address);
 
     // Write to memory byte-by-byte.
-    for (int i = 0; i < sizeof(uint32_t); i++) {
-        startbyte[i] = (unsigned char) data;
+    for (int i = 0; i < 4; i++) {
+        startbyte[i] = data;
         data >>= 8;
     }
 }
@@ -80,7 +78,7 @@ void writemem32(uint32_t address, uint32_t data) {
 void writemem64(uint32_t address, uint64_t data) { 
     // Write to memory using writemem32.
     for (int i = 0; i < 8; i += 4) {
-        writemem32(address + i, (uint32_t) data);
+        writemem32(address + i, data);
         data >>= 32;
     }
 }
