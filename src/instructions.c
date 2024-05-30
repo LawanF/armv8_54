@@ -356,10 +356,11 @@ uint32_t encode_single_data_transfer(Instruction *inst) {
 
 // instruction of format 0[ sf:1 ]011000[ simm19:19 ][ rt:5 ]
 #define LOAD_LITERAL_MASK 0x18000000UL // 0001 1000 0000 0000 0000 0000 0000 0000
-#define LOAD_LITERAL_MASK_START   24
-#define LOAD_LITERAL_MASK_END     29
-#define LOAD_LITERAL_SIMM19_START 5
-#define LOAD_LITERAL_SIMM19_END   23
+#define LOAD_LITERAL_MASK_START     24
+#define LOAD_LITERAL_MASK_END       29
+#define LOAD_LITERAL_SIMM19_START   5
+#define LOAD_LITERAL_SIMM19_END     23
+#define LOAD_LITERAL_UPPER_MASK_BIT 31
 
 Instruction decode_load_literal(uint32_t inst_data) {
     int32_t simm19 = (int32_t) BITMASK(inst_data, 5, 23);
@@ -384,6 +385,11 @@ uint32_t encode_load_literal(Instruction *inst) {
            | ((uint32_t) inst->sf << SDT_SF_BIT);
 }
 
+// common bits shared across all branch instructions
+// are bits 26-29 101:             ---101-----------------------------
+#define BRANCH_COMMON_MASK       0x5UL
+#define BRANCH_COMMON_MASK_START 26
+#define BRANCH_COMMON_MASK_END   28
 // unconditional branch has format 000101[         simm26:26         ]
 // bits 26-21 000101
 #define BRANCH_UNCOND_MASK 0x14000000UL // 0001 0100 0000 0000 0000 0000 0000 0000
@@ -473,7 +479,9 @@ CommandFormat decode_format(uint32_t inst_data) {
         && !GET_BIT(inst_data, SDT_MASK_LOWER_BIT)
         && GET_BIT(inst_data, SDT_MASK_UPPER_BIT)) return SINGLE_DATA_TRANSFER;
     // bits 24-29 011000 and bit 31 0
-    if (BITMASK(inst_data, 24, 29) == 0x18 && !GET_BIT(inst_data, 31)) return LOAD_LITERAL;
+    if ((BITMASK(inst_data, LOAD_LITERAL_MASK_START, LOAD_LITERAL_MASK_END)
+         == LOAD_LITERAL_MASK >> LOAD_LITERAL_MASK_START)
+        && !GET_BIT(inst_data, LOAD_LITERAL_UPPER_MASK_BIT)) return LOAD_LITERAL;
     // bits 26-29 0101
     if (BITMASK(inst_data, 26, 29) == 0x5) return BRANCH;
     return UNKNOWN;
