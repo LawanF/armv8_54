@@ -79,7 +79,7 @@ typedef struct {
 
 #define UNKNOWN_INSTRUCTION ((Instruction) { .command_format = UNKNOWN })
 
-/* Decoding operands
+/* Functions for decoding and encoding operands
  * These functions assume that the instruction is in the correct group,
  * and the instructions are valid. */
 
@@ -180,13 +180,13 @@ uint32_t encode_sdt_offset(const Instruction *inst) {
     }
 }
 
+/* Functions for decoding and encoding instructions.
+ * A precondition is that the instructions are of the specified group, and are well-formed. */
+
 // shared between different instructions
 // start and end of RD or RT
 #define RD_RT_START 0
 #define RD_RT_END   4
-
-/* Decoding instructions
- * A precondition is that the instructions are of the correct group. */
 
 // for DP instructions, the sign bits are in position 31
 // OPC is stored in bits 29 and 30
@@ -272,7 +272,7 @@ Instruction decode_dp_reg(uint32_t inst_data) {
     };
 }
 
-uint32_t encode_dp_reg(Instruction *inst) {
+uint32_t encode_dp_reg(const Instruction *inst) {
     return DP_REG_MASK
            | ((uint32_t) inst->rd             << RD_RT_START)
            | ((uint32_t) inst->dp_reg.rn      << DP_REG_RN_START)
@@ -487,6 +487,8 @@ uint32_t encode_branch(const Instruction *inst) {
     }
 }
 
+/* Determines the format of the instruction.
+ * Returns UNKNOWN if no known format is immediately known without decoding further. */
 CommandFormat decode_format(uint32_t inst_data) {
     if (inst_data == HALT_BIN) return HALT;
     // bits 26-28 100
@@ -510,6 +512,8 @@ CommandFormat decode_format(uint32_t inst_data) {
     return UNKNOWN;
 }
 
+/* Decodes an instruction from ARMv8-a.
+ * If the instruction is malformed or unknown, the Instruction's command_format field will be UNKNOWN. */
 Instruction decode(uint32_t inst_data) {
     switch (decode_format(inst_data)) {
         case HALT:                 return (Instruction) { .command_format = HALT };
@@ -522,26 +526,18 @@ Instruction decode(uint32_t inst_data) {
     }
 }
 
-uint32_t instruction_to_binary(Instruction *inst) {
-    switch (inst->command_type) {
-        case HALT: return HALT_BIN;
-        case DP_IMM: {
-            // instruction has format [ XXX1 00XX XXXX XXXX XXXX XXXX XXXX XXXX ]
-            uint32_t res = 0x10000000;
-            // shift fields by their respective positions
-            res |= inst->sf << 31;
-            res |= inst->opc << 29;
-            uint16_t operand;
-            switch (inst->dp_imm.operand_type) {
-                case ARITH_OPERAND: {
-                    res |= ARITH_OPI << 23;
-                    operand |= // TODO
-                    break;
-                case WIDE_MOVE_OPERAND: res |= WIDE_MOVE_OPI << 23; // TODO
-            }
-            
-        }
-        case UNKNOWN: return 0;
+/* Encodes an instruction stored at the given pointer into ARMv8-a.
+ * Assumes that the instruction is well-formed.
+ * If the instruction is unknown, returns zero. */
+uint32_t encode(const Instruction *inst) {
+    switch (inst->command_format) {
+        case HALT:                 return HALT_BIN;
+        case DP_IMM:               return encode_dp_imm(inst);
+        case DP_REG:               return encode_dp_reg(inst);
+        case SINGLE_DATA_TRANSFER: return encode_single_data_transfer(inst);
+        case LOAD_LITERAL:         return encode_load_literal(inst);
+        case BRANCH:               return encode_branch(inst);
+        case UNKNOWN:              return 0;
     }
 }
 
