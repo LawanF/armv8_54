@@ -15,6 +15,14 @@ void initmem() {
 }
 
 /*
+    Loads an array into memory using memcpy.
+    Used to load instructions to memory.
+*/
+void loadtomem(void *arr, size_t numbytes) {
+    memcpy(memory, arr, numbytes);
+}
+
+/*
     Takes a 21-bit address as uint32_t.
     Checks if address is less than or equal to (MEMORY_SIZE - 4) and
     if address adheres to 4-byte boundary (for readmem32 and writemem32).
@@ -104,9 +112,4 @@ void writemem64(uint32_t address, uint64_t data) {
         writemem32(address + i, data);
         data >>= 32;
     }
-}
-
-int main() {
-    writemem64(MEMORY_SIZE - 4, 0xff);
-    return 0;
 }
