@@ -299,6 +299,7 @@ static void offset_program_counter(MachineState *alter_machine_state, int32_t en
 
 static void arith_instr_exec(char opc:2, char rd:5, uint32_t rn_data, uint32_t op2) {
 	switch (opc) {
+			static uint32_t res;
                         case 0: {
                             write_general_registers(rd, rn_data + op2);
                             break;
@@ -307,7 +308,7 @@ static void arith_instr_exec(char opc:2, char rd:5, uint32_t rn_data, uint32_t o
                             // INT32 ? OR INT64 - HOW ARE WE HANDLING REGISTER SIZE
 
 
-                            uint32_t res = rn_data + dp_imm_imm12;
+                            res = rn_data + dp_imm_imm12;
 
 
                             write_general_registers(rd, res);
@@ -344,7 +345,7 @@ static void arith_instr_exec(char opc:2, char rd:5, uint32_t rn_data, uint32_t o
                         }
                         case 3: {
                             // INT32 ? OR INT64 - HOW ARE WE HANDLING REGISTER SIZE
-                            uint32_t res = rn_data - op2;
+                            res = rn_data - op2;
                             write_general_registers(rd, res);
                             if (res < 0) {
                                 // set sign flag to 1
@@ -424,7 +425,7 @@ void execute(Instruction *inst) {
 			    // set all bits to one except imm16 bits (which these are will vary depending on if the imm16 was shifted earlier)
 			    // in 32 bit case upper 32 bits are all 0 (i.e. zero extended)
 			    // set rd to op
-			    wide_move_operand = NEGATE_MASK(wide_move_operand) 
+			    wide_move_operand = NEGATE_MASK(wide_move_operand);
 			    write_general_registers(dp_imm_rd, wide_move_hw);
                             break;
                         }             
@@ -439,9 +440,9 @@ void execute(Instruction *inst) {
 			    // in 32 bit version zero extend to 64
 			    uint32_t wide_move_rd_data = (machine_state->general_registers)[dp_imm_rd].data;
 			    if (hw == 0) {
-			       wide_move_rd_data = BIT_MASK(wide_move_rd_data, 16, 31)
+			       wide_move_rd_data = BIT_MASK(wide_move_rd_data, 16, 31) << 16;
 			    } else if (hw == 1) {
-			       wide_move_rd_data = BIT_MASK(wide_move_rd_data, 0, 15)
+			       wide_move_rd_data = BIT_MASK(wide_move_rd_data, 0, 15);
 			    }
 			    wide_move_rd_data = wide_move_rd_data & wide_move_operand;
 			    write_general_registers(dp_imm_rd, wide_move_hw);
@@ -462,6 +463,9 @@ void execute(Instruction *inst) {
 	    char dp_reg_operand:6 = (inst->dp_reg).operand;
 	    char dp_reg_rn:5 = (inst->dp_reg).rn;
 	    char dp_reg_rd:5 = (inst->rd);
+	    uint32_t dp_reg_rn_data = (machine_state->general_registers)[dp_reg_rn].data;
+            uint32_t dp_reg_rm_data = (machine_state->general_registers)[dp_reg_rm].data;
+	    static uint32_t res;
 	    if (dp_reg_m == 0) {
 		char dp_reg_shift = (GET_BIT(dp_reg_opr, 1) << 1) & (GET_BIT(dp_reg_opr, 2));
 		// get data from registers rn, rm
@@ -469,8 +473,6 @@ void execute(Instruction *inst) {
 		// op2 = rm shifted operand many bits
 		// then execute instruction Rd = Rn (op) Op2
 		
-		uint32_t dp_reg_rn_data = (machine_state->general_registers)[dp_reg_rn].data;
-		uint32_t dp_reg_rm_data = (machine_state->general_registers)[dp_reg_rm].data;
 		
 		switch (dp_reg_shift) {
 			case 0: { dp_reg_rm_data = dp_reg_rm_data << dp_reg_operand }
@@ -502,25 +504,48 @@ void execute(Instruction *inst) {
 
 		    switch (dp_reg_opc) {
 			    case 0: {
-				uint32_t res = dp_reg_rn_data & dp_reg_rm_data;
+				res = dp_reg_rn_data & dp_reg_rm_data;
 				break;
 			    }
 			    case 1: {
-				uint32_t res = dp_reg_rn_data | dp_reg_rm_data;
+				res = dp_reg_rn_data | dp_reg_rm_data;
 				break;
 			    }
 			    case 2: {
-				uint32_t res = dp_reg_rn_data ^ dp_reg_rm_data;
+				res = dp_reg_rn_data ^ dp_reg_rm_data;
 				break;
 			    }
 			    case 3: {
-				uint32_t res = dp_reg_rn_data & dp_reg_rm_data;
-				// set flags
+				res = dp_reg_rn_data & dp_reg_rm_data;
+				// set flags 
+				if (res < 0) {
+					// set sign flag N to 1
+				} else {
+					// set sign flag N to 0
+				}
+				if (res == 0) {
+					// set zero register Z to 1
+				} else { 
+					// set zero register Z to 0
+				}
+				// set registers C and V to 0
+				break;
+			    }
 		    }
 		    write_general_registers(dp_reg_rd, res);
 		}		
 	    } else {
 	        // multiply
+		char multiply_x:1 = GET_BIT(dp_reg_operand, 0);
+		char multiply_ra:5 = BIT_MASK(dp_reg_operand, 1, 5);
+
+		uint32_t multiply_ra_data = (machine_state->general_registers)[multiply_ra].data;
+		if (multiply_x == 0) {
+			res = multiply_ra_data + (dp_reg_rn_data * dp_reg_rm_data);
+		} else {
+			res = multiply_ra_data - (dp_reg_rn_data * dp_reg_rm_data);
+		}
+		write_general_registers(dp_reg_rd, res);
 	    }
 		   
             break;
