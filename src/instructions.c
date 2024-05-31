@@ -385,7 +385,7 @@ uint32_t encode_load_literal(const Instruction *inst) {
 }
 
 // common bits shared across all branch instructions
-// are bits 26-29 101:             ---101-----------------------------
+// are bits 26-29 0101:            --0101-----------------------------
 #define BRANCH_COMMON_MASK       0x5UL
 #define BRANCH_COMMON_MASK_START 26
 #define BRANCH_COMMON_MASK_END   29
@@ -406,7 +406,6 @@ uint32_t encode_load_literal(const Instruction *inst) {
 #define BRANCH_COND_LOWER_MASK_BIT   4
 #define BRANCH_COND_COND_START       0
 #define BRANCH_COND_COND_END         3
-
 #define BRANCH_COND_SIMM19_START     5
 #define BRANCH_COND_SIMM19_END       23
 // register branch has format      1101011000011111000000[ xn:5 ]00000
