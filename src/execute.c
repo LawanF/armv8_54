@@ -15,9 +15,40 @@
 // Negates a number 32-bit number n
 #define NEGATE_MASK(n) ((n) ^ (0xffffffffUL))
 
+#define UNKNOWN_INSTRUCTION ((Instruction) { .command_format = UNKNOWN })
+
 /* Functions for decoding and encoding operands
  * These functions assume that the instruction is in the correct group,
  * and the instructions are valid. */
+
+// DP immediate operands use bits 5-22
+// arithmetic has format [ sh:1 ][ imm12:12 ][ rn:5 ]
+#define ARITH_OP_RN_START    5
+#define ARITH_OP_RN_END      9
+#define ARITH_OP_IMM12_START 10
+#define ARITH_OP_IMM12_END   21
+#define ARITH_OP_SH_BIT      22
+// wide move has format  [ hw:2    ][ imm16:16      ]
+#define WIDE_MOVE_IMM16_START 5
+#define WIDE_MOVE_IMM16_END   20
+#define WIDE_MOVE_HW_START    21
+#define WIDE_MOVE_HW_END      22
+
+DPImmOperand decode_dp_imm_operand(DPImmOperandType operand_type, uint32_t inst_data) {
+    switch (operand_type) {
+        case ARITH_OPERAND:
+            return (DPImmOperand) { .arith_operand = {
+                .sh    = GET_BIT(inst_data, ARITH_OP_SH_BIT),
+                .imm12 = BITMASK(inst_data, ARITH_OP_IMM12_START, ARITH_OP_IMM12_END),
+                .rn    = BITMASK(inst_data, ARITH_OP_RN_START,    ARITH_OP_RN_END)
+            } };
+        case WIDE_MOVE_OPERAND:
+            return (DPImmOperand) { .wide_move_operand = {
+                .hw    = BITMASK(inst_data, WIDE_MOVE_HW_START,    WIDE_MOVE_HW_END),
+                .imm16 = BITMASK(inst_data, WIDE_MOVE_IMM16_START, WIDE_MOVE_IMM16_END) }
+            };
+    }
+}
 
 uint32_t encode_dp_imm_operand(const Instruction *inst) {
     DPImmOperandType operand_type = inst->dp_imm.operand_type;
