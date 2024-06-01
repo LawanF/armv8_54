@@ -1,5 +1,9 @@
 // A header file describing the instruction data type.
 
+#ifndef INSTRUCTIONS_H
+#define INSTRUCTIONS_H
+#include <stdint.h>
+
 // enum for specifying type of instruction
 typedef enum { UNKNOWN, HALT, DP_IMM, DP_REG, SINGLE_DATA_TRANSFER, LOAD_LITERAL, BRANCH } CommandFormat;
 
@@ -64,3 +68,5 @@ typedef struct {
         struct { BranchOperandType operand_type; BranchOperand operand; } branch;
     };
 } Instruction;
+
+#endif

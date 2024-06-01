@@ -1,5 +1,6 @@
 #include <stdint.h>
-#include <instructions.h>
+#include "instructions.h"
+#include "instruction_constants.h"
 
 // binary representation of HALT instruction
 #define HALT_BIN 0x8a000000

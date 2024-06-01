@@ -1,3 +1,6 @@
+#ifndef INSTRUCTION_CONSTANTS_H
+#define INSTRUCTION_CONSTANTS_H
+
 #include "instructions.h"
 
 #define HALT_BIN 0x8a000000
@@ -16,3 +19,5 @@
 #define WIDE_MOVE_IMM16_END   20
 #define WIDE_MOVE_HW_START    21
 #define WIDE_MOVE_HW_END      22
+
+#endif
