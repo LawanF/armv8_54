@@ -31,9 +31,11 @@ static SDTOffset decode_sdt_offset(SDTOffsetType offset_type, uint32_t inst_data
     SDTOffset offset;
     switch (offset_type) {
         case PRE_INDEX_OFFSET:
-        case POST_INDEX_OFFSET:
-            offset.simm9 = BITMASK(inst_data, SDT_INDEX_SIMM9_START, SDT_INDEX_SIMM9_END);
+        case POST_INDEX_OFFSET: {
+            uint16_t simm9_masked = BITMASK(inst_data, SDT_INDEX_SIMM9_START, SDT_INDEX_SIMM9_END);
+            offset.simm9 = SIGN_EXTEND(simm9_masked, 9, 16);
             break;
+        }
         case REGISTER_OFFSET:
             offset.xm    = BITMASK(inst_data, SDT_REGISTER_XM_START, SDT_REGISTER_XM_END);
             break;
@@ -90,13 +92,13 @@ static Instruction decode_dp_reg(uint32_t inst_data) {
 
 // Decodes a load literal instruction, returning it as a copy.
 static Instruction decode_load_literal(uint32_t inst_data) {
+    // sign extend simm19
+    uint32_t simm19_masked = BITMASK(inst_data, LOAD_LITERAL_SIMM19_START, LOAD_LITERAL_SIMM19_END);
     return (Instruction) {
         .command_format = LOAD_LITERAL,
         .sf = GET_BIT(inst_data, SDT_SF_BIT),
         .rt = BITMASK(inst_data, RD_RT_START, RD_RT_END),
-        .load_literal = {
-            .simm19 = BITMASK(inst_data, LOAD_LITERAL_SIMM19_START, LOAD_LITERAL_SIMM19_END)
-        }
+        .load_literal = { .simm19 = SIGN_EXTEND(simm19_masked, 19, 32) }
     };
 }
 
@@ -123,19 +125,23 @@ static Instruction decode_branch(uint32_t inst_data) {
     };
     BranchOperand branch_operand;
     switch (operand_type) {
-        case UNCOND_BRANCH:
+        case UNCOND_BRANCH: {
+            uint32_t simm26_masked = BITMASK(inst_data, BRANCH_UNCOND_SIMM26_START, BRANCH_UNCOND_SIMM26_END);
             branch_operand = (BranchOperand) { .uncond_branch =
-                { .simm26 = BITMASK(inst_data, BRANCH_UNCOND_SIMM26_START, BRANCH_UNCOND_SIMM26_END) }
+                { .simm26 = SIGN_EXTEND(simm26_masked, 26, 32) }
             };
             break;
-        case COND_BRANCH:
+        }
+        case COND_BRANCH: {
+            uint32_t simm19_masked = BITMASK(inst_data, BRANCH_COND_SIMM19_START, BRANCH_COND_SIMM19_END);
             branch_operand = (BranchOperand) { .cond_branch =
                 {
                     .cond = BITMASK(inst_data, BRANCH_COND_COND_START, BRANCH_COND_COND_END),
-                    .simm19 = BITMASK(inst_data, BRANCH_COND_SIMM19_START, BRANCH_COND_SIMM19_END)
+                    .simm19 = SIGN_EXTEND(simm19_masked, 19, 32)
                 }
             };
             break;
+        }
         case REGISTER_BRANCH:
             branch_operand = (BranchOperand) { .register_branch =
                 { .xn = BITMASK(inst_data, BRANCH_REG_XN_START, BRANCH_REG_XN_END) }

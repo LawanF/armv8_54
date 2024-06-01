@@ -3,17 +3,6 @@
 
 #include "instructions.h"
 
-// Returns 1 if the i'th bit of n is 1 and 0 otherwise
-// Uses an unsigned long to work with 32 bits
-#define GET_BIT(n, i) (((n) >> (i)) & 0x1UL)
-// Applies a bitmask and returns bits from i (inclusive) to j (inclusive) of n, where i<=j,
-// shifted so that bit i is bit 0 in the result
-#define BITMASK(n, i, j) (((n) >> (i)) & ((0x1UL << ((j) - (i) + 1)) - 1))
-// Returns a 1 bit with i zeros to the right of it
-#define FILL_BIT(i) (0x1UL << (i))
-// Negates a number 32-bit number n
-#define NEGATE_MASK(n) ((n) ^ (0xffffffffUL))
-
 /*
  * Constants shared between instructions
  */
@@ -22,6 +11,11 @@
 #define HALT_BIN 0x8a000000
 #define UNKNOWN_INSTRUCTION ((Instruction) { .command_format = UNKNOWN })
 #define HALT_INSTRUCTION ((Instruction) { .command_format = HALT })
+
+// returns bits from i to j - 1 inclusive, filled with ones
+#define SET_BITS(FROM, TO) ((1ULL << (TO)) - FILL_BIT(FROM))
+// returns a number sign extended from width FROM casted to intTO_t, assuming this is defined in <stdint.h>
+#define SIGN_EXTEND(num, FROM, TO) ((int##TO##_t) (num | ((GET_BIT(num, FROM - 1)) ? SET_BITS(FROM, TO) : 0)))
 
 // start and end of RD or RT
 #define RD_RT_START 0
