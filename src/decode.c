@@ -7,32 +7,40 @@
 
 // Decodes a DP (immediate) operand, given its type.
 static DPImmOperand decode_dp_imm_operand(DPImmOperandType operand_type, uint32_t inst_data) {
+    DPImmOperand operand;
     switch (operand_type) {
         case ARITH_OPERAND:
-            return (DPImmOperand) { .arith_operand = {
+            operand = (DPImmOperand) { .arith_operand = {
                 .sh    = GET_BIT(inst_data, ARITH_OP_SH_BIT),
                 .imm12 = BITMASK(inst_data, ARITH_OP_IMM12_START, ARITH_OP_IMM12_END),
                 .rn    = BITMASK(inst_data, ARITH_OP_RN_START,    ARITH_OP_RN_END)
             } };
+            break;
         case WIDE_MOVE_OPERAND:
-            return (DPImmOperand) { .wide_move_operand = {
+            operand = (DPImmOperand) { .wide_move_operand = {
                 .hw    = BITMASK(inst_data, WIDE_MOVE_HW_START,    WIDE_MOVE_HW_END),
                 .imm16 = BITMASK(inst_data, WIDE_MOVE_IMM16_START, WIDE_MOVE_IMM16_END) }
             };
+            break;
     }
+    return operand;
 }
 
 // Decodes a single data transfer offset, given its type.
 static SDTOffset decode_sdt_offset(SDTOffsetType offset_type, uint32_t inst_data) {
+    SDTOffset offset;
     switch (offset_type) {
         case PRE_INDEX_OFFSET:
         case POST_INDEX_OFFSET:
-            return (SDTOffset) { .simm9 = BITMASK(inst_data, SDT_INDEX_SIMM9_START, SDT_INDEX_SIMM9_END) };
+            offset.simm9 = BITMASK(inst_data, SDT_INDEX_SIMM9_START, SDT_INDEX_SIMM9_END);
+            break;
         case REGISTER_OFFSET:
-            return (SDTOffset) { .xm    = BITMASK(inst_data, SDT_REGISTER_XM_START, SDT_REGISTER_XM_END) };
+            offset.xm    = BITMASK(inst_data, SDT_REGISTER_XM_START, SDT_REGISTER_XM_END);
+            break;
         case UNSIGNED_OFFSET:
-            return (SDTOffset) { .imm12 = BITMASK(inst_data, SDT_UNSIGNED_IMM12_START, SDT_UNSIGNED_IMM12_END) };
+            offset.imm12 = BITMASK(inst_data, SDT_UNSIGNED_IMM12_START, SDT_UNSIGNED_IMM12_END);
     }
+    return offset;
 }
 
 /* Functions for decoding instructions.
@@ -208,4 +216,6 @@ Instruction decode(uint32_t inst_data) {
         case BRANCH:               return decode_branch(inst_data);
         case UNKNOWN:              return UNKNOWN_INSTRUCTION;
     }
+    // if the format is unrecognised
+    return UNKNOWN_INSTRUCTION;
 }

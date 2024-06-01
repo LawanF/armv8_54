@@ -1,5 +1,8 @@
 #include "instructions.h"
 #include "instruction_constants.h"
+#include <assert.h>
+
+#define FAIL_ENCODE() { assert(-1); return 0; }
 
 /* Functions for encoding operands.
  * These functions assume that the instruction is in the correct group,
@@ -10,7 +13,6 @@ static uint32_t encode_dp_imm_operand(const Instruction *inst) {
     DPImmOperandType operand_type = inst->dp_imm.operand_type;
     DPImmOperand operand = inst->dp_imm.operand;
     switch (operand_type) {
-        // operand uses bits 5-22
         case ARITH_OPERAND:
             return ARITH_OPI
                    | ((uint32_t) operand.arith_operand.sh << ARITH_OP_SH_BIT)
@@ -21,6 +23,8 @@ static uint32_t encode_dp_imm_operand(const Instruction *inst) {
                    | ((uint32_t) operand.wide_move_operand.hw    << WIDE_MOVE_HW_START)
                    | ((uint32_t) operand.wide_move_operand.imm16 << WIDE_MOVE_IMM16_START);
     }
+    // if the operand type is invalud
+    FAIL_ENCODE();
 }
 
 // Encodes a single data transfer offset, given a reference to an Instruction.
@@ -41,6 +45,8 @@ static uint32_t encode_sdt_offset(const Instruction *inst) {
         case UNSIGNED_OFFSET:
             return (uint32_t) offset.imm12 << SDT_UNSIGNED_IMM12_START;
     }
+    // if the offset type is invalid
+    FAIL_ENCODE();
 }
 
 /* Functions for encoding instructions.
@@ -48,11 +54,11 @@ static uint32_t encode_sdt_offset(const Instruction *inst) {
 
 // Encodes a DP (immediate) instruction, given a reference to an Instruction.
 static uint32_t encode_dp_imm(const Instruction *inst) {
-    DPImmOperand operand = inst->dp_imm.operand;
-    char opi;
+    unsigned char opi = 0;
     switch (inst->dp_imm.operand_type) {
         case ARITH_OPERAND:     opi = ARITH_OPI;     break;
         case WIDE_MOVE_OPERAND: opi = WIDE_MOVE_OPI; break;
+        default: FAIL_ENCODE(); // if the operand type is unknown
     }
     return DP_IMM_MASK
            | ((uint32_t) inst->sf  << DP_SF_BIT)
@@ -120,6 +126,8 @@ static uint32_t encode_branch(const Instruction *inst) {
                    | (xn << BRANCH_REG_XN_START);
         }
     }
+    // if the enum falls outside the above cases
+    FAIL_ENCODE();
 }
 
 /* Encodes an instruction stored at the given pointer into ARMv8-a.
@@ -135,4 +143,6 @@ uint32_t encode(const Instruction *inst) {
         case BRANCH:               return encode_branch(inst);
         case UNKNOWN:              return 0;
     }
+    // if the command format is invalid
+    FAIL_ENCODE();
 }
