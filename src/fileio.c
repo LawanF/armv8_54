@@ -4,6 +4,7 @@
 #include <stdarg.h>
 #include "registers.h"
 #include "memory.h"
+#define WORD_SIZE (4)
 
 /*
     Takes a FILE *fileptr and a long int *size.
@@ -81,7 +82,7 @@ static void printf_with_err(char *output, va_list args) {
     and prints them for the output file
 */
 static void locate_non_zero_mem(void) {
-    for (int i = 0; i < MEMORY_SIZE; i += 4) {
+    for (int i = 0; i < MEMORY_SIZE; i += WORD_SIZE) {
         uint32_t data = readmem32(i);
         if (data != 0) {
             printf_with_err("%08x: %08x\n", i, data);
