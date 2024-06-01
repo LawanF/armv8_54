@@ -24,7 +24,7 @@ typedef union {
        - sh determines whether to left shift the immediate value by 12 bits
        - imm12 is an unsigned immediate value of 12 bits
        - rn is a register which is added or subtracted to for setting into rd */
-    struct { unsigned char sh:1; uint16_t imm12:12; unsigned char rn:5; } arith_operand;
+    struct { unsigned char sh:1; unsigned char rn:5; uint16_t imm12; } arith_operand;
     /* wide move instruction: 
        - hw determines a left shift by multiple of 16
        - imm16 is an unsigned immediate value of 16 bits */
@@ -34,15 +34,15 @@ typedef union {
 typedef enum { REGISTER_OFFSET, PRE_INDEX_OFFSET, POST_INDEX_OFFSET, UNSIGNED_OFFSET } SDTOffsetType;
 typedef union {
     unsigned char xm:5; // register offset
-    int16_t simm9:9; // pre or post index
-    uint16_t imm12:12; // unsigned offset
+    int16_t simm9; // pre or post index
+    uint16_t imm12; // unsigned offset
 } SDTOffset;
 
 typedef enum { UNCOND_BRANCH, REGISTER_BRANCH, COND_BRANCH, } BranchOperandType;
 typedef union {
-    struct { int32_t simm26:26; } uncond_branch;
+    struct { int32_t simm26; } uncond_branch;
     struct { unsigned char xn:5; } register_branch;
-    struct { unsigned char cond:4; int32_t simm19:19; } cond_branch;
+    struct { unsigned char cond:4; int32_t simm19; } cond_branch;
 } BranchOperand;
 
 // generic instruction struct - unions for specific instruction data
@@ -74,7 +74,7 @@ typedef struct {
             SDTOffsetType offset_type; SDTOffset offset;
         } single_data_transfer;
         // load literal: simm19 is a signed immediate value
-        struct { int32_t simm19:19; } load_literal;
+        struct { int32_t simm19; } load_literal;
         // branch
         struct { BranchOperandType operand_type; BranchOperand operand; } branch;
     };
