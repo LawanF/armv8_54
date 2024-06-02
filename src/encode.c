@@ -1,4 +1,4 @@
-#include "instructions.h"
+#include "encode.h"
 #include "instruction_constants.h"
 #include <assert.h>
 

@@ -1,4 +1,4 @@
-#include "instructions.h"
+#include "decode.h"
 #include "instruction_constants.h"
 
 /* Functions for decoding operands
