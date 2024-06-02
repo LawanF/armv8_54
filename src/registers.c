@@ -6,25 +6,25 @@ static MachineState machine_state;
 
 void init_machine_state(void) {
     // Creating a pointer to the machine state to alter the global var
-    MachineState *ms = &machine_state;
+    MachineState *ms_pointer = &machine_state;
 
     // Initialising the general registers
     for (int i = 0; i < NUM_GENERAL_REGISTERS; i++) {
-        ms->general_registers[i].data = 0;
-        ms->general_registers[i].writable = 1;
+        ms_pointer->general_registers[i].data = 0;
+        ms_pointer->general_registers[i].writable = 1;
     }
 
     // Initialising the special registers
-    ms->zero_register.data = 0;
-    ms->zero_register.writable = 0;
+    ms_pointer->zero_register.data = 0;
+    ms_pointer->zero_register.writable = 0;
 
-    ms->program_counter.data = 0;
-    ms->program_counter.writable = 1;
+    ms_pointer->program_counter.data = 0;
+    ms_pointer->program_counter.writable = 1;
 
-    ms->pstate.zero = 0;
-    ms->pstate.neg = 0;
-    ms->pstate.carry = 0;
-    ms->pstate.overflow = 0;
+    ms_pointer->pstate.zero = 0;
+    ms_pointer->pstate.neg = 0;
+    ms_pointer->pstate.carry = 0;
+    ms_pointer->pstate.overflow = 0;
 }
 
 /*
@@ -46,8 +46,8 @@ void write_general_registers(int index, uint64_t value) {
     assert(index >= 0);
 
     // Find the general register and write
-    MachineState *ms = &machine_state;
-    ms->general_registers[index].data = value;
+    MachineState *ms_pointer = &machine_state;
+    ms_pointer->general_registers[index].data = value;
 }
 
 /*
@@ -56,13 +56,13 @@ void write_general_registers(int index, uint64_t value) {
 */
 void write_program_counter(uint32_t address) {
     checkaddress32(address);
-    MachineState *ms = &machine_state;
-    ms->program_counter.data = address;
+    MachineState *ms_pointer = &machine_state;
+    ms_pointer->program_counter.data = address;
 }
 
 void increment_pc(void) {
-    MachineState *ms = &machine_state;
-    write_program_counter((ms->program_counter.data)+1);
+    MachineState *ms_pointer = &machine_state;
+    write_program_counter((ms_pointer->program_counter.data) + 4);
 }
 
 /*
@@ -71,19 +71,19 @@ void increment_pc(void) {
 */
 void set_pstate_flag(char flag, bool value) {
     assert((flag == 'N') || (flag == 'C') || (flag == 'V') || (flag == 'Z'));
-    MachineState *ms = &machine_state;
+    MachineState *ms_pointer = &machine_state;
     switch (flag) {
         case 'N':
-            ms->pstate.neg = value;
+            ms_pointer->pstate.neg = value;
             break;
         case 'C':
-            ms->pstate.carry = value;
+            ms_pointer->pstate.carry = value;
             break;
         case 'V':
-            ms->pstate.overflow = value;
+            ms_pointer->pstate.overflow = value;
             break;
         case 'Z':
-            ms->pstate.zero = value;
+            ms_pointer->pstate.zero = value;
             break;
         default:
             break;
