@@ -220,8 +220,7 @@ Instruction decode(uint32_t inst_data) {
         case SINGLE_DATA_TRANSFER: return decode_single_data_transfer(inst_data);
         case LOAD_LITERAL:         return decode_load_literal(inst_data);
         case BRANCH:               return decode_branch(inst_data);
-        case UNKNOWN:              return UNKNOWN_INSTRUCTION;
+        case UNKNOWN:
+        default:                   return UNKNOWN_INSTRUCTION;
     }
-    // if the format is unrecognised
-    return UNKNOWN_INSTRUCTION;
 }
