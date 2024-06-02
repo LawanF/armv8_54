@@ -18,7 +18,7 @@ void initmem() {
     Loads an array into memory using memcpy.
     Used to load instructions to memory.
 */
-void loadtomem(void *arr, size_t numbytes) {
+void loadtomem(void *arr, uint32_t numbytes) {
     memcpy(memory, arr, numbytes);
 }
 

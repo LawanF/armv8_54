@@ -72,8 +72,16 @@ void store_file_to_mem(char *filename) {
     A function that executes printf but flags errors (to help with
     file writing errors)
 */
-static void printf_with_err(char *output, va_list args) {
-    int ret = printf(output, args);
+static void printf_with_err(char *output, ...) {
+    int ret;
+
+    va_list myargs;
+    va_start(myargs, output);
+
+    ret = vprintf(output, myargs);
+
+    va_end(myargs);
+
     if (ret < 0) {
 	fprintf(stderr, "printf_with_err: couldn't print instruction of format %s", output);
     }
