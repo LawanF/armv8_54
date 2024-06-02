@@ -1,6 +1,6 @@
 #include "registers.h"
+#include "memory.h"
 #include <assert.h>
-#include <stdio.h>
 
 static MachineState machine_state;
 
@@ -42,11 +42,50 @@ MachineState read_machine_state(void) {
 */
 void write_general_registers(int index, uint64_t value) {
     // Check that the index refers to an existing general register
-    assert(index <= NUM_GENERAL_REGISTERS);
+    assert(index < NUM_GENERAL_REGISTERS);
     assert(index >= 0);
 
     // Find the general register and write
     MachineState *ms = &machine_state;
-    ms->general_registers[index].data = value; 
+    ms->general_registers[index].data = value;
 }
 
+/*
+    A function that writes to the program counter a specific value,
+    the logic of what that might be is  dealt with separately
+*/
+void write_program_counter(uint32_t address) {
+    checkaddress32(address);
+    MachineState *ms = &machine_state;
+    ms->program_counter.data = address;
+}
+
+void increment_pc(void) {
+    MachineState *ms = &machine_state;
+    write_program_counter((ms->program_counter.data)+1);
+}
+
+/*
+    A function that sets pstate flags in the machine state, given
+    the flag they want to alter
+*/
+void set_pstate_flag(char flag, bool value) {
+    assert((flag == 'N') || (flag == 'C') || (flag == 'V') || (flag == 'Z'));
+    MachineState *ms = &machine_state;
+    switch (flag) {
+        case 'N':
+            ms->pstate.neg = value;
+            break;
+        case 'C':
+            ms->pstate.carry = value;
+            break;
+        case 'V':
+            ms->pstate.overflow = value;
+            break;
+        case 'Z':
+            ms->pstate.zero = value;
+            break;
+        default:
+            break;
+    }
+}
