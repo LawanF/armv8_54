@@ -27,7 +27,7 @@ void loadtomem(void *arr, size_t numbytes) {
     Checks if address is less than or equal to (MEMORY_SIZE - 4) and
     if address adheres to 4-byte boundary (for readmem32 and writemem32).
 */
-static void checkaddress32(uint32_t address) {
+void checkaddress32(uint32_t address) {
     // Check if address is a multiple of 4.
     if ((address % 4) != 0) {
         fprintf(stderr, "checkaddress32: address %08x is not multiple of 4\n", address);
