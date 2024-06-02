@@ -26,4 +26,16 @@ typedef struct {
     ProcessorStateRegister pstate;
 } MachineState;
 
+extern void init_machine_state(void);
+
+extern MachineState read_machine_state(void);
+
+extern void write_general_registers(int index, uint64_t value);
+
+extern void write_program_counter(uint32_t address);
+
+extern void increment_pc(void);
+
+extern void set_pstate_flag(char flag, bool value);
+
 #endif
