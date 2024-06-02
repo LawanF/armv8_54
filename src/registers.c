@@ -39,15 +39,18 @@ MachineState read_machine_state(void) {
 /*
     A function that writes to a specific general register given
     the required index, and the value that needs to be written
+    Is a no-op when the index refers to the zero register
 */
 void write_general_registers(int index, uint64_t value) {
     // Check that the index refers to an existing general register
-    assert(index < NUM_GENERAL_REGISTERS);
+    assert(index <= NUM_GENERAL_REGISTERS);
     assert(index >= 0);
 
-    // Find the general register and write
-    MachineState *ms_pointer = &machine_state;
-    ms_pointer->general_registers[index].data = value;
+    // If it's not the zero register, find register and write
+    if (index != NUM_GENERAL_REGISTERS) {
+        MachineState *ms_pointer = &machine_state;
+        ms_pointer->general_registers[index].data = value;
+    }
 }
 
 /*
