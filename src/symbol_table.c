@@ -70,17 +70,17 @@ SymbolTable symtable_new(float load_factor) {
     return symtable;
 }
 
-/** Frees the contents of a bucket, including the memory used to store it.
- * @param bucket the bucket to be freed
+/** Frees the contents of a linked list with a given head node, including the memory used to store it.
+ * @param head the head of the list to be freed
  */
-static void bucket_free(Bucket bucket) {
-    Bucket next_bucket;
-    for (Bucket cur_bucket = bucket; cur_bucket != NULL; cur_bucket = next_bucket) {
-        free(cur_bucket->entry.label);
-        next_bucket = cur_bucket->tail;
-        free(cur_bucket);
+static void bucket_free_all(Bucket head) {
+    Bucket next_head;
+    for (Bucket bucket = head; bucket != NULL; bucket = next_head) {
+        free(bucket->entry.label);
+        next_head = bucket->tail;
+        free(bucket);
     }
-    free(bucket);
+    free(head);
 }
 
 /** Prepends an element to the given bucket, modifying it in place.
@@ -107,6 +107,37 @@ static bool bucket_contains(Bucket bucket, char *key) {
     return false;
 }
 
+/** Removes (and frees) the first element with a given key in the symbol table.
+ * The reference to the bucket given in `head_ptr` will be written with the head of the new list,
+ * and `dest` will be written with the value associated with the `key` (if it exists).
+ * @param head_ptr the given symbol table
+ * @param key the string to search for in the bucket
+ * @param dest a pointer to which the associated value of `key` is written, if it exists.
+ * @returns `true` if the element was removed, and `false` if the bucket is unmodified.
+ */
+static bool bucket_remove(Bucket *head_ptr, char *key, uint16_t *dest) {
+    Bucket par = NULL;
+    for (Bucket cur = *head_ptr; cur != NULL; cur = cur->tail) {
+        if (strcmp(cur->entry.label, key) == 0) {
+            // match found
+            if (par == NULL) {
+                // change the head node
+                *head_ptr = cur->tail;
+            } else {
+                // unlink the current entry from the list
+                par->tail = cur->tail;
+            }
+            *dest = cur->entry.address;
+            // destroy the entry
+            free(cur->entry.label);
+            free(cur);
+            return true;
+        }
+        par = cur;
+    }
+    return false;
+}
+
 /** Returns a pointer to an array of `symtable->size` entries in the symbol table
  * @param symtable the given symbol table
  * @returns an unsorted copy of the entries in the symtable, or `NULL` if memory allocation failed
@@ -129,7 +160,7 @@ static Entry *symtable_entries(SymbolTable symtable) {
  */
 static void symtable_free_buckets(SymbolTable symtable) {
     for (uint16_t i = 0; i < symtable->num_buckets; i++) {
-        bucket_free(symtable->buckets[i]);
+        bucket_free_all(symtable->buckets[i]);
     }
     free(symtable->buckets);
 }
