@@ -48,16 +48,28 @@ typedef struct symtable {
     uint16_t num_buckets;
 } *SymbolTable;
 
-/** Creates a symbol table with the given load factor, and one bucket.
- * @param load_factor the load factor of the symbol table (maximum average number of entries per bucket).
- * @returns the symbol table, or `NULL` if the given load factor is invalid (not positive) or creation fails.
+/** Creates a symbol table with a given number of buckets.
+ * A precondition is that the number of buckets is a power of two.
+ * @param load_factor the load factor of the symbol table
+ * @param num_buckets the number of buckets in the symbol table
+ * @returns the symbol table, or `NULL` if creation fails
+ * @see symtable_new
  */
-SymbolTable symtable_new(float load_factor) {
+SymbolTable symtable_num_buckets(float load_factor, uint16_t num_buckets) {
     if (load_factor <= 0) return NULL;
+    // count the number of ones; it is one if and only if num_buckets is a power of two
+    uint8_t num_ones = 0;
+    for (int i = 0; i < 16; i++) {
+        num_ones += (num_buckets >> i) & 0x1;
+    }
+    if (num_ones != 1) return NULL;
     // a singleton array of one bucket
-    Bucket *buckets = malloc(sizeof(struct bucket) * 1);
+    Bucket *buckets = malloc(sizeof(struct bucket) * num_buckets);
     if (buckets == NULL) return NULL;
-    buckets[0] = NULL;
+    // initialise the buckets with NULL
+    for (int i = 0; i < num_buckets; i++) {
+        buckets[i] = NULL;
+    }
     SymbolTable symtable = malloc(sizeof(struct symtable));
     if (symtable == NULL) {
         free(buckets);
@@ -66,8 +78,16 @@ SymbolTable symtable_new(float load_factor) {
     symtable->load_factor = load_factor;
     symtable->buckets     = buckets;
     symtable->size        = 0;
-    symtable->num_buckets = 1;
+    symtable->num_buckets = num_buckets;
     return symtable;
+}
+
+/** Creates a symbol table with the given load factor, and one bucket.
+ * @param load_factor the load factor of the symbol table (maximum average number of entries per bucket).
+ * @returns the symbol table, or `NULL` if the given load factor is invalid (not positive) or creation fails.
+ */
+SymbolTable symtable_new(float load_factor) {
+    return symtable_num_buckets(load_factor, /* num_buckets = */ 1);
 }
 
 /** Frees the contents of a linked list with a given head node, including the memory used to store it.
@@ -100,7 +120,7 @@ static bool bucket_add(Bucket bucket, Entry entry) {
  * @param bucket the bucket to be searched through
  * @returns `true` if and only if an entry is in the bucket.
  */
-static bool bucket_contains(Bucket bucket, char *key) {
+static bool bucket_contains(Bucket bucket, const char *key) {
     for (Bucket b = bucket; b != NULL; b = b->tail) {
         if (strcmp(b->entry.label, key) == 0) return true;
     }
@@ -165,6 +185,14 @@ static void symtable_free_buckets(SymbolTable symtable) {
     free(symtable->buckets);
 }
 
+/** Frees the contents of the symbol table.
+ * @param symtable the given symbol table to be unallocated from memory
+ */
+void symtable_free(SymbolTable symtable) {
+    symtable_free_buckets(symtable);
+    free(symtable);
+}
+
 /** A hashing function used to index the symtable using the djb2 algorithm in the given link.
  * @param str the string to be hashed
  * @returns the hashed string, 16 bits in length
@@ -185,3 +213,12 @@ static uint16_t symtable_bucket_index(SymbolTable symtable, const char *key) {
     return string_hash(key) & (symtable->num_buckets - 1);
 }
 
+/** Determines whether an entry under a given key exists in a symbol table
+ * @param symtable the symbol table to be searched
+ * @param key the symbol to be searched for in the symbol table
+ * @returns `true` if a value is associated to the key in the map, and `false` otherwise
+ */
+static bool symtable_contains(SymbolTable symtable, const char *key) {
+    uint16_t bucket_index = symtable_bucket_index(symtable, key);
+    return bucket_contains(symtable->buckets[bucket_index], key);
+}
