@@ -1,9 +1,12 @@
 /* Implementation for a symbol table.
  * This is a (hash)map from labels (strings, aka char[]) to memory addresses (unsigned integers). */
 
+#include <cmath>
 #include <stdlib.h>
 #include <stdint.h>
 #include <stdbool.h>
+
+#define MAX_NUM_BUCKETS (0x1UL << 15)
 
 /**
  * A structure representing an entry in a bucket.
@@ -16,8 +19,8 @@ typedef struct {
 } Entry;
 
 /**
- * A structure representing a resizing array of map entries.
- * @property head a pointer to the first of `size` entries in the bucket
+ * A structure representing a linked list of map entries.
+ * @property entry a pointer to the current of `size` entries in the bucket
  * @property size the current size of the bucket
  */
 struct bucket;
@@ -54,14 +57,23 @@ SymbolTable symtable_new(float load_factor) {
     Bucket *buckets = malloc(sizeof(struct bucket) * 1);
     if (buckets == NULL) return NULL;
     buckets[0] = NULL;
-    SymbolTable table = malloc(sizeof(struct symtable));
-    if (table == NULL) {
+    SymbolTable symtable = malloc(sizeof(struct symtable));
+    if (symtable == NULL) {
         free(buckets);
         return NULL;
     }
-    table->load_factor = load_factor;
-    table->buckets     = buckets;
-    table->size        = 0;
-    table->num_buckets = 1;
-    return table;
+    symtable->load_factor = load_factor;
+    symtable->buckets     = buckets;
+    symtable->size        = 0;
+    symtable->num_buckets = 1;
+    return symtable;
+}
+
+static void bucket_free(Bucket bucket) {
+    Bucket next_bucket;
+    for (Bucket cur_bucket = bucket; cur_bucket != NULL; cur_bucket = next_bucket) {
+        free(cur_bucket->entry.label);
+        next_bucket = cur_bucket->tail;
+        free(cur_bucket);
+    }
 }
