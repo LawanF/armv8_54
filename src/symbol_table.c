@@ -1,7 +1,7 @@
 /* Implementation for a symbol table.
  * This is a (hash)map from labels (strings, aka char[]) to memory addresses (unsigned integers). */
 
-#include <cmath>
+#include <assert.h>
 #include <stdlib.h>
 #include <stdint.h>
 #include <stdbool.h>
@@ -69,6 +69,9 @@ SymbolTable symtable_new(float load_factor) {
     return symtable;
 }
 
+/** Frees the contents of a bucket, including the memory used to store it.
+ * @param bucket the bucket to be freed
+ */
 static void bucket_free(Bucket bucket) {
     Bucket next_bucket;
     for (Bucket cur_bucket = bucket; cur_bucket != NULL; cur_bucket = next_bucket) {
@@ -76,18 +79,35 @@ static void bucket_free(Bucket bucket) {
         next_bucket = cur_bucket->tail;
         free(cur_bucket);
     }
+    free(bucket);
 }
 
 /** Prepends an element to the given bucket, modifying it in place.
  * @param bucket the bucket to be appended
  * @returns 1 if the bucket was modified, 0 if addition fails (i.e. if memory allocation fails)
  */
-static int bucket_add(Bucket *bucket, Entry entry) {
+static int bucket_add(Bucket bucket, Entry entry) {
     Bucket prepended = malloc(sizeof(struct bucket));
     if (prepended == NULL) return 0;
-    *prepended = (struct bucket) { .entry = entry, .tail = *bucket };
-    *bucket = prepended;
+    *prepended = (struct bucket) { .entry = entry, .tail = bucket };
+    bucket = prepended;
     return 1;
+}
+
+/** Returns a pointer to an array of `symtable->size` entries in the array
+ * @param symtable the given symbol table
+ * @returns an unsorted copy of the entries in the symtable.
+ */
+Entry *symtable_entries(SymbolTable symtable) {
+    Entry *entries = malloc(sizeof(Entry) * symtable->size);
+    uint16_t i = 0;
+    for (uint16_t j = 0; j < symtable->num_buckets; j++) {
+        for (Bucket b = symtable->buckets[j]; b != NULL; b = b->tail) {
+            entries[i++] = b->entry;
+        }
+    }
+    assert(i == symtable->size);
+    return entries;
 }
 
 /** Frees the buckets inside the symbol table.
