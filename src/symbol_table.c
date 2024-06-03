@@ -5,6 +5,7 @@
 #include <stdlib.h>
 #include <stdint.h>
 #include <stdbool.h>
+#include <string.h>
 
 #define MAX_NUM_BUCKETS (0x1UL << 15)
 
@@ -84,17 +85,29 @@ static void bucket_free(Bucket bucket) {
 
 /** Prepends an element to the given bucket, modifying it in place.
  * @param bucket the bucket to be appended
- * @returns 1 if the bucket was modified, 0 if addition fails (i.e. if memory allocation fails)
+ * @returns `true` if the bucket was modified, `false` if addition fails (i.e. if memory allocation fails)
  */
-static int bucket_add(Bucket bucket, Entry entry) {
+static bool bucket_add(Bucket bucket, Entry entry) {
     Bucket prepended = malloc(sizeof(struct bucket));
-    if (prepended == NULL) return 0;
+    if (prepended == NULL) return false;
     *prepended = (struct bucket) { .entry = entry, .tail = bucket };
     bucket = prepended;
-    return 1;
+    return true;
 }
 
-/** Returns a pointer to an array of `symtable->size` entries in the array
+/** Uses linear search to determine whether an entry with a given key is in the bucket.
+ * A precondition is that the key is not `NULL`.
+ * @param bucket the bucket to be searched through
+ * @returns `true` if and only if an entry is in the bucket.
+ */
+static bool bucket_contains(Bucket bucket, char *key) {
+    for (Bucket b = bucket; b != NULL; b = b->tail) {
+        if (strcmp(b->entry.label, key) == 0) return true;
+    }
+    return false;
+}
+
+/** Returns a pointer to an array of `symtable->size` entries in the symbol table
  * @param symtable the given symbol table
  * @returns an unsorted copy of the entries in the symtable, or `NULL` if memory allocation failed
  */
@@ -133,6 +146,7 @@ static uint16_t string_hash(const char *str) {
 }
 
 /** Returns the index in which a given key is stored in the symbol table.
+ * A precondition is that the number of buckets in the table is a power of two.
  * @param symtable the symbol table to be indexed
  * @param key the string to be hashed
  */
