@@ -77,3 +77,15 @@ static void bucket_free(Bucket bucket) {
         free(cur_bucket);
     }
 }
+
+/** Prepends an element to the given bucket, modifying it in place.
+ * @param bucket the bucket to be appended
+ * @returns 1 if the bucket was modified, 0 if addition fails (i.e. if memory allocation fails)
+ */
+static int bucket_add(Bucket *bucket, Entry entry) {
+    Bucket prepended = malloc(sizeof(struct bucket));
+    if (prepended == NULL) return 0;
+    *prepended = (struct bucket) { .entry = entry, .tail = *bucket };
+    *bucket = prepended;
+    return 1;
+}
