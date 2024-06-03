@@ -1,6 +1,7 @@
 /* Implementation for a symbol table.
  * This is a (hash)map from labels (strings, aka char[]) to memory addresses (unsigned integers). */
 
+#include <stdlib.h>
 #include <stdint.h>
 #include <stdbool.h>
 
@@ -37,7 +38,30 @@ struct bucket {
  * @property num_buckets the current number of buckets
  */
 typedef struct symtable {
-    const float load_factor;
+    float load_factor;
     Bucket *buckets;
+    uint16_t size;
     uint16_t num_buckets;
 } *SymbolTable;
+
+/** Creates a symbol table with the given load factor, and one bucket.
+ * @param load_factor the load factor of the symbol table (maximum average number of entries per bucket).
+ * @returns the symbol table, or `NULL` if the given load factor is invalid (not positive) or creation fails.
+ */
+SymbolTable symtable_new(float load_factor) {
+    if (load_factor <= 0) return NULL;
+    // a singleton array of one bucket
+    Bucket *buckets = malloc(sizeof(struct bucket) * 1);
+    if (buckets == NULL) return NULL;
+    buckets[0] = NULL;
+    SymbolTable table = malloc(sizeof(struct symtable));
+    if (table == NULL) {
+        free(buckets);
+        return NULL;
+    }
+    table->load_factor = load_factor;
+    table->buckets     = buckets;
+    table->size        = 0;
+    table->num_buckets = 1;
+    return table;
+}
