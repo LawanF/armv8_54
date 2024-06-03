@@ -84,6 +84,23 @@ static void arith_instr_exec(char opc:2, char rd:5, uint32_t rn_data, uint32_t o
                     }
 }
 
+static void read_write_to_mem(unsigned char sdt_l, uint32_t sdt_rt, uint32_t mem_address) {
+	if (sdt_l == 1) {
+            // read from mem 
+	    // write to rt
+
+            static uint32_t data_load = readmem32(mem_address);
+            write_general_registers(sdt_rt, data_load);
+
+        } else {
+            // read from rt
+            // write to mem
+
+            static uint32_t data_store = (machine_state->general_registers)[sdt_rt];
+            writemem32(mem_address, data_store);
+        }
+}
+
 void execute(Instruction *inst) {
     if (inst == NULL) return;
     enum CommandFormat inst_command_format = inst->command_format;
@@ -263,11 +280,51 @@ void execute(Instruction *inst) {
             break;
         }
         case SINGLE_DATA_TRANSFER: {
+	    unsigned char sdt_u:1 = (inst->single_data_transfer).u;
+	    unsigned char sdt_l:1 = (inst->single_data_transfer).l;
+	    unsigned char sdt_xn:5 = (inst->single_data_transfer).xn;
+	    unsigned char sdt_sf:1 = (inst->sf);
+	    unsigned char sdt_opc:2 = (inst->opc);
+	    unsigned char sdt_rt:4 = (inst->rt);
+	    uint32_t sdt_rt_data = (machine_state->general_registers)[sdt_rt].data;
+	    uint32_t sdt_xn_data = (machine_state->general_registers)[sdt_xn].data;
+	    SDTOffsetType sdt_type = (inst->single_data_transfer).offset_type;
 
+	    switch (sdt_type) {
+		    case REGISTER_OFFSET: {
+		    	unsigned char sdt_xm:5 = (inst->single_data_transfer).offset.xm;
+			uint32_t sdt_xm_data =  (machine_state->general_registers)[sdt_xm].data;
+			uint32_t mem_address = sdt_xm_data + sdt_xn_data;
+		    	read_write_mem(sdt_l, sdt_rt, mem_address);
+		    }
+		    case PRE_INDEX_OFFSET: {
+			int16_t sdt_simm9 = (inst->single_data_transfer).offset.simm9;
+		        if (sdt_simm9 > -256 && sdt_simm9 < 255) {
+				uint32_t mem_address = sdt_xn_data + sdt_simm9;
+				read_write_mem(sdt_l, sdt_rt, mem_address);
+				write_general_registers(sdt_xn, mem_address);
+			} else {
+				// exit ini? or nothing
+			}
+
+		    case POST_INDEX_OFFSET:
+		        int16_t sdt_simm9 = (inst->single_data_transfer).offset.simm9;
+			if (sdt_simm9 > -256 && sdt_simm9 < 255) {
+                                read_write_mem(sdt_l, sdt_rt, sdt_xn_data);
+				write_general_registers(sdt_xn, sdt_xn_data + sdt_simm9);
+                        } else {
+                                // exit ini? or nothing
+                        }	
+		    case UNSIGNED_OFFSET:
+			uint16_t sdt_imm12 = (inst->single_data_transfer).offset.imm12;
+			uint32_t uoffset = sdt_imm12 * 4;
+			read_write_mem(sdt_l, sdt_rt, sdt_xn_data + uoffset);
             break;
         }
         case LOAD_LITERAL: {
-
+	    uint32_t sdt_pc = (machine_state->program_counter).data;
+	    int32_t sdt_simm19 = (inst->load_literal).simm19;
+	    read_write_mem(1, sdt_rt, sdt_pc + sdt_simm19 * 4);
             break;
         }
         case BRANCH: {
