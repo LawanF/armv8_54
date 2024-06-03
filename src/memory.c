@@ -23,6 +23,9 @@ void initmem() {
     Used to load instructions to memory.
 */
 void loadtomem(void *arr, uint32_t numbytes) {
+    if (numbytes > MEMORY_SIZE) {
+        fprintf(stderr, "loadtomem: number of bytes exceeds memory.");
+    }
     memcpy(memory, arr, numbytes);
 }
 
