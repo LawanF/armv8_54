@@ -96,10 +96,11 @@ static int bucket_add(Bucket bucket, Entry entry) {
 
 /** Returns a pointer to an array of `symtable->size` entries in the array
  * @param symtable the given symbol table
- * @returns an unsorted copy of the entries in the symtable.
+ * @returns an unsorted copy of the entries in the symtable, or `NULL` if memory allocation failed
  */
-Entry *symtable_entries(SymbolTable symtable) {
+static Entry *symtable_entries(SymbolTable symtable) {
     Entry *entries = malloc(sizeof(Entry) * symtable->size);
+    if (entries == NULL) return NULL;
     uint16_t i = 0;
     for (uint16_t j = 0; j < symtable->num_buckets; j++) {
         for (Bucket b = symtable->buckets[j]; b != NULL; b = b->tail) {
@@ -119,3 +120,23 @@ static void symtable_free_buckets(SymbolTable symtable) {
     }
     free(symtable->buckets);
 }
+
+/** A hashing function used to index the symtable using the djb2 algorithm in the given link.
+ * @param str the string to be hashed
+ * @returns the hashed string, 16 bits in length
+ * @see http://www.cse.yorku.ca/~oz/hash.html
+ */
+static uint16_t string_hash(const char *str) {
+    uint16_t hash = 5381;
+    for (int c; (c = *str++); hash = ((hash << 5) + hash) + c); // hash = hash * 33 + c
+    return hash;
+}
+
+/** Returns the index in which a given key is stored in the symbol table.
+ * @param symtable the symbol table to be indexed
+ * @param key the string to be hashed
+ */
+static uint16_t symtable_bucket_index(SymbolTable symtable, const char *key) {
+    return string_hash(key) & (symtable->num_buckets - 1);
+}
+
