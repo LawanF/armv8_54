@@ -1,5 +1,7 @@
 #include <stdint.h>
+#include <stdlib.h>
 #include "instructions.h"
+#include "registers.h"
 
 static void offset_program_counter(MachineState *alter_machine_state, int32_t enc_address) {
 	int64_t offset = enc_address*4;
@@ -83,6 +85,13 @@ static void arith_instr_exec(char opc:2, char rd:5, uint32_t rn_data, uint32_t o
                     }
 }
 
+void halt(void) {
+    MachineState *machine_state = read_machine_state();
+    char *filename = get_output_file();
+    print_output(machine_state, filename);
+    exit(1);
+}
+
 void execute(Instruction *inst) {
     if (inst == NULL) return;
     enum CommandFormat inst_command_format = inst->command_format;
@@ -91,7 +100,7 @@ void execute(Instruction *inst) {
 	MachineState *machine_state = read_machine_state();
 
 	case HALT: {
-
+            halt();
             break;
         }
         case DP_IMM: {
