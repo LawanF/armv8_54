@@ -89,3 +89,13 @@ static int bucket_add(Bucket *bucket, Entry entry) {
     *bucket = prepended;
     return 1;
 }
+
+/** Frees the buckets inside the symbol table.
+ * @param symtable the given symbol table
+ */
+static void symtable_free_buckets(SymbolTable symtable) {
+    for (uint16_t i = 0; i < symtable->num_buckets; i++) {
+        bucket_free(symtable->buckets[i]);
+    }
+    free(symtable->buckets);
+}
