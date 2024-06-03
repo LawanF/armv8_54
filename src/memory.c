@@ -3,6 +3,10 @@
 #include <string.h>
 #include "memory.h"
 
+#define BYTE_BITS 8
+#define WORD_BITS 32
+#define WORD_BYTES 4
+
 // Define a char[] representing the machine memory.
 // Data is stored in little-endian.
 static unsigned char memory[MEMORY_SIZE];
@@ -18,7 +22,10 @@ void initmem() {
     Loads an array into memory using memcpy.
     Used to load instructions to memory.
 */
-void loadtomem(void *arr, size_t numbytes) {
+void loadtomem(void *arr, uint32_t numbytes) {
+    if (numbytes > MEMORY_SIZE) {
+        fprintf(stderr, "loadtomem: number of bytes exceeds memory.");
+    }
     memcpy(memory, arr, numbytes);
 }
 
@@ -29,13 +36,13 @@ void loadtomem(void *arr, size_t numbytes) {
 */
 void checkaddress32(uint32_t address) {
     // Check if address is a multiple of 4.
-    if ((address % 4) != 0) {
-        fprintf(stderr, "checkaddress32: address %08x is not multiple of 4\n", address);
+    if ((address % WORD_BYTES) != 0) {
+        fprintf(stderr, "checkaddress32: address %08x is not multiple of %d\n", address, WORD_BYTES);
         exit(1);
     }
 
     // Check if address is within bounds of memory.
-    if (address > MEMORY_SIZE - 4) {
+    if (address > MEMORY_SIZE - WORD_BYTES) {
         fprintf(stderr, "checkaddress32: address %08x is out of bounds\n", address);
         exit(1);
     }
@@ -63,8 +70,8 @@ uint32_t readmem32(uint32_t address) {
     uint32_t data = 0;
 
     // Fetch each byte, shifting them accordingly.
-    for (int i = 0; i < 4; i++) {
-        data |= startbyte[i] << (8 * i);
+    for (int i = 0; i < WORD_BYTES; i++) {
+        data |= startbyte[i] << (BYTE_BITS * i);
     }
 
     return data;
@@ -78,10 +85,10 @@ uint64_t readmem64(uint32_t address) {
     // Define uint64_t to return.
     uint64_t data = 0;
 
-    // Fetch each data from memory using readmem32.
-    for (int i = 0; i < 8; i += 4) {
-        data <<= 32;
-        data |= readmem32(address + 4 - i);
+    // Fetch each data from memory using readmem32 twice.
+    for (int i = 0; i < (2 * WORD_BYTES); i += WORD_BYTES) {
+        data <<= WORD_BITS;
+        data |= readmem32(address + WORD_BYTES - i);
     }
 
     return data;
@@ -96,9 +103,9 @@ void writemem32(uint32_t address, uint32_t data) {
     unsigned char *startbyte = fetchbyte(address);
 
     // Write to memory byte-by-byte.
-    for (int i = 0; i < 4; i++) {
+    for (int i = 0; i < WORD_BYTES; i++) {
         startbyte[i] = data;
-        data >>= 8;
+        data >>= BYTE_BITS;
     }
 }
 
@@ -107,9 +114,9 @@ void writemem32(uint32_t address, uint32_t data) {
     Writes 64 bits (8 bytes) at specified address.
 */
 void writemem64(uint32_t address, uint64_t data) { 
-    // Write to memory using writemem32.
-    for (int i = 0; i < 8; i += 4) {
+    // Write to memory using writemem32 twice.
+    for (int i = 0; i < (2 * WORD_BYTES); i += WORD_BYTES) {
         writemem32(address + i, data);
-        data >>= 32;
+        data >>= WORD_BITS;
     }
 }

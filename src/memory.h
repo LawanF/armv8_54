@@ -6,7 +6,7 @@
 
 extern void initmem();
 
-extern void loadtomem(void *arr, size_t numbytes);
+extern void loadtomem(void *arr, uint32_t numbytes);
 
 extern void checkaddress32(uint32_t address);
 

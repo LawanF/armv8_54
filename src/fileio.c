@@ -2,9 +2,9 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdarg.h>
-#include "registers.h"
 #include "memory.h"
-#define WORD_SIZE (4)
+#include "fileio.h"
+#define WORD_SIZE 4
 
 /*
     Takes a FILE *fileptr and a long int *size.
@@ -31,7 +31,7 @@ static void filesize(FILE *fileptr, long int *size) {
     Takes a string that specifies a file location.
     Returns a char array with the contents of that file.
 */
-char *store_file_to_arr(char *filename) {
+void store_file_to_mem(char *filename) {
     // Define array to return.
     char *arr;
 
@@ -62,7 +62,9 @@ char *store_file_to_arr(char *filename) {
     // Close file.
     fclose(fileptr);
 
-    return arr;
+    // Load arr to memory and free the space created by malloc.
+    loadtomem(arr, size);
+    free(arr);
 }
 
 // OUTPUT FILE
@@ -70,8 +72,16 @@ char *store_file_to_arr(char *filename) {
     A function that executes printf but flags errors (to help with
     file writing errors)
 */
-static void printf_with_err(char *output, va_list args) {
-    int ret = printf(output, args);
+static void printf_with_err(char *output, ...) {
+    int ret;
+
+    va_list myargs;
+    va_start(myargs, output);
+
+    ret = vprintf(output, myargs);
+
+    va_end(myargs);
+
     if (ret < 0) {
 	fprintf(stderr, "printf_with_err: couldn't print instruction of format %s", output);
     }
