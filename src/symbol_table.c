@@ -122,7 +122,7 @@ static bool bucket_add(Bucket *head_ptr, const Entry entry) {
  * @param dest a pointer to which to write the associated address, if it is found
  * @returns `true` if and only if an entry with the given key exists in the bucket.
  */
-static bool bucket_find(Bucket bucket, const char *key, uint32_t *dest) {
+static bool bucket_get(Bucket bucket, const char *key, uint32_t *dest) {
     for (Bucket b = bucket; b != NULL; b = b->tail) {
         if (strcmp(b->entry.label, key) == 0) {
             if (dest != NULL) *dest = b->entry.address;
@@ -138,7 +138,7 @@ static bool bucket_find(Bucket bucket, const char *key, uint32_t *dest) {
  * @returns `true` if and only if an entry is in the bucket.
  */
 static bool bucket_contains(Bucket bucket, const char *key) {
-    return bucket_find(bucket, key, NULL);
+    return bucket_get(bucket, key, NULL);
 }
 
 /** Removes (and frees) the first element with a given key in the symbol table.
@@ -243,9 +243,9 @@ bool symtable_contains(SymbolTable symtable, const char *key) {
  * @param dest a pointer to which to write the associated address, if it is found
  * @returns `true` if and only if an entry with the given key exists in the symbol table.
  */
-bool symtable_find(SymbolTable symtable, const char *key, uint32_t *dest) {
+bool symtable_get(SymbolTable symtable, const char *key, uint32_t *dest) {
     uint16_t bucket_index = symtable_bucket_index(symtable, key);
-    return bucket_find(symtable->buckets[bucket_index], key, dest);
+    return bucket_get(symtable->buckets[bucket_index], key, dest);
 }
 
 /** Removes the entry with a given key in the symbol table.
@@ -309,7 +309,7 @@ bool symtable_set(SymbolTable symtable, const char *key, const uint32_t address)
     uint16_t bucket_index = symtable_bucket_index(symtable, key);
     Bucket *head_ptr = &symtable->buckets[bucket_index];
     // remove any old entry
-    if (!symtable_remove(symtable, key, NULL)) return false;
+    symtable_remove(symtable, key, NULL);
     // add a new entry; resize if needed
     char *str = malloc((strlen(key) + 1) * sizeof(char));
     if (str == NULL) return false;
