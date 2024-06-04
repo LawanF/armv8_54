@@ -10,7 +10,7 @@ static void offset_program_counter(MachineState machine_state, int32_t enc_addre
     write_program_counter(offset);
 }
 
-static void arith_instr_exec(char opc:2, char rd:5, uint64_t rn_data, uint64_t op2) {
+static void arith_instr_exec(unsigned char opc:2, unsigned char rd:5, uint64_t rn_data, uint64_t op2) {
 	switch (opc) {
 			static uint64_t res;
             case 0: {
@@ -106,16 +106,16 @@ static void read_write_to_mem(unsigned char sdt_l, uint64_t sdt_rt, uint64_t mem
 
 
 static void halt(void) {
-    char *filename = get_output_file();
+    unsigned char *filename = get_output_file();
     print_output(machine_state, filename);
     exit(1);
 }
 
 static void dp_imm(void) {
         DPImmOperandType dpimm_operand_type = (inst->dp_imm).operand_type;
-        char dp_imm_opc:2 = (inst->opc);
-        char dp_imm_rd:5 = (inst->rd);
-        char dp_imm_sf:1 = (inst->sf);
+        unsigned char dp_imm_opc:2 = (inst->opc);
+        unsigned char dp_imm_rd:5 = (inst->rd);
+        unsigned char dp_imm_sf:1 = (inst->sf);
         switch (dpimm_operand_type) {
             case ARITH_OPERAND: {
                 // get imm12, rn
@@ -125,8 +125,8 @@ static void dp_imm(void) {
 
                 uint32_t dp_imm_imm12 = (inst->dp_imm).operand.arith_operand.imm12;
 
-                char dp_imm_rn:5 = (inst->dp_imm).operand.arith_operand.rn;
-                char dp_imm_sh:1 = (inst->dp_imm).operand.arith_operand.sh;
+                unsigned char dp_imm_rn:5 = (inst->dp_imm).operand.arith_operand.rn;
+                unsigned char dp_imm_sh:1 = (inst->dp_imm).operand.arith_operand.sh;
 
                 if (sh==1) {
                     dp_imm_imm12 = dp_imm_imm12 << 12;
@@ -145,7 +145,7 @@ static void dp_imm(void) {
                                 // ^ separate 32 bit instr? do i need error checks for values that aren't 0 or 1
 
                                 uint16_t wide_move_imm16 = (inst->dp_imm).operand.wide_move_operand.imm16;
-                                char wide_move_hw:2 = (inst->dp_imm).operand.wide_move_operand.hw;
+                                unsigned char wide_move_hw:2 = (inst->dp_imm).operand.wide_move_operand.hw;
 
                                 uint32_t wide_move_operand = wide_move_imm16 << (wide_move_hw * 16);
                                 case 0: {
@@ -183,14 +183,14 @@ static void dp_imm(void) {
 
 
 static void dp_reg(void) {
-        char dp_reg_sf:1 = (inst->sf);
-        char dp_reg_opc:2 = (inst->opc);
-        char dp_reg_m:1 = (inst->dp_reg).m;
-        char dp_reg_opr:4 = (inst->dp_reg).dp_reg.opr;
-        char dp_reg_rm:5 = (inst->dp_reg).dp_reg.rm;
-        char dp_reg_operand:6 = (inst->dp_reg).operand;
-        char dp_reg_rn:5 = (inst->dp_reg).rn;
-        char dp_reg_rd:5 = (inst->rd);
+        unsigned char dp_reg_sf:1 = (inst->sf);
+        unsigned char dp_reg_opc:2 = (inst->opc);
+        unsigned char dp_reg_m:1 = (inst->dp_reg).m;
+        unsigned char dp_reg_opr:4 = (inst->dp_reg).dp_reg.opr;
+        unsigned char dp_reg_rm:5 = (inst->dp_reg).dp_reg.rm;
+        unsigned char dp_reg_operand:6 = (inst->dp_reg).operand;
+        unsigned char dp_reg_rn:5 = (inst->dp_reg).rn;
+        unsigned char dp_reg_rd:5 = (inst->rd);
         uint64_t dp_reg_rn_data = (machine_state.general_registers)[dp_reg_rn].data;
         uint64_t dp_reg_rm_data = (machine_state.general_registers)[dp_reg_rm].data;
         static uint64_t res;
@@ -261,8 +261,8 @@ static void dp_reg(void) {
             }
         } else {
             // multiply
-            char multiply_x:1 = GET_BIT(dp_reg_operand, 0);
-            char multiply_ra:5 = BIT_MASK(dp_reg_operand, 1, 5);
+            unsigned char multiply_x:1 = GET_BIT(dp_reg_operand, 0);
+            unsigned char multiply_ra:5 = BIT_MASK(dp_reg_operand, 1, 5);
 
             uint64_t multiply_ra_data = (machine_state.general_registers)[multiply_ra].data;
             if (multiply_x == 0) {
@@ -276,7 +276,6 @@ static void dp_reg(void) {
 
 
 static void sdt(void) {
-    unsigned char sdt_u:1 = (inst->single_data_transfer).u;
     unsigned char sdt_l:1 = (inst->single_data_transfer).l;
     unsigned char sdt_xn:5 = (inst->single_data_transfer).xn;
     unsigned char sdt_sf:1 = (inst->sf);
