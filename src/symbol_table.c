@@ -127,6 +127,22 @@ static bool bucket_contains(Bucket bucket, const char *key) {
     return false;
 }
 
+/** Performs linear search to find an entry associated with a given key in a bucket.
+ * If `dest` is not `NULL`, `dest` is written with the value if such an entry is found.
+ * @param bucket the bucket to be searched through
+ * @param dest a pointer to which to write the associated address, if it is found
+ * @returns `true` if and only if an entry with the given key exists in the bucket.
+ */
+static bool bucket_find(Bucket bucket, const char *key, uint16_t *dest) {
+    for (Bucket b = bucket; b != NULL; b = b->tail) {
+        if (strcmp(b->entry.label, key) == 0) {
+            if (dest != NULL) *dest = b->entry.address;
+            return true;
+        }
+    }
+    return false;
+}
+
 /** Removes (and frees) the first element with a given key in the symbol table.
  * The reference to the bucket given in `head_ptr` will be written with the head of the new list,
  * and if `dest` is not NULL, it will be written with the value associated with the `key` (if it exists).
@@ -235,7 +251,6 @@ bool symtable_remove(SymbolTable symtable, const char *key, uint16_t *dest) {
     Bucket *head_ptr = &symtable->buckets[bucket_index];
     return bucket_remove(head_ptr, key, dest);
 }
-
 
 /* Adds a given entry with key and associated address to the symbol table.
  * @param symtable the symbol table to add an entry added to
