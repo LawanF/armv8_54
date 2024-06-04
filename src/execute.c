@@ -1,6 +1,6 @@
 #include <stdint.h>
 #include <stdlib.h>
-#include "instructions.h"
+#include "instuctions.h"
 #include "registers.h"
 
 static void offset_program_counter(MachineState machine_state, int32_t enc_address) {
@@ -10,7 +10,7 @@ static void offset_program_counter(MachineState machine_state, int32_t enc_addre
     write_program_counter(offset);
 }
 
-static void arith_instr_exec(unsigned char opc:2, unsigned char rd:5, uint64_t rn_data, uint64_t op2) {
+static void arith_inst_exec(unsigned char opc:2, unsigned char rd:5, uint64_t rn_data, uint64_t op2) {
 	switch (opc) {
 			static uint64_t res;
             case 0: {
@@ -105,13 +105,13 @@ static void read_write_to_mem(unsigned char sdt_l, uint64_t sdt_rt, uint64_t mem
 }
 
 
-static void halt(void) {
+static void halt(MachineState machine_state) {
     unsigned char *filename = get_output_file();
     print_output(machine_state, filename);
     exit(1);
 }
 
-static void dp_imm(void) {
+static void dp_imm(MachineState machine_state, Instruction *inst) {
         DPImmOperandType dpimm_operand_type = (inst->dp_imm).operand_type;
         unsigned char dp_imm_opc:2 = (inst->opc);
         unsigned char dp_imm_rd:5 = (inst->rd);
@@ -121,7 +121,7 @@ static void dp_imm(void) {
                 // get imm12, rn
                 // get sh and see if need to left shift imm12
                 // stack pointer (rn/rd = 11111 case handled by write to register function)
-                // use opc to select specific instruction, update rd and condition (pstate) flags if needed
+                // use opc to select specific instuction, update rd and condition (pstate) flags if needed
 
                 uint32_t dp_imm_imm12 = (inst->dp_imm).operand.arith_operand.imm12;
 
@@ -133,7 +133,7 @@ static void dp_imm(void) {
                 }
                 uint64_t dp_imm_rn_data = (machine_state.general_registers)[dp_imm_rn].data;
 
-                arith_instr_exec(dp_imm_opc, dp_imm_rd, dp_imm_rn_data, dp_imm_imm12);
+                arith_inst_exec(dp_imm_opc, dp_imm_rd, dp_imm_rn_data, dp_imm_imm12);
 
                 break;
             }
@@ -141,8 +141,8 @@ static void dp_imm(void) {
                         switch (dp_imm_opc) {
                                 // get imm16, hw
                                 // operand = imm16 << (hw * 16)
-                                // In the 32-bit version of the move instruction, hw can only take the values 00 or 01 (representing shifts of 0 or 16 bits)
-                                // ^ separate 32 bit instr? do i need error checks for values that aren't 0 or 1
+                                // In the 32-bit version of the move instuction, hw can only take the values 00 or 01 (representing shifts of 0 or 16 bits)
+                                // ^ separate 32 bit inst? do i need error checks for values that aren't 0 or 1
 
                                 uint16_t wide_move_imm16 = (inst->dp_imm).operand.wide_move_operand.imm16;
                                 unsigned char wide_move_hw:2 = (inst->dp_imm).operand.wide_move_operand.hw;
@@ -182,7 +182,7 @@ static void dp_imm(void) {
 }
 
 
-static void dp_reg(void) {
+static void dp_reg(MachineState machine_state, Instruction *inst) {
         unsigned char dp_reg_sf:1 = (inst->sf);
         unsigned char dp_reg_opc:2 = (inst->opc);
         unsigned char dp_reg_m:1 = (inst->dp_reg).m;
@@ -199,7 +199,7 @@ static void dp_reg(void) {
             // get data from registers rn, rm
             // perform shift on rm for cases 00, 01, 10, case 11 only done in logical case
             // op2 = rm shifted operand many bits
-            // then execute instruction Rd = Rn (op) Op2
+            // then execute instuction Rd = Rn (op) Op2
             
             switch (dp_reg_shift) {
                 case 0: { dp_reg_rm_data = dp_reg_rm_data << dp_reg_operand  break;}
@@ -211,12 +211,12 @@ static void dp_reg(void) {
                 // arithmetic
                 // same as for dp_imm
 
-                arith_instr_exec(dp_reg_opc, dp_reg_rd, dp_reg_rn_data, dp_reg_rm_data);
+                arith_inst_exec(dp_reg_opc, dp_reg_rd, dp_reg_rn_data, dp_reg_rm_data);
             } else {
                 // logical
                 // handle shift case 11
                 // handle case of N = 0,1
-                // logical instructions
+                // logical instuctions
                 if (dp_reg_shift == 3) {
                     uint64_t right_shift = dp_reg_rm_data >> dp_reg_operand;
                     uint64_t rotate_bits = dp_reg_rm_data << (32-dp_reg_operand);
@@ -275,7 +275,7 @@ static void dp_reg(void) {
 }
 
 
-static void sdt(void) {
+static void sdt(MachineState machine_state, Instruction *inst) {
     unsigned char sdt_l:1 = (inst->single_data_transfer).l;
     unsigned char sdt_xn:5 = (inst->single_data_transfer).xn;
     unsigned char sdt_sf:1 = (inst->sf);
@@ -316,13 +316,13 @@ static void sdt(void) {
                 read_write_mem(sdt_l, sdt_rt, sdt_xn_data + uoffset);
 }
 
-static void load_lit(void) {
+static void load_lit(MachineState machine_state, Instruction *inst) {
     uint64_t sdt_pc = (machine_state.program_counter).data;
     int32_t sdt_simm19 = (inst->load_literal).simm19;
     read_write_mem(1, sdt_rt, sdt_pc + sdt_simm19 * 4);
 }
 
-static void branch(void) {
+static void branch(MachineState machine_state, Instruction *inst) {
     // decrement pc when editing
     // how to specify PC when writing to machine state
 
@@ -401,27 +401,27 @@ void execute(Instruction *inst) {
 	    MachineState machine_state = read_machine_state();
 
     	case HALT: {
-            halt();
+            halt(machine_state);
             break;
         }
         case DP_IMM: {
-            dp_imm();	    
+            dp_imm(machine_state, inst);	    
             break;
         }
         case DP_REG: {
-		    dp_reg();
+		    dp_reg(machine_state, inst);
             break;
         }
 	    case SINGLE_DATA_TRANSFER: {
-            sdt();
+            sdt(machine_state, inst);
             break;
         }
         case LOAD_LITERAL: {
-            load_lit();
+            load_lit(machine_state, inst);
             break;
         }
         case BRANCH: {
-            branch();
+            branch(machine_state, inst);
 	        break;
         }
     }
