@@ -122,7 +122,7 @@ static bool bucket_add(Bucket *head_ptr, Entry entry) {
  * @param dest a pointer to which to write the associated address, if it is found
  * @returns `true` if and only if an entry with the given key exists in the bucket.
  */
-static bool bucket_find(Bucket bucket, const char *key, uint16_t *dest) {
+static bool bucket_find(Bucket bucket, const char *key, uint32_t *dest) {
     for (Bucket b = bucket; b != NULL; b = b->tail) {
         if (strcmp(b->entry.label, key) == 0) {
             if (dest != NULL) *dest = b->entry.address;
@@ -149,7 +149,7 @@ static bool bucket_contains(Bucket bucket, const char *key) {
  * @param dest a pointer to which the previous associated value of `key` is written, if it exists.
  * @returns `true` if the element was removed, and `false` if the bucket is unmodified.
  */
-static bool bucket_remove(Bucket *head_ptr, const char *key, uint16_t *dest) {
+static bool bucket_remove(Bucket *head_ptr, const char *key, uint32_t *dest) {
     for (Bucket cur = *head_ptr, par = NULL; cur != NULL; par = cur, cur = cur->tail) {
         if (strcmp(cur->entry.label, key) == 0) {
             // match found
@@ -243,7 +243,7 @@ bool symtable_contains(SymbolTable symtable, const char *key) {
  * @param dest a pointer to which to write the associated address, if it is found
  * @returns `true` if and only if an entry with the given key exists in the symbol table.
  */
-bool symtable_find(SymbolTable symtable, const char *key, uint16_t *dest) {
+bool symtable_find(SymbolTable symtable, const char *key, uint32_t *dest) {
     uint16_t bucket_index = symtable_bucket_index(symtable, key);
     return bucket_find(symtable->buckets[bucket_index], key, dest);
 }
@@ -255,7 +255,7 @@ bool symtable_find(SymbolTable symtable, const char *key, uint16_t *dest) {
  * @param dest a pointer to which the previous associated address under `key` is written, if it exists.
  * @returns `true` if the entry was removed, and `false` if the symbol table was unmodified.
  */
-bool symtable_remove(SymbolTable symtable, const char *key, uint16_t *dest) {
+bool symtable_remove(SymbolTable symtable, const char *key, uint32_t *dest) {
     uint16_t bucket_index = symtable_bucket_index(symtable, key);
     Bucket *head_ptr = &symtable->buckets[bucket_index];
     if (bucket_remove(head_ptr, key, dest)) {
@@ -265,7 +265,7 @@ bool symtable_remove(SymbolTable symtable, const char *key, uint16_t *dest) {
     return false;
 }
 
-extern bool symtable_set(SymbolTable symtable, const char *key, const uint16_t address);
+extern bool symtable_set(SymbolTable symtable, const char *key, const uint32_t address);
 
 /** Resizes the symbol table to contain twice the number of buckets.
  * @param symtable the symbol table to resize
@@ -304,7 +304,7 @@ static bool symtable_resize(SymbolTable symtable) {
  * @param address the location in memory of the label
  * @returns `true` if addition succeeded, and `false` otherwise
  */
-bool symtable_set(SymbolTable symtable, const char *key, const uint16_t address) {
+bool symtable_set(SymbolTable symtable, const char *key, const uint32_t address) {
     uint16_t bucket_index = symtable_bucket_index(symtable, key);
     Bucket *head_ptr = &symtable->buckets[bucket_index];
     if (!bucket_contains(*head_ptr, key)) {

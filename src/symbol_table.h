@@ -13,8 +13,8 @@ void symtable_free(SymbolTable symtable);
 
 bool symtable_contains(SymbolTable symtable, const char *key);
 
-bool symtable_find(SymbolTable symtable, const char *key, uint16_t *dest);
+bool symtable_find(SymbolTable symtable, const char *key, uint32_t *dest);
 
-bool symtable_remove(SymbolTable symtable, const char *key, uint16_t *dest);
+bool symtable_remove(SymbolTable symtable, const char *key, uint32_t *dest);
 
-bool symtable_set(SymbolTable symtable, const char *key, const uint16_t address);
+bool symtable_set(SymbolTable symtable, const char *key, const uint32_t address);
