@@ -308,28 +308,25 @@ static bool symtable_resize(SymbolTable symtable) {
 bool symtable_set(SymbolTable symtable, const char *key, const uint32_t address) {
     uint16_t bucket_index = symtable_bucket_index(symtable, key);
     Bucket *head_ptr = &symtable->buckets[bucket_index];
-    if (!bucket_contains(*head_ptr, key)) {
-        // add a new entry; resize if needed
-        char *str = malloc((strlen(key) + 1) * sizeof(char));
-        if (str == NULL) return false;
-        strcpy(str, key);
-        Entry entry = { .label = str, .address = address };
-        if (!bucket_add(head_ptr, entry)) {
-            free(str);
-            return false;
-        }
-        symtable->size++;
-        // check if resizing succeeds as well
-        if (symtable->size + 1 >= symtable->num_buckets * symtable->load_factor
-            && !symtable_resize(symtable)) {
-            // remove the added entry
-            symtable->size--;
-            bucket_remove(head_ptr, key, NULL);
-            return false;
-        }
-        return true;
-    } else {
-        // an entry already exists in the symbol table; remove it and set the new one
-        return symtable_remove(symtable, key, NULL) && symtable_set(symtable, key, address);
+    // remove any old entry
+    if (!symtable_remove(symtable, key, NULL)) return false;
+    // add a new entry; resize if needed
+    char *str = malloc((strlen(key) + 1) * sizeof(char));
+    if (str == NULL) return false;
+    strcpy(str, key);
+    Entry entry = { .label = str, .address = address };
+    if (!bucket_add(head_ptr, entry)) {
+        free(str);
+        return false;
     }
+    symtable->size++;
+    // check if resizing succeeds as well
+    if (symtable->size + 1 >= symtable->num_buckets * symtable->load_factor
+        && !symtable_resize(symtable)) {
+        // remove the added entry
+        symtable->size--;
+        bucket_remove(head_ptr, key, NULL);
+        return false;
+    }
+    return true;
 }
