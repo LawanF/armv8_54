@@ -312,6 +312,7 @@ bool symtable_set(SymbolTable symtable, const char *key, const uint16_t address)
     uint16_t bucket_index = symtable_bucket_index(symtable, key);
     Bucket *head_ptr = &symtable->buckets[bucket_index];
     if (!bucket_contains(*head_ptr, key)) {
+        // add a new entry; resize if needed
         Entry *entry_ptr = malloc(sizeof(Entry));
         if (entry_ptr == NULL) return false;
         char *str = malloc(strlen(key));
@@ -325,6 +326,10 @@ bool symtable_set(SymbolTable symtable, const char *key, const uint16_t address)
             free(str);
             free(entry_ptr);
             return false;
+        }
+        // check if resizing succeeds as well
+        if (symtable->size + 1 >= symtable->num_buckets * symtable->load_factor) {
+            if (!symtable_resize(symtable)) return false;
         }
         symtable->size++;
         return true;
