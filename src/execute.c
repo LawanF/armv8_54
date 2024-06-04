@@ -3,9 +3,9 @@
 #include "instructions.h"
 #include "registers.h"
 
-static void offset_program_counter(MachineState *alter_machine_state, int32_t enc_address) {
+static void offset_program_counter(MachineState machine_state, int32_t enc_address) {
 	int64_t offset = enc_address*4;
-	offset += (machine_state->program_counter.data);
+	offset += (machine_state.program_counter.data);
     offset -= 4;
     write_program_counter(offset);
 }
@@ -13,92 +13,78 @@ static void offset_program_counter(MachineState *alter_machine_state, int32_t en
 static void arith_instr_exec(char opc:2, char rd:5, uint64_t rn_data, uint64_t op2) {
 	switch (opc) {
 			static uint64_t res;
-                        case 0: {
-                            write_general_registers(rd, rn_data + op2);
-                            break;
-                        }
-                        case 1: {
-                            // INT32 ? OR INT64 - HOW ARE WE HANDLING REGISTER SIZE
+            case 0: {
+                write_general_registers(rd, rn_data + op2);
+                break;
+            }
+            case 1: {
+                // INT32 ? OR INT64 - HOW ARE WE HANDLING REGISTER SIZE
 
+                res = rn_data + dp_imm_imm12;
+                write_general_registers(rd, res);
 
-                            res = rn_data + dp_imm_imm12;
+                set_pstate_flag('N', GET_BIT(res, 63));
+          
+                if (res == 0) {
+                    // set zero flag to 1
+                    set_pstate_flag('Z', 1);
+                } else {
+                    // set zero flag to 0
+                    set_pstate_flag('Z', 0);
+                }
+                if (res < rn_data || res < dp_imm+imm12) {
+                    // set carry flag to 1
+                    set_pstate_flag('C', 1);
+                } else {
+                    // set carry flag to 0
+                    set_pstate_flag('C', 0);
+                }
+                if ((rn_data > 0 && op2 > 0 && res < 0) || (rn_data < 0 && op2 < 0 && res > 0)) {
+                    // set signed overflow flag to 1
+                    set_pstate_flag('V', 1);
+                } else {
+                    // set signed overflow flag to 0
+                    set_pstate_flag('V', 0);
+                }
 
-
-                            write_general_registers(rd, res);
-
-
-                            if (res < 0) {
-                                // set sign flag to 1
-                                set_pstate_flag('N', 1);
-                            } else {
-                                // set sign flag to 0
-                                set_pstate_flag('N', 0);
-                            }
-                            if (res == 0) {
-                                // set zero flag to 1
-                                set_pstate_flag('Z', 1);
-                            } else {
-                                // set zero flag to 0
-                                set_pstate_flag('Z', 0);
-                            }
-                            if (res < rn_data || res < dp_imm+imm12) {
-                                // set carry flag to 1
-                                set_pstate_flag('C', 1);
-                            } else {
-                                // set carry flag to 0
-                                set_pstate_flag('C', 0);
-                            }
-                            if ((rn_data > 0 && op2 > 0 && res < 0) || (rn_data < 0 && op2 < 0 && res > 0)) {
-                                // set signed overflow flag to 1
-                                set_pstate_flag('V', 1);
-                            } else {
-                                // set signed overflow flag to 0
-                                set_pstate_flag('V', 0);
-                            }
-
-                            // HOW ARE WE HANDLING SIGNED / UNSIGNED INTEGERS
-                            // figure out how we are handling the size of the register - is the result meant to be stored as 32 or 64 bit int
-                            break;
-                        }
-                        case 2: {
-                            write_general_registers(rd, rn_data - op2);
-                            break;
-                        }
-                        case 3: {
-                            // INT32 ? OR INT64 - HOW ARE WE HANDLING REGISTER SIZE
-                            res = rn_data - op2;
-                            write_general_registers(rd, res);
-                            if (res < 0) {
-                                // set sign flag to 1
-                                set_pstate_flag('N', 1);
-                            } else {
-                                // set sign flag to 0
-                                set_pstate_flag('N', 0);
-                            }
-                            if (res == 0) {
-                                // set zero flag to 1
-                                set_pstate_flag('Z', 1);
-                            } else {
-                                // set zero flag to 0
-                                set_pstate_flag('Z', 0);
-                            }
-                            if (res < rn_data || res < op2) {
-                                // set carry flag to 1
-                                set_pstate_flag('C', 1);
-			                } else {
-                                // set carry flag to 0
-                                set_pstate_flag('C', 0);
-                            }
-                            if ((rn_data < 0 && op2 > 0 && res > 0) || (rn_data > 0 && op2 < 0 && res < 0)) {
-                                // set signed overflow flag to 1
-                                set_pstate_flag('V', 1);
-                            } else {
-                                // set signed overflow flag to 0
-                                set_pstate_flag('V', 0);
-                            }
-                            break;
-                        }
-                    }
+                // HOW ARE WE HANDLING SIGNED / UNSIGNED INTEGERS
+                // figure out how we are handling the size of the register - is the result meant to be stored as 32 or 64 bit int
+                break;
+            }
+            case 2: {
+                write_general_registers(rd, rn_data - op2);
+                break;
+            }
+            case 3: {
+                // INT32 ? OR INT64 - HOW ARE WE HANDLING REGISTER SIZE
+                res = rn_data - op2;
+                write_general_registers(rd, res);
+                
+                set_pstate_flag('N', GET_BIT(res, 63));
+                if (res == 0) {
+                    // set zero flag to 1
+                    set_pstate_flag('Z', 1);
+                } else {
+                    // set zero flag to 0
+                    set_pstate_flag('Z', 0);
+                }
+                if (res < rn_data || res < op2) {
+                    // set carry flag to 1
+                    set_pstate_flag('C', 1);
+                } else {
+                    // set carry flag to 0
+                    set_pstate_flag('C', 0);
+                }
+                if ((rn_data < 0 && op2 > 0 && res > 0) || (rn_data > 0 && op2 < 0 && res < 0)) {
+                    // set signed overflow flag to 1
+                    set_pstate_flag('V', 1);
+                } else {
+                    // set signed overflow flag to 0
+                    set_pstate_flag('V', 0);
+                }
+                break;
+            }
+      }
 }
 
 static void read_write_to_mem(unsigned char sdt_l, uint64_t sdt_rt, uint64_t mem_address) {
@@ -113,7 +99,7 @@ static void read_write_to_mem(unsigned char sdt_l, uint64_t sdt_rt, uint64_t mem
             // read from rt
             // write to mem
 
-            static uint64_t data_store = (machine_state->general_registers)[sdt_rt];
+            static uint64_t data_store = (machine_state.general_registers)[sdt_rt];
             writemem64(mem_address, data_store);
         }
 }
@@ -145,7 +131,7 @@ static void dp_imm(void) {
                 if (sh==1) {
                     dp_imm_imm12 = dp_imm_imm12 << 12;
                 }
-                uint64_t dp_imm_rn_data = (machine_state->general_registers)[dp_imm_rn].data;
+                uint64_t dp_imm_rn_data = (machine_state.general_registers)[dp_imm_rn].data;
 
                 arith_instr_exec(dp_imm_opc, dp_imm_rd, dp_imm_rn_data, dp_imm_imm12);
 
@@ -180,7 +166,7 @@ static void dp_imm(void) {
                                     // mask rd data around bits that will be replaced with operand (dependent on hw * 16) 
                                     // and with operand bits
                                     // in 32 bit version zero extend to 64
-                                    uint64_t wide_move_rd_data = (machine_state->general_registers)[dp_imm_rd].data;
+                                    uint64_t wide_move_rd_data = (machine_state.general_registers)[dp_imm_rd].data;
                                     if (hw == 0) {
                                        wide_move_rd_data = BIT_MASK(wide_move_rd_data, 16, 31) << 16;
                                     } else if (hw == 1) {
@@ -205,8 +191,8 @@ static void dp_reg(void) {
         char dp_reg_operand:6 = (inst->dp_reg).operand;
         char dp_reg_rn:5 = (inst->dp_reg).rn;
         char dp_reg_rd:5 = (inst->rd);
-        uint64_t dp_reg_rn_data = (machine_state->general_registers)[dp_reg_rn].data;
-        uint64_t dp_reg_rm_data = (machine_state->general_registers)[dp_reg_rm].data;
+        uint64_t dp_reg_rn_data = (machine_state.general_registers)[dp_reg_rn].data;
+        uint64_t dp_reg_rm_data = (machine_state.general_registers)[dp_reg_rm].data;
         static uint64_t res;
         if (dp_reg_m == 0) {
             char dp_reg_shift = (GET_BIT(dp_reg_opr, 1) << 1) & (GET_BIT(dp_reg_opr, 2));
@@ -257,13 +243,7 @@ static void dp_reg(void) {
                     case 3: {
                     res = dp_reg_rn_data & dp_reg_rm_data;
                     // set flags 
-                    if (res < 0) {
-                        // set sign flag N to 1
-                        set_pstate_flag('N', 1);
-                    } else {
-                        // set sign flag N to 0
-                        set_pstate_flag('N', 0);
-                    }
+                    set_pstate_flag('N', GET_BIT(res, 63));
                     if (res == 0) {
                         // set zero register Z to 1
                         set_pstate_flag('Z', 1);
@@ -284,7 +264,7 @@ static void dp_reg(void) {
             char multiply_x:1 = GET_BIT(dp_reg_operand, 0);
             char multiply_ra:5 = BIT_MASK(dp_reg_operand, 1, 5);
 
-            uint64_t multiply_ra_data = (machine_state->general_registers)[multiply_ra].data;
+            uint64_t multiply_ra_data = (machine_state.general_registers)[multiply_ra].data;
             if (multiply_x == 0) {
                 res = multiply_ra_data + (dp_reg_rn_data * dp_reg_rm_data);
             } else {
@@ -302,14 +282,14 @@ static void sdt(void) {
     unsigned char sdt_sf:1 = (inst->sf);
     unsigned char sdt_opc:2 = (inst->opc);
     unsigned char sdt_rt:4 = (inst->rt);
-    uint64_t sdt_rt_data = (machine_state->general_registers)[sdt_rt].data;
-    uint64_t sdt_xn_data = (machine_state->general_registers)[sdt_xn].data;
+    uint64_t sdt_rt_data = (machine_state.general_registers)[sdt_rt].data;
+    uint64_t sdt_xn_data = (machine_state.general_registers)[sdt_xn].data;
     SDTOffsetType sdt_type = (inst->single_data_transfer).offset_type;
 
     switch (sdt_type) {
             case REGISTER_OFFSET: {
                 unsigned char sdt_xm:5 = (inst->single_data_transfer).offset.xm;
-                uint64_t sdt_xm_data =  (machine_state->general_registers)[sdt_xm].data;
+                uint64_t sdt_xm_data =  (machine_state.general_registers)[sdt_xm].data;
                 uint64_t mem_address = sdt_xm_data + sdt_xn_data;
                 read_write_mem(sdt_l, sdt_rt, mem_address);
             }
@@ -338,7 +318,7 @@ static void sdt(void) {
 }
 
 static void load_lit(void) {
-    uint64_t sdt_pc = (machine_state->program_counter).data;
+    uint64_t sdt_pc = (machine_state.program_counter).data;
     int32_t sdt_simm19 = (inst->load_literal).simm19;
     read_write_mem(1, sdt_rt, sdt_pc + sdt_simm19 * 4);
 }
@@ -353,7 +333,7 @@ static void branch(void) {
     switch (branch_operand_type) {
 
         case UNCOND_BRANCH: {
-            offset_program_counter(*machine_state, (inst->branch).operand.uncond_branch.simm26);
+            offset_program_counter(machine_state, (inst->branch).operand.uncond_branch.simm26);
             break;
             // use machine state function to write PC = PC + simm26*4 (sign extend to 64 bit)
         }
@@ -361,51 +341,51 @@ static void branch(void) {
             // use machine state function to read register branch_xn
             // then write address in branch_xn to PC
             char register_branch_xn:5 = (inst->branch).operand.register_branch.xn;
-            write_program_counter((machine_state->general_registers)[register_branch_xn].data);
+            write_program_counter((machine_state.general_registers)[register_branch_xn].data);
             break;
         }
         case COND_BRANCH: {
                 char eval_cond:4 = (inst->branch).operand.cond_branch.cond;
-                ProcessorStateRegister branch_pstate = (machine_state->pstate);
+                ProcessorStateRegister branch_pstate = (machine_state.pstate);
                 switch (eval_cond) {
                     case 0: {
                         if (branch_pstate.zero == 1) {
-                            offset_program_counter(*machine_state, (inst->branch).operand.cond_branch.simm19);
+                            offset_program_counter(machine_state, (inst->branch).operand.cond_branch.simm19);
                         }
                         break;
                     }
                     case 1: {
                         if (branch_pstate.zero == 0) {
-                            offset_program_counter(*machine_state, (inst->branch).operand.cond_branch.simm19);
+                            offset_program_counter(machine_state, (inst->branch).operand.cond_branch.simm19);
                         }
                         break;
                     }
                     case 10: {
                         if (branch_pstate.neg == branch_pstate.overflow) {
-                            offset_program_counter(*machine_state, (inst->branch).operand.cond_branch.simm19);
+                            offset_program_counter(machine_state, (inst->branch).operand.cond_branch.simm19);
                         }
                         break;
                     }
                     case 11: {
                         if (branch_pstate.neg != branch_pstate.overflow) {
-                            offset_program_counter(*machine_state, (inst->branch).operand.cond_branch.simm19);
+                            offset_program_counter(machine_state, (inst->branch).operand.cond_branch.simm19);
                         }
                         break;
                     }
                     case 12: {
                         if (branch_pstate.zero == 0 && branch_pstate.neg == branch_pstate.overflow) {
-                            offset_program_counter(*machine_state, (inst->branch).operand.cond_branch.simm19);
+                            offset_program_counter(machine_state, (inst->branch).operand.cond_branch.simm19);
                         }
                         break;
                     }
                     case 13: {
                         if (!(branch_pstate.zero == 0 && branch_pstate.neg == branch_pstate.overflow)) {
-                            offset_program_counter(*machine_state, (inst->branch).operand.cond_branch.simm19);
+                            offset_program_counter(machine_state, (inst->branch).operand.cond_branch.simm19);
                         }
                         break;
                     }
                     case 14: {
-                        offset_program_counter(*machine_state, (inst->branch).operand.cond_branch.simm19);
+                        offset_program_counter(machine_state, (inst->branch).operand.cond_branch.simm19);
                         break;
                     }
                 }
@@ -419,7 +399,7 @@ void execute(Instruction *inst) {
     enum CommandFormat inst_command_format = inst->command_format;
     switch (inst_command_format) {
         
-	    MachineState *machine_state = read_machine_state();
+	    MachineState machine_state = read_machine_state();
 
     	case HALT: {
             halt();
