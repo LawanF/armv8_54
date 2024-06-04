@@ -120,7 +120,7 @@ static void arith_inst_exec(unsigned char opc:2, unsigned char rd:5, uint64_t rn
       }
 }
 
-static void read_write_to_mem(unsigned char sdt_sf, unsigned char sdt_l, uint64_t sdt_rt, uint64_t mem_address) {
+static void read_write_to_mem(unsigned char sdt_l, uint64_t sdt_rt, uint64_t mem_address, unsigned char sdt_sf) {
         if (sdt_l == 1) {
             // read from mem 
             // write to rt
@@ -230,7 +230,7 @@ static void dp_imm(MachineState machine_state, Instruction *inst) {
                         break;
                     }
                     case 3: {
-                        movek(dp_imm_rd, wide_move_operand);
+                        movk(dp_imm_rd, wide_move_operand);
                         break;
                     }
             }
@@ -355,26 +355,26 @@ static void sdt(MachineState machine_state, Instruction *inst) {
             unsigned char sdt_xm:5 = (inst->single_data_transfer).offset.xm;
             uint64_t sdt_xm_data =  (machine_state.general_registers)[sdt_xm].data;
             uint64_t mem_address = sdt_xm_data + sdt_xn_data;
-            read_write_mem(sdt_l, sdt_rt, mem_address);
+            read_write_mem(sdt_l, sdt_rt, mem_address, sdt_sf);
             break;
         }
         case PRE_INDEX_OFFSET: {
             int16_t sdt_simm9 = (inst->single_data_transfer).offset.simm9;
             uint64_t mem_address = sdt_xn_data + sdt_simm9;
-            read_write_mem(sdt_l, sdt_rt, mem_address);
+            read_write_mem(sdt_l, sdt_rt, mem_address, sdt_sf);
             write_general_registers(sdt_xn, mem_address);
             break;
         }
         case POST_INDEX_OFFSET: {
             int16_t sdt_simm9 = (inst->single_data_transfer).offset.simm9;
-            read_write_mem(sdt_l, sdt_rt, sdt_xn_data);
+            read_write_mem(sdt_l, sdt_rt, sdt_xn_data, sdt_sf);
             write_general_registers(sdt_xn, sdt_xn_data + sdt_simm9);
             break;
         }
         case UNSIGNED_OFFSET: {
             uint16_t sdt_imm12 = (inst->single_data_transfer).offset.imm12;
             uint64_t uoffset = sdt_imm12 * 8;
-            read_write_mem(sdt_l, sdt_rt, sdt_xn_data + uoffset);
+            read_write_mem(sdt_l, sdt_rt, sdt_xn_data + uoffset, sdt_sf);
             break;
         }
     }
@@ -383,7 +383,8 @@ static void sdt(MachineState machine_state, Instruction *inst) {
 static void load_lit(MachineState machine_state, Instruction *inst) {
     uint64_t sdt_pc = (machine_state.program_counter).data;
     int32_t sdt_simm19 = (inst->load_literal).simm19;
-    read_write_mem(1, sdt_rt, sdt_pc + sdt_simm19 * 4);
+    unsigned char sdt_sf:1 = (inst->sf);
+    read_write_mem(1, sdt_rt, sdt_pc + sdt_simm19 * 4, sdt_sf);
 }
 
 static void branch(MachineState machine_state, Instruction *inst) {
