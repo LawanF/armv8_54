@@ -323,14 +323,15 @@ bool symtable_set(SymbolTable symtable, const char *key, const uint32_t address)
             free(entry_ptr);
             return false;
         }
+        symtable->size++;
         // check if resizing succeeds as well
         if (symtable->size + 1 >= symtable->num_buckets * symtable->load_factor
             && !symtable_resize(symtable)) {
             // remove the added entry
+            symtable->size--;
             bucket_remove(head_ptr, key, NULL);
             return false;
         }
-        symtable->size++;
         return true;
     } else {
         // an entry already exists in the symbol table; remove it and set the new one
