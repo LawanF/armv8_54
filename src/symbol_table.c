@@ -269,6 +269,39 @@ bool symtable_remove(SymbolTable symtable, const char *key, uint16_t *dest) {
     return false;
 }
 
+extern bool symtable_set(SymbolTable symtable, const char *key, const uint16_t address);
+
+/** Resizes the symbol table to contain twice the number of buckets.
+ * @param symtable the symbol table to resize
+ * @returns `true` if resizing has succeeded (i.e. memory allocation has succeeded), and `false` otherwise.
+ */
+static bool symtable_resize(SymbolTable symtable) {
+    if (symtable->num_buckets >= MAX_NUM_BUCKETS / 2) return false;
+    SymbolTable new_table = symtable_num_buckets(symtable->load_factor, symtable->num_buckets * 2);
+    if (new_table == NULL) return false;
+    Entry *entries = symtable_entries(symtable);
+    if (entries == NULL) {
+        symtable_free(new_table);
+        return false;
+    }
+    bool success = true;
+    for (int i = 0; i < symtable->size; i++) {
+        Entry e = entries[i];
+        success = success && symtable_set(new_table, e.label, e.address);
+    }
+    free(entries);
+    if (!success) {
+        // destroy the temporary table
+        symtable_free(symtable);
+        return false;
+    } else {
+        // clear the buckets in the old symbol table and copy the new ones over
+        symtable_free_buckets(symtable);
+        memcpy(symtable, new_table, sizeof(struct symtable));
+        return true;
+    }
+}
+
 /** Adds a given entry with key and associated address to the symbol table.
  * @param symtable the symbol table to add an entry added to
  * @param key the label to be associated
