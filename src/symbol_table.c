@@ -1,6 +1,7 @@
 /* Implementation for a symbol table.
  * This is a (hash)map from labels (strings, aka char[]) to memory addresses (unsigned integers). */
 
+#include "symbol_table.h"
 #include <assert.h>
 #include <stdlib.h>
 #include <stdint.h>
@@ -41,12 +42,12 @@ struct bucket {
  * @property buckets a basal pointer to an array of `Bucket`s
  * @property num_buckets the current number of buckets
  */
-typedef struct symtable {
+struct symtable {
     float load_factor;
     Bucket *buckets;
     uint16_t size;
     uint16_t num_buckets;
-} *SymbolTable;
+};
 
 /** Creates a symbol table with a given number of buckets.
  * A precondition is that the number of buckets is a power of two.
@@ -242,7 +243,7 @@ bool symtable_contains(SymbolTable symtable, const char *key) {
  * @param dest a pointer to which to write the associated address, if it is found
  * @returns `true` if and only if an entry with the given key exists in the symbol table.
  */
-static bool symtable_find(SymbolTable symtable, const char *key, uint16_t *dest) {
+bool symtable_find(SymbolTable symtable, const char *key, uint16_t *dest) {
     uint16_t bucket_index = symtable_bucket_index(symtable, key);
     return bucket_find(symtable->buckets[bucket_index], key, dest);
 }
@@ -310,7 +311,7 @@ bool symtable_set(SymbolTable symtable, const char *key, const uint16_t address)
         // add a new entry; resize if needed
         Entry *entry_ptr = malloc(sizeof(Entry));
         if (entry_ptr == NULL) return false;
-        char *str = malloc(strlen(key));
+        char *str = malloc((strlen(key) + 1) * sizeof(char));
         if (str == NULL) {
             free(entry_ptr);
             return false;
