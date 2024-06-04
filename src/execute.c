@@ -10,18 +10,26 @@ static void offset_program_counter(MachineState machine_state, int32_t enc_addre
     write_program_counter(offset);
 }
 
-static void add(unsigned char rd:5, uint64_t rn_data, uint64_t op2) {
-    write_general_registers(rd, rn_data + op2);
+static void add(unsigned char rd:5, uint64_t rn_data, uint64_t op2, unsigned char sf:1) {
+    uint64_t res = rn_data + op2;
+    if (sf == 0) {
+        write_general_registers(rd,(uint64_t)(uint32_t)res);
+    } else {
+        write_general_registers(rd, res);
+    }
 }
 
-static void adds(unsigned char rd:5, uint64_t rn_data, uint64_t op2) {
-    // INT32 ? OR INT64 - HOW ARE WE HANDLING REGISTER SIZE
-
-    res = rn_data + dp_imm_imm12;
-    write_general_registers(rd, res);
-
-    set_pstate_flag('N', GET_BIT(res, 63));
-
+static void adds(unsigned char rd:5, uint64_t rn_data, uint64_t op2, unsigned char sf:1) {
+    uint64_t res = rn_data + dp_imm_imm12;
+    
+    if (sf == 0) { 
+        res = (uint64_t)(uint32_t)res
+        write_general_registers(rd, res);
+        set_pstate_flag('N', GET_BIT(res, 31));
+    else {
+        write_general_registers(rd, res);
+        set_pstate_flag('N', GET_BIT(res, 63));
+    }
     if (res == 0) {
         // set zero flag to 1
         set_pstate_flag('Z', 1);
@@ -48,16 +56,25 @@ static void adds(unsigned char rd:5, uint64_t rn_data, uint64_t op2) {
     // figure out how we are handling the size of the register - is the result meant to be stored as 32 or 64 bit int
 }
 
-static void sub(unsigned char rd:5, uint64_t rn_data, uint64_t op2) {
-    write_general_registers(rd, rn_data - op2);
+static void sub(unsigned char rd:5, uint64_t rn_data, uint64_t op2, unsigned char sf:1) {
+    uint64_t res = rn_data - op2;
+    if (sf == 0) {
+        write_general_registers(rd,(uint64_t)(uint32_t)res);
+    } else {
+        write_general_registers(rd, res);
+    }
 }
 
-static void subs(unsigned char rd:5, uint64_t rn_data, uint64_t op2) {
-    // INT32 ? OR INT64 - HOW ARE WE HANDLING REGISTER SIZE
-    res = rn_data - op2;
-    write_general_registers(rd, res);
-
-    set_pstate_flag('N', GET_BIT(res, 63));
+static void subs(unsigned char rd:5, uint64_t rn_data, uint64_t op2, unsigned char sf:1) {
+    uint64_t res = rn_data - op2;
+    if (sf == 0) {
+        res = (uint64_t)(uint32_t)res
+        write_general_registers(rd, res);
+        set_pstate_flag('N', GET_BIT(res, 31));
+    else {
+        write_general_registers(rd, res);
+        set_pstate_flag('N', GET_BIT(res, 63));
+    }
     if (res == 0) {
         // set zero flag to 1
         set_pstate_flag('Z', 1);
@@ -81,23 +98,23 @@ static void subs(unsigned char rd:5, uint64_t rn_data, uint64_t op2) {
     }
 }
 
-static void arith_inst_exec(unsigned char opc:2, unsigned char rd:5, uint64_t rn_data, uint64_t op2) {
+static void arith_inst_exec(unsigned char opc:2, unsigned char rd:5, uint64_t rn_data, uint64_t op2, unsigned char sf:1) {
 	switch (opc) {
 			static uint64_t res;
             case 0: {
-                add(rd, rn_data, op2);
+                add(rd, rn_data, op2, sf);
                 break;
             }
             case 1: {
-                adds(rd, rn_data, op2);
+                adds(rd, rn_data, op2, sf);
                 break;
             }
             case 2: {
-                sub(rd, rn_data, op2);
+                sub(rd, rn_data, op2, sf);
                 break;
             }
             case 3: {
-                subs(rd, rn_data, op2);
+                subs(rd, rn_data, op2, sf);
                 break;
             }
       }
@@ -189,7 +206,7 @@ static void dp_imm(MachineState machine_state, Instruction *inst) {
             }
             uint64_t dp_imm_rn_data = (machine_state.general_registers)[dp_imm_rn].data;
 
-            arith_inst_exec(dp_imm_opc, dp_imm_rd, dp_imm_rn_data, dp_imm_imm12);
+            arith_inst_exec(dp_imm_opc, dp_imm_rd, dp_imm_rn_data, dp_imm_imm12, dp_imm_sf);
 
             break;
         }
@@ -252,7 +269,7 @@ static void dp_reg(MachineState machine_state, Instruction *inst) {
                 // arithmetic
                 // same as for dp_imm
 
-                arith_inst_exec(dp_reg_opc, dp_reg_rd, dp_reg_rn_data, dp_reg_rm_data);
+                arith_inst_exec(dp_reg_opc, dp_reg_rd, dp_reg_rn_data, dp_reg_rm_data, dp_reg_sf);
             } else {
                 // logical
                 // handle shift case 11
