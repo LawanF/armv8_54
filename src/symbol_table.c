@@ -100,7 +100,6 @@ static void bucket_free_all(Bucket head) {
         next_head = bucket->tail;
         free(bucket);
     }
-    free(head);
 }
 
 /** Prepends an element to the given bucket, modifying it in place.
@@ -113,18 +112,6 @@ static bool bucket_add(Bucket *head_ptr, Entry entry) {
     *prepended = (struct bucket) { .entry = entry, .tail = *head_ptr };
     *head_ptr = prepended;
     return true;
-}
-
-/** Uses linear search to determine whether an entry with a given key is in the bucket.
- * A precondition is that the key is not `NULL`.
- * @param bucket the bucket to be searched through
- * @returns `true` if and only if an entry is in the bucket.
- */
-static bool bucket_contains(Bucket bucket, const char *key) {
-    for (Bucket b = bucket; b != NULL; b = b->tail) {
-        if (strcmp(b->entry.label, key) == 0) return true;
-    }
-    return false;
 }
 
 /** Performs linear search to find an entry associated with a given key in a bucket.
@@ -144,6 +131,15 @@ static bool bucket_find(Bucket bucket, const char *key, uint16_t *dest) {
     return false;
 }
 
+/** Uses linear search to determine whether an entry with a given key is in the bucket.
+ * A precondition is that the key is not `NULL`.
+ * @param bucket the bucket to be searched through
+ * @returns `true` if and only if an entry is in the bucket.
+ */
+static bool bucket_contains(Bucket bucket, const char *key) {
+    return bucket_find(bucket, key, NULL);
+}
+
 /** Removes (and frees) the first element with a given key in the symbol table.
  * The reference to the bucket given in `head_ptr` will be written with the head of the new list,
  * and if `dest` is not NULL, it will be written with the value associated with the `key` (if it exists).
@@ -153,8 +149,7 @@ static bool bucket_find(Bucket bucket, const char *key, uint16_t *dest) {
  * @returns `true` if the element was removed, and `false` if the bucket is unmodified.
  */
 static bool bucket_remove(Bucket *head_ptr, const char *key, uint16_t *dest) {
-    Bucket par = NULL;
-    for (Bucket cur = *head_ptr; cur != NULL; cur = cur->tail) {
+    for (Bucket cur = *head_ptr, par = NULL; cur != NULL; par = cur, cur = cur->tail) {
         if (strcmp(cur->entry.label, key) == 0) {
             // match found
             if (par == NULL) {
@@ -233,7 +228,7 @@ static uint16_t symtable_bucket_index(SymbolTable symtable, const char *key) {
 /** Determines whether an entry under a given key exists in a symbol table
  * @param symtable the symbol table to be searched
  * @param key the symbol to be searched for in the symbol table
- * @returns `true` if a value is associated to the key in the map, and `false` otherwise
+ * @returns `true` if an address is associated to the key in the map, and `false` otherwise
  */
 bool symtable_contains(SymbolTable symtable, const char *key) {
     uint16_t bucket_index = symtable_bucket_index(symtable, key);
@@ -252,8 +247,8 @@ static bool symtable_find(SymbolTable symtable, const char *key, uint16_t *dest)
     return bucket_find(symtable->buckets[bucket_index], key, dest);
 }
 
-/** Removes the entry with a given key in the symbol table, writing the previous associated
- * address to `dest`.
+/** Removes the entry with a given key in the symbol table.
+ * If `dest` is not `NULL`, `dest` is written with the previous associated address under that key.
  * @param head_ptr the given symbol table
  * @param key the string to search for in the bucket
  * @param dest a pointer to which the previous associated address under `key` is written, if it exists.
@@ -303,7 +298,7 @@ static bool symtable_resize(SymbolTable symtable) {
 }
 
 /** Adds a given entry with key and associated address to the symbol table.
- * @param symtable the symbol table to add an entry added to
+ * @param symtable the symbol table to add to
  * @param key the label to be associated
  * @param address the location in memory of the label
  * @returns `true` if addition succeeded, and `false` otherwise
@@ -328,13 +323,16 @@ bool symtable_set(SymbolTable symtable, const char *key, const uint16_t address)
             return false;
         }
         // check if resizing succeeds as well
-        if (symtable->size + 1 >= symtable->num_buckets * symtable->load_factor) {
-            if (!symtable_resize(symtable)) return false;
+        if (symtable->size + 1 >= symtable->num_buckets * symtable->load_factor
+            && !symtable_resize(symtable)) {
+            // remove the added entry
+            bucket_remove(head_ptr, key, NULL);
+            return false;
         }
         symtable->size++;
         return true;
     } else {
-        // an entry already exists in the symbol table, remove this from the symbol table
+        // an entry already exists in the symbol table; remove it and set the new one
         return symtable_remove(symtable, key, NULL) && symtable_set(symtable, key, address);
     }
 }
