@@ -1,6 +1,6 @@
 #include <stdint.h>
 #include <stdlib.h>
-#include "instuctions.h"
+#include "execute.h"
 #include "registers.h"
 
 static void offset_program_counter(MachineState machine_state, int32_t enc_address) {
