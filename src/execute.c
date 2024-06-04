@@ -6,8 +6,8 @@
 static void offset_program_counter(MachineState *alter_machine_state, int32_t enc_address) {
 	int64_t offset = enc_address*4;
 	offset += (machine_state->program_counter.data);
-        offset -= 4;
-        write_program_counter(offset);
+    offset -= 4;
+    write_program_counter(offset);
 }
 
 static void arith_instr_exec(char opc:2, char rd:5, uint64_t rn_data, uint64_t op2) {
@@ -29,23 +29,31 @@ static void arith_instr_exec(char opc:2, char rd:5, uint64_t rn_data, uint64_t o
 
                             if (res < 0) {
                                 // set sign flag to 1
+                                set_pstate_flag('N', 1);
                             } else {
                                 // set sign flag to 0
+                                set_pstate_flag('N', 0);
                             }
                             if (res == 0) {
                                 // set zero flag to 1
+                                set_pstate_flag('Z', 1);
                             } else {
                                 // set zero flag to 0
+                                set_pstate_flag('Z', 0);
                             }
                             if (res < rn_data || res < dp_imm+imm12) {
                                 // set carry flag to 1
+                                set_pstate_flag('C', 1);
                             } else {
                                 // set carry flag to 0
+                                set_pstate_flag('C', 0);
                             }
                             if ((rn_data > 0 && op2 > 0 && res < 0) || (rn_data < 0 && op2 < 0 && res > 0)) {
                                 // set signed overflow flag to 1
+                                set_pstate_flag('V', 1);
                             } else {
                                 // set signed overflow flag to 0
+                                set_pstate_flag('V', 0);
                             }
 
                             // HOW ARE WE HANDLING SIGNED / UNSIGNED INTEGERS
@@ -62,23 +70,31 @@ static void arith_instr_exec(char opc:2, char rd:5, uint64_t rn_data, uint64_t o
                             write_general_registers(rd, res);
                             if (res < 0) {
                                 // set sign flag to 1
+                                set_pstate_flag('N', 1);
                             } else {
                                 // set sign flag to 0
+                                set_pstate_flag('N', 0);
                             }
                             if (res == 0) {
                                 // set zero flag to 1
+                                set_pstate_flag('Z', 1);
                             } else {
                                 // set zero flag to 0
+                                set_pstate_flag('Z', 0);
                             }
                             if (res < rn_data || res < op2) {
                                 // set carry flag to 1
-			    } else {
+                                set_pstate_flag('C', 1);
+			                } else {
                                 // set carry flag to 0
+                                set_pstate_flag('C', 0);
                             }
                             if ((rn_data < 0 && op2 > 0 && res > 0) || (rn_data > 0 && op2 < 0 && res < 0)) {
                                 // set signed overflow flag to 1
+                                set_pstate_flag('V', 1);
                             } else {
                                 // set signed overflow flag to 0
+                                set_pstate_flag('V', 0);
                             }
                             break;
                         }
@@ -116,22 +132,22 @@ static void dp_imm(void) {
         char dp_imm_sf:1 = (inst->sf);
         switch (dpimm_operand_type) {
             case ARITH_OPERAND: {
-            // get imm12, rn
-            // get sh and see if need to left shift imm12
-            // stack pointer (rn/rd = 11111 case handled by write to register function)
-            // use opc to select specific instruction, update rd and condition (pstate) flags if needed
+                // get imm12, rn
+                // get sh and see if need to left shift imm12
+                // stack pointer (rn/rd = 11111 case handled by write to register function)
+                // use opc to select specific instruction, update rd and condition (pstate) flags if needed
 
-            uint32_t dp_imm_imm12 = (inst->dp_imm).operand.arith_operand.imm12;
+                uint32_t dp_imm_imm12 = (inst->dp_imm).operand.arith_operand.imm12;
 
-            char dp_imm_rn:5 = (inst->dp_imm).operand.arith_operand.rn;
-            char dp_imm_sh:1 = (inst->dp_imm).operand.arith_operand.sh;
+                char dp_imm_rn:5 = (inst->dp_imm).operand.arith_operand.rn;
+                char dp_imm_sh:1 = (inst->dp_imm).operand.arith_operand.sh;
 
-            if (sh==1) {
-                dp_imm_imm12 = dp_imm_imm12 << 12;
-            }
-            uint64_t dp_imm_rn_data = (machine_state->general_registers)[dp_imm_rn].data;
+                if (sh==1) {
+                    dp_imm_imm12 = dp_imm_imm12 << 12;
+                }
+                uint64_t dp_imm_rn_data = (machine_state->general_registers)[dp_imm_rn].data;
 
-            arith_instr_exec(dp_imm_opc, dp_imm_rd, dp_imm_rn_data, dp_imm_imm12);
+                arith_instr_exec(dp_imm_opc, dp_imm_rd, dp_imm_rn_data, dp_imm_imm12);
 
                 break;
             }
@@ -243,15 +259,21 @@ static void dp_reg(void) {
                     // set flags 
                     if (res < 0) {
                         // set sign flag N to 1
+                        set_pstate_flag('N', 1);
                     } else {
                         // set sign flag N to 0
+                        set_pstate_flag('N', 0);
                     }
                     if (res == 0) {
                         // set zero register Z to 1
+                        set_pstate_flag('Z', 1);
                     } else {
                         // set zero register Z to 0
+                        set_pstate_flag('Z', 0);
                     }
                     // set registers C and V to 0
+                    set_pstate_flag('C', 0);
+                    set_pstate_flag('V', 0);
                     break;
                     }
                 }
@@ -337,12 +359,9 @@ static void branch(void) {
         }
         case REGISTER_BRANCH: {
             // use machine state function to read register branch_xn
-            // if xn is 11111 then ignore
             // then write address in branch_xn to PC
             char register_branch_xn:5 = (inst->branch).operand.register_branch.xn;
-            if (register_branch_xn != 31) {
-                write_program_counter((machine_state->general_registers)[register_branch_xn].data);
-            }
+            write_program_counter((machine_state->general_registers)[register_branch_xn].data);
             break;
         }
         case COND_BRANCH: {
