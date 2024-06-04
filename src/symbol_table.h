@@ -1,4 +1,4 @@
-/** A module for creating symbol tables (hash maps from labels (of type char *) to addresses (of type uint16_t)).
+/** A module for creating symbol tables (hash maps from labels (of type char *) to addresses (of type uint32_t)).
  * The hash map is dynamically allocated.
  */
 
