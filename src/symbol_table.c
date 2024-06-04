@@ -55,7 +55,7 @@ typedef struct symtable {
  * @returns the symbol table, or `NULL` if creation fails
  * @see symtable_new
  */
-SymbolTable symtable_num_buckets(float load_factor, uint16_t num_buckets) {
+static SymbolTable symtable_num_buckets(float load_factor, uint16_t num_buckets) {
     if (load_factor <= 0) return NULL;
     // count the number of ones; it is one if and only if num_buckets is a power of two
     uint8_t num_ones = 0;
@@ -262,7 +262,11 @@ static bool symtable_find(SymbolTable symtable, const char *key, uint16_t *dest)
 bool symtable_remove(SymbolTable symtable, const char *key, uint16_t *dest) {
     uint16_t bucket_index = symtable_bucket_index(symtable, key);
     Bucket *head_ptr = &symtable->buckets[bucket_index];
-    return bucket_remove(head_ptr, key, dest);
+    if (bucket_remove(head_ptr, key, dest)) {
+        symtable->size--;
+        return true;
+    }
+    return false;
 }
 
 /** Adds a given entry with key and associated address to the symbol table.
@@ -289,6 +293,7 @@ bool symtable_set(SymbolTable symtable, const char *key, const uint16_t address)
             free(entry_ptr);
             return false;
         }
+        symtable->size++;
         return true;
     } else {
         // an entry already exists in the symbol table, remove this from the symbol table
