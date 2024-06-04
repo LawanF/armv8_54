@@ -10,78 +10,94 @@ static void offset_program_counter(MachineState machine_state, int32_t enc_addre
     write_program_counter(offset);
 }
 
+static void add(unsigned char rd:5, uint64_t rn_data, uint64_t op2) {
+    write_general_registers(rd, rn_data + op2);
+}
+
+static void adds(unsigned char rd:5, uint64_t rn_data, uint64_t op2) {
+    // INT32 ? OR INT64 - HOW ARE WE HANDLING REGISTER SIZE
+
+    res = rn_data + dp_imm_imm12;
+    write_general_registers(rd, res);
+
+    set_pstate_flag('N', GET_BIT(res, 63));
+
+    if (res == 0) {
+        // set zero flag to 1
+        set_pstate_flag('Z', 1);
+    } else {
+        // set zero flag to 0
+        set_pstate_flag('Z', 0);
+    }
+    if (res < rn_data || res < dp_imm+imm12) {
+        // set carry flag to 1
+        set_pstate_flag('C', 1);
+    } else {
+        // set carry flag to 0
+        set_pstate_flag('C', 0);
+    }
+    if ((rn_data > 0 && op2 > 0 && res < 0) || (rn_data < 0 && op2 < 0 && res > 0)) {
+        // set signed overflow flag to 1
+        set_pstate_flag('V', 1);
+    } else {
+        // set signed overflow flag to 0
+        set_pstate_flag('V', 0);
+    }
+
+    // HOW ARE WE HANDLING SIGNED / UNSIGNED INTEGERS
+    // figure out how we are handling the size of the register - is the result meant to be stored as 32 or 64 bit int
+}
+
+static void sub(unsigned char rd:5, uint64_t rn_data, uint64_t op2) {
+    write_general_registers(rd, rn_data - op2);
+}
+
+static void subs(unsigned char rd:5, uint64_t rn_data, uint64_t op2) {
+    // INT32 ? OR INT64 - HOW ARE WE HANDLING REGISTER SIZE
+    res = rn_data - op2;
+    write_general_registers(rd, res);
+
+    set_pstate_flag('N', GET_BIT(res, 63));
+    if (res == 0) {
+        // set zero flag to 1
+        set_pstate_flag('Z', 1);
+    } else {
+        // set zero flag to 0
+        set_pstate_flag('Z', 0);
+    }
+    if (res < rn_data || res < op2) {
+        // set carry flag to 1
+        set_pstate_flag('C', 1);
+    } else {
+        // set carry flag to 0
+        set_pstate_flag('C', 0);
+    }
+    if ((rn_data < 0 && op2 > 0 && res > 0) || (rn_data > 0 && op2 < 0 && res < 0)) {
+        // set signed overflow flag to 1
+        set_pstate_flag('V', 1);
+    } else {
+        // set signed overflow flag to 0
+        set_pstate_flag('V', 0);
+    }
+}
+
 static void arith_inst_exec(unsigned char opc:2, unsigned char rd:5, uint64_t rn_data, uint64_t op2) {
 	switch (opc) {
 			static uint64_t res;
             case 0: {
-                write_general_registers(rd, rn_data + op2);
+                add(rd, rn_data, op2);
                 break;
             }
             case 1: {
-                // INT32 ? OR INT64 - HOW ARE WE HANDLING REGISTER SIZE
-
-                res = rn_data + dp_imm_imm12;
-                write_general_registers(rd, res);
-
-                set_pstate_flag('N', GET_BIT(res, 63));
-          
-                if (res == 0) {
-                    // set zero flag to 1
-                    set_pstate_flag('Z', 1);
-                } else {
-                    // set zero flag to 0
-                    set_pstate_flag('Z', 0);
-                }
-                if (res < rn_data || res < dp_imm+imm12) {
-                    // set carry flag to 1
-                    set_pstate_flag('C', 1);
-                } else {
-                    // set carry flag to 0
-                    set_pstate_flag('C', 0);
-                }
-                if ((rn_data > 0 && op2 > 0 && res < 0) || (rn_data < 0 && op2 < 0 && res > 0)) {
-                    // set signed overflow flag to 1
-                    set_pstate_flag('V', 1);
-                } else {
-                    // set signed overflow flag to 0
-                    set_pstate_flag('V', 0);
-                }
-
-                // HOW ARE WE HANDLING SIGNED / UNSIGNED INTEGERS
-                // figure out how we are handling the size of the register - is the result meant to be stored as 32 or 64 bit int
+                adds(rd, rn_data, op2);
                 break;
             }
             case 2: {
-                write_general_registers(rd, rn_data - op2);
+                sub(rd, rn_data, op2);
                 break;
             }
             case 3: {
-                // INT32 ? OR INT64 - HOW ARE WE HANDLING REGISTER SIZE
-                res = rn_data - op2;
-                write_general_registers(rd, res);
-                
-                set_pstate_flag('N', GET_BIT(res, 63));
-                if (res == 0) {
-                    // set zero flag to 1
-                    set_pstate_flag('Z', 1);
-                } else {
-                    // set zero flag to 0
-                    set_pstate_flag('Z', 0);
-                }
-                if (res < rn_data || res < op2) {
-                    // set carry flag to 1
-                    set_pstate_flag('C', 1);
-                } else {
-                    // set carry flag to 0
-                    set_pstate_flag('C', 0);
-                }
-                if ((rn_data < 0 && op2 > 0 && res > 0) || (rn_data > 0 && op2 < 0 && res < 0)) {
-                    // set signed overflow flag to 1
-                    set_pstate_flag('V', 1);
-                } else {
-                    // set signed overflow flag to 0
-                    set_pstate_flag('V', 0);
-                }
+                subs(rd, rn_data, op2);
                 break;
             }
       }
@@ -111,74 +127,87 @@ static void halt(MachineState machine_state) {
     exit(1);
 }
 
+static void movn(unsigned char dp_imm_rd:5, uint32_t wide_move_operand) {
+    // ~OP by xor with 1111...
+    // set all bits to one except imm16 bits (which these are will vary depending on if the imm16 was shifted earlier)
+    // in 32 bit case upper 32 bits are all 0 (i.e. zero extended)
+    // set rd to op
+    wide_move_operand = ~wide_move_operand;
+    write_general_registers(dp_imm_rd, wide_move_operand);
+}
+
+static void movz(unsigned char dp_imm_rd:5, uint32_t wide_move_operand) {
+    write_general_registers(dp_imm_rd, wide_move_operand);
+}
+
+static void movk(unsigned char dp_imm_rd:5, uint32_t wide_move_operand) {
+    // get rd data
+    // mask rd data around bits that will be replaced with operand (dependent on hw * 16)
+    // and with operand bits
+    // in 32 bit version zero extend to 64
+    uint64_t wide_move_rd_data = (machine_state.general_registers)[dp_imm_rd].data;
+    if (hw == 0) {
+       wide_move_rd_data = BIT_MASK(wide_move_rd_data, 16, 31) << 16;
+    } else if (hw == 1) {
+       wide_move_rd_data = BIT_MASK(wide_move_rd_data, 0, 15);
+    }
+    wide_move_rd_data = wide_move_rd_data & wide_move_operand;
+    write_general_registers(dp_imm_rd, wide_move_hw);
+}
+
 static void dp_imm(MachineState machine_state, Instruction *inst) {
-        DPImmOperandType dpimm_operand_type = (inst->dp_imm).operand_type;
-        unsigned char dp_imm_opc:2 = (inst->opc);
-        unsigned char dp_imm_rd:5 = (inst->rd);
-        unsigned char dp_imm_sf:1 = (inst->sf);
-        switch (dpimm_operand_type) {
-            case ARITH_OPERAND: {
-                // get imm12, rn
-                // get sh and see if need to left shift imm12
-                // stack pointer (rn/rd = 11111 case handled by write to register function)
-                // use opc to select specific instuction, update rd and condition (pstate) flags if needed
+    DPImmOperandType dpimm_operand_type = (inst->dp_imm).operand_type;
+    unsigned char dp_imm_opc:2 = (inst->opc);
+    unsigned char dp_imm_rd:5 = (inst->rd);
+    unsigned char dp_imm_sf:1 = (inst->sf);
+    switch (dpimm_operand_type) {
+        case ARITH_OPERAND: {
+            // get imm12, rn
+            // get sh and see if need to left shift imm12
+            // stack pointer (rn/rd = 11111 case handled by write to register function)
+            // use opc to select specific instuction, update rd and condition (pstate) flags if needed
 
-                uint32_t dp_imm_imm12 = (inst->dp_imm).operand.arith_operand.imm12;
+            uint32_t dp_imm_imm12 = (inst->dp_imm).operand.arith_operand.imm12;
 
-                unsigned char dp_imm_rn:5 = (inst->dp_imm).operand.arith_operand.rn;
-                unsigned char dp_imm_sh:1 = (inst->dp_imm).operand.arith_operand.sh;
+            unsigned char dp_imm_rn:5 = (inst->dp_imm).operand.arith_operand.rn;
+            unsigned char dp_imm_sh:1 = (inst->dp_imm).operand.arith_operand.sh;
 
-                if (sh==1) {
-                    dp_imm_imm12 = dp_imm_imm12 << 12;
-                }
-                uint64_t dp_imm_rn_data = (machine_state.general_registers)[dp_imm_rn].data;
-
-                arith_inst_exec(dp_imm_opc, dp_imm_rd, dp_imm_rn_data, dp_imm_imm12);
-
-                break;
+            if (sh==1) {
+                dp_imm_imm12 = dp_imm_imm12 << 12;
             }
-            case WIDE_MOVE_OPERAND: {
-                        switch (dp_imm_opc) {
-                                // get imm16, hw
-                                // operand = imm16 << (hw * 16)
-                                // In the 32-bit version of the move instuction, hw can only take the values 00 or 01 (representing shifts of 0 or 16 bits)
-                                // ^ separate 32 bit inst? do i need error checks for values that aren't 0 or 1
+            uint64_t dp_imm_rn_data = (machine_state.general_registers)[dp_imm_rn].data;
 
-                                uint16_t wide_move_imm16 = (inst->dp_imm).operand.wide_move_operand.imm16;
-                                unsigned char wide_move_hw:2 = (inst->dp_imm).operand.wide_move_operand.hw;
+            arith_inst_exec(dp_imm_opc, dp_imm_rd, dp_imm_rn_data, dp_imm_imm12);
 
-                                uint32_t wide_move_operand = wide_move_imm16 << (wide_move_hw * 16);
-                                case 0: {
-                                    // ~OP by xor with 1111... 
-                                    // set all bits to one except imm16 bits (which these are will vary depending on if the imm16 was shifted earlier)
-                                    // in 32 bit case upper 32 bits are all 0 (i.e. zero extended)
-                                    // set rd to op
-                                    wide_move_operand = ~wide_move_operand;
-                                    write_general_registers(dp_imm_rd, wide_move_hw);
-                                    break;
-                                }
-                                case 2: {
-                                    write_general_registers(dp_imm_rd, wide_move_hw);
-                                    break;
-                                }
-                                case 3: {
-                                    // get rd data
-                                    // mask rd data around bits that will be replaced with operand (dependent on hw * 16) 
-                                    // and with operand bits
-                                    // in 32 bit version zero extend to 64
-                                    uint64_t wide_move_rd_data = (machine_state.general_registers)[dp_imm_rd].data;
-                                    if (hw == 0) {
-                                       wide_move_rd_data = BIT_MASK(wide_move_rd_data, 16, 31) << 16;
-                                    } else if (hw == 1) {
-                                       wide_move_rd_data = BIT_MASK(wide_move_rd_data, 0, 15);
-                                    }
-                                    wide_move_rd_data = wide_move_rd_data & wide_move_operand;
-                                    write_general_registers(dp_imm_rd, wide_move_hw);
-                                    break;
-                                }
-                            }
-                    break;
-                }    
+            break;
+        }
+        case WIDE_MOVE_OPERAND: {
+            switch (dp_imm_opc) {
+                    // get imm16, hw
+                    // operand = imm16 << (hw * 16)
+                    // In the 32-bit version of the move instuction, hw can only take the values 00 or 01 (representing shifts of 0 or 16 bits)
+                    // ^ separate 32 bit inst? do i need error checks for values that aren't 0 or 1
+
+                    uint16_t wide_move_imm16 = (inst->dp_imm).operand.wide_move_operand.imm16;
+                    unsigned char wide_move_hw:2 = (inst->dp_imm).operand.wide_move_operand.hw;
+
+                    uint32_t wide_move_operand = wide_move_imm16 << (wide_move_hw * 16);
+                    case 0: {
+                        movn(dp_imm_rd, wide_move_operand);
+                        break;
+                    }
+                    case 2: {
+                        movz(dp_imm_rd, wide_move_operand);
+                        break;
+                    }
+                    case 3: {
+                        movek(dp_imm_rd, wide_move_operand);
+                        break;
+                    }
+            }
+            break;
+        }    
+    }
 }
 
 
@@ -202,9 +231,9 @@ static void dp_reg(MachineState machine_state, Instruction *inst) {
             // then execute instuction Rd = Rn (op) Op2
             
             switch (dp_reg_shift) {
-                case 0: { dp_reg_rm_data = dp_reg_rm_data << dp_reg_operand  break;}
-                case 1: { dp_reg_rm_data = dp_reg_rm_data >> dp_reg_operand break;}
-                case 2: { dp_reg_rm_data = (((int64_t)dp_reg_rm_data) >> dp_reg_operand) break;}
+                case 0: { /* lsl */ dp_reg_rm_data = dp_reg_rm_data << dp_reg_operand  break;}
+                case 1: { /* lsr */ dp_reg_rm_data = dp_reg_rm_data >> dp_reg_operand break;}
+                case 2: { /* asr */ dp_reg_rm_data = (((int64_t)dp_reg_rm_data) >> dp_reg_operand) break;}
             }
 
             if (GET_BIT(dp_reg_opr, 0) == 0) {
@@ -218,6 +247,7 @@ static void dp_reg(MachineState machine_state, Instruction *inst) {
                 // handle case of N = 0,1
                 // logical instuctions
                 if (dp_reg_shift == 3) {
+                    // ror
                     uint64_t right_shift = dp_reg_rm_data >> dp_reg_operand;
                     uint64_t rotate_bits = dp_reg_rm_data << (32-dp_reg_operand);
                     dp_reg_rm_data  = right_shift | rotate_bits;
@@ -229,32 +259,36 @@ static void dp_reg(MachineState machine_state, Instruction *inst) {
 
                 switch (dp_reg_opc) {
                     case 0: {
-                    res = dp_reg_rn_data & dp_reg_rm_data;
-                    break;
+                        // and / bic
+                        res = dp_reg_rn_data & dp_reg_rm_data;
+                        break;
                     }
                     case 1: {
-                    res = dp_reg_rn_data | dp_reg_rm_data;
-                    break;
+                        // orr / orn
+                        res = dp_reg_rn_data | dp_reg_rm_data;
+                        break;
                     }
                     case 2: {
-                    res = dp_reg_rn_data ^ dp_reg_rm_data;
-                    break;
+                        // eor / eon
+                        res = dp_reg_rn_data ^ dp_reg_rm_data;
+                        break;
                     }
                     case 3: {
-                    res = dp_reg_rn_data & dp_reg_rm_data;
-                    // set flags 
-                    set_pstate_flag('N', GET_BIT(res, 63));
-                    if (res == 0) {
-                        // set zero register Z to 1
-                        set_pstate_flag('Z', 1);
-                    } else {
-                        // set zero register Z to 0
-                        set_pstate_flag('Z', 0);
-                    }
-                    // set registers C and V to 0
-                    set_pstate_flag('C', 0);
-                    set_pstate_flag('V', 0);
-                    break;
+                        // ands / bics
+                        res = dp_reg_rn_data & dp_reg_rm_data;
+                        // set flags 
+                        set_pstate_flag('N', GET_BIT(res, 63));
+                        if (res == 0) {
+                            // set zero register Z to 1
+                            set_pstate_flag('Z', 1);
+                        } else {
+                            // set zero register Z to 0
+                            set_pstate_flag('Z', 0);
+                        }
+                        // set registers C and V to 0
+                        set_pstate_flag('C', 0);
+                        set_pstate_flag('V', 0);
+                        break;
                     }
                 }
                 write_general_registers(dp_reg_rd, res);
@@ -266,8 +300,10 @@ static void dp_reg(MachineState machine_state, Instruction *inst) {
 
             uint64_t multiply_ra_data = (machine_state.general_registers)[multiply_ra].data;
             if (multiply_x == 0) {
+                // madd
                 res = multiply_ra_data + (dp_reg_rn_data * dp_reg_rm_data);
             } else {
+                // msub
                 res = multiply_ra_data - (dp_reg_rn_data * dp_reg_rm_data);
             }
             write_general_registers(dp_reg_rd, res);
@@ -286,34 +322,33 @@ static void sdt(MachineState machine_state, Instruction *inst) {
     SDTOffsetType sdt_type = (inst->single_data_transfer).offset_type;
 
     switch (sdt_type) {
-            case REGISTER_OFFSET: {
-                unsigned char sdt_xm:5 = (inst->single_data_transfer).offset.xm;
-                uint64_t sdt_xm_data =  (machine_state.general_registers)[sdt_xm].data;
-                uint64_t mem_address = sdt_xm_data + sdt_xn_data;
-                read_write_mem(sdt_l, sdt_rt, mem_address);
-            }
-            case PRE_INDEX_OFFSET: {
-                int16_t sdt_simm9 = (inst->single_data_transfer).offset.simm9;
-                if (sdt_simm9 > -256 && sdt_simm9 < 255) {
-                        uint64_t mem_address = sdt_xn_data + sdt_simm9;
-                        read_write_mem(sdt_l, sdt_rt, mem_address);
-                        write_general_registers(sdt_xn, mem_address);
-                } else {
-                        // exit ini? or nothing
-                }
-
-            case POST_INDEX_OFFSET:
-                int16_t sdt_simm9 = (inst->single_data_transfer).offset.simm9;
-                if (sdt_simm9 > -256 && sdt_simm9 < 255) {
-                        read_write_mem(sdt_l, sdt_rt, sdt_xn_data);
-                        write_general_registers(sdt_xn, sdt_xn_data + sdt_simm9);
-                } else {
-                        // exit ini? or nothing
-                }
-            case UNSIGNED_OFFSET:
-                uint16_t sdt_imm12 = (inst->single_data_transfer).offset.imm12;
-                uint64_t uoffset = sdt_imm12 * 8;
-                read_write_mem(sdt_l, sdt_rt, sdt_xn_data + uoffset);
+        case REGISTER_OFFSET: {
+            unsigned char sdt_xm:5 = (inst->single_data_transfer).offset.xm;
+            uint64_t sdt_xm_data =  (machine_state.general_registers)[sdt_xm].data;
+            uint64_t mem_address = sdt_xm_data + sdt_xn_data;
+            read_write_mem(sdt_l, sdt_rt, mem_address);
+            break;
+        }
+        case PRE_INDEX_OFFSET: {
+            int16_t sdt_simm9 = (inst->single_data_transfer).offset.simm9;
+            uint64_t mem_address = sdt_xn_data + sdt_simm9;
+            read_write_mem(sdt_l, sdt_rt, mem_address);
+            write_general_registers(sdt_xn, mem_address);
+            break;
+        }
+        case POST_INDEX_OFFSET: {
+            int16_t sdt_simm9 = (inst->single_data_transfer).offset.simm9;
+            read_write_mem(sdt_l, sdt_rt, sdt_xn_data);
+            write_general_registers(sdt_xn, sdt_xn_data + sdt_simm9);
+            break;
+        }
+        case UNSIGNED_OFFSET: {
+            uint16_t sdt_imm12 = (inst->single_data_transfer).offset.imm12;
+            uint64_t uoffset = sdt_imm12 * 8;
+            read_write_mem(sdt_l, sdt_rt, sdt_xn_data + uoffset);
+            break;
+        }
+    }
 }
 
 static void load_lit(MachineState machine_state, Instruction *inst) {
@@ -330,7 +365,6 @@ static void branch(MachineState machine_state, Instruction *inst) {
     enum BRANCH_OPERAND_TYPE branch_operand_type = (inst->branch).operand_type;
 
     switch (branch_operand_type) {
-
         case UNCOND_BRANCH: {
             offset_program_counter(machine_state, (inst->branch).operand.uncond_branch.simm26);
             break;
