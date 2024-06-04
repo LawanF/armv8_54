@@ -104,7 +104,7 @@ static void bucket_free_all(Bucket head) {
 }
 
 /** Prepends an element to the given bucket, modifying it in place.
- * @param bucket the bucket to be appended
+ * @param bucket_ptr a pointer to the bucket to be appended
  * @returns `true` if the bucket was modified, `false` if addition fails (i.e. if memory allocation fails)
  */
 static bool bucket_add(Bucket *head_ptr, Entry entry) {
@@ -129,13 +129,13 @@ static bool bucket_contains(Bucket bucket, const char *key) {
 
 /** Removes (and frees) the first element with a given key in the symbol table.
  * The reference to the bucket given in `head_ptr` will be written with the head of the new list,
- * and `dest` will be written with the value associated with the `key` (if it exists).
- * @param head_ptr the given symbol table
+ * and if `dest` is not NULL, it will be written with the value associated with the `key` (if it exists).
+ * @param head_ptr a pointer to the bucket to be modified
  * @param key the string to search for in the bucket
- * @param dest a pointer to which the associated value of `key` is written, if it exists.
+ * @param dest a pointer to which the previous associated value of `key` is written, if it exists.
  * @returns `true` if the element was removed, and `false` if the bucket is unmodified.
  */
-static bool bucket_remove(Bucket *head_ptr, char *key, uint16_t *dest) {
+static bool bucket_remove(Bucket *head_ptr, const char *key, uint16_t *dest) {
     Bucket par = NULL;
     for (Bucket cur = *head_ptr; cur != NULL; cur = cur->tail) {
         if (strcmp(cur->entry.label, key) == 0) {
@@ -147,7 +147,7 @@ static bool bucket_remove(Bucket *head_ptr, char *key, uint16_t *dest) {
                 // unlink the current entry from the list
                 par->tail = cur->tail;
             }
-            *dest = cur->entry.address;
+            if (dest != NULL) *dest = cur->entry.address;
             // destroy the entry
             free(cur->entry.label);
             free(cur);
@@ -218,10 +218,24 @@ static uint16_t symtable_bucket_index(SymbolTable symtable, const char *key) {
  * @param key the symbol to be searched for in the symbol table
  * @returns `true` if a value is associated to the key in the map, and `false` otherwise
  */
-static bool symtable_contains(SymbolTable symtable, const char *key) {
+bool symtable_contains(SymbolTable symtable, const char *key) {
     uint16_t bucket_index = symtable_bucket_index(symtable, key);
     return bucket_contains(symtable->buckets[bucket_index], key);
 }
+
+/** Removes the entry with a given key in the symbol table, writing the previous associated
+ * address to `dest`.
+ * @param head_ptr the given symbol table
+ * @param key the string to search for in the bucket
+ * @param dest a pointer to which the previous associated address under `key` is written, if it exists.
+ * @returns `true` if the entry was removed, and `false` if the symbol table was unmodified.
+ */
+bool symtable_remove(SymbolTable symtable, const char *key, uint16_t *dest) {
+    uint16_t bucket_index = symtable_bucket_index(symtable, key);
+    Bucket *head_ptr = &symtable->buckets[bucket_index];
+    return bucket_remove(head_ptr, key, dest);
+}
+
 
 /* Adds a given entry with key and associated address to the symbol table.
  * @param symtable the symbol table to add an entry added to
@@ -248,6 +262,8 @@ static bool symtable_set(SymbolTable symtable, const char *key, const uint16_t a
             return false;
         }
         return true;
+    } else {
+        // an entry already exists in the symbol table, remove this from the symbol table
+        return symtable_remove(symtable, key, NULL) && symtable_set(symtable, key, address);
     }
-    return false;
 }
