@@ -65,7 +65,7 @@ static SymbolTable symtable_num_buckets(float load_factor, uint16_t num_buckets)
     }
     if (num_ones != 1) return NULL;
     // a singleton array of one bucket
-    Bucket *buckets = malloc(sizeof(struct bucket) * num_buckets);
+    Bucket *buckets = malloc(sizeof(Bucket) * num_buckets);
     if (buckets == NULL) return NULL;
     // initialise the buckets with NULL
     for (int i = 0; i < num_buckets; i++) {
