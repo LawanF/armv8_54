@@ -130,6 +130,7 @@ static bool bucket_contains(Bucket bucket, const char *key) {
 /** Performs linear search to find an entry associated with a given key in a bucket.
  * If `dest` is not `NULL`, `dest` is written with the value if such an entry is found.
  * @param bucket the bucket to be searched through
+ * @param key the label to be searched for
  * @param dest a pointer to which to write the associated address, if it is found
  * @returns `true` if and only if an entry with the given key exists in the bucket.
  */
@@ -239,6 +240,18 @@ bool symtable_contains(SymbolTable symtable, const char *key) {
     return bucket_contains(symtable->buckets[bucket_index], key);
 }
 
+/** Searches for an entry with the given label `key` in the symbol table.
+ * If `dest` is not `NULL`, `dest` is written with the address if such an entry is found.
+ * @param symtable the symbol table to be searched through
+ * @param key the symbol to be searched for
+ * @param dest a pointer to which to write the associated address, if it is found
+ * @returns `true` if and only if an entry with the given key exists in the symbol table.
+ */
+static bool symtable_find(SymbolTable symtable, const char *key, uint16_t *dest) {
+    uint16_t bucket_index = symtable_bucket_index(symtable, key);
+    return bucket_find(symtable->buckets[bucket_index], key, dest);
+}
+
 /** Removes the entry with a given key in the symbol table, writing the previous associated
  * address to `dest`.
  * @param head_ptr the given symbol table
@@ -252,13 +265,13 @@ bool symtable_remove(SymbolTable symtable, const char *key, uint16_t *dest) {
     return bucket_remove(head_ptr, key, dest);
 }
 
-/* Adds a given entry with key and associated address to the symbol table.
+/** Adds a given entry with key and associated address to the symbol table.
  * @param symtable the symbol table to add an entry added to
  * @param key the label to be associated
  * @param address the location in memory of the label
  * @returns `true` if addition succeeded, and `false` otherwise
  */
-static bool symtable_set(SymbolTable symtable, const char *key, const uint16_t address) {
+bool symtable_set(SymbolTable symtable, const char *key, const uint16_t address) {
     uint16_t bucket_index = symtable_bucket_index(symtable, key);
     Bucket *head_ptr = &symtable->buckets[bucket_index];
     if (!bucket_contains(*head_ptr, key)) {
