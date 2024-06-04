@@ -107,11 +107,11 @@ static void bucket_free_all(Bucket head) {
  * @param bucket the bucket to be appended
  * @returns `true` if the bucket was modified, `false` if addition fails (i.e. if memory allocation fails)
  */
-static bool bucket_add(Bucket bucket, Entry entry) {
+static bool bucket_add(Bucket *head_ptr, Entry entry) {
     Bucket prepended = malloc(sizeof(struct bucket));
     if (prepended == NULL) return false;
-    *prepended = (struct bucket) { .entry = entry, .tail = bucket };
-    bucket = prepended;
+    *prepended = (struct bucket) { .entry = entry, .tail = *head_ptr };
+    *head_ptr = prepended;
     return true;
 }
 
@@ -221,4 +221,33 @@ static uint16_t symtable_bucket_index(SymbolTable symtable, const char *key) {
 static bool symtable_contains(SymbolTable symtable, const char *key) {
     uint16_t bucket_index = symtable_bucket_index(symtable, key);
     return bucket_contains(symtable->buckets[bucket_index], key);
+}
+
+/* Adds a given entry with key and associated address to the symbol table.
+ * @param symtable the symbol table to add an entry added to
+ * @param key the label to be associated
+ * @param address the location in memory of the label
+ * @returns `true` if addition succeeded, and `false` otherwise
+ */
+static bool symtable_set(SymbolTable symtable, const char *key, const uint16_t address) {
+    uint16_t bucket_index = symtable_bucket_index(symtable, key);
+    Bucket *head_ptr = &symtable->buckets[bucket_index];
+    if (!bucket_contains(*head_ptr, key)) {
+        Entry *entry_ptr = malloc(sizeof(Entry));
+        if (entry_ptr == NULL) return false;
+        char *str = malloc(strlen(key));
+        if (str == NULL) {
+            free(entry_ptr);
+            return false;
+        }
+        strcpy(str, key);
+        *entry_ptr = (Entry) { .label = str, .address = address };
+        if (!bucket_add(head_ptr, *entry_ptr)) {
+            free(str);
+            free(entry_ptr);
+            return false;
+        }
+        return true;
+    }
+    return false;
 }
