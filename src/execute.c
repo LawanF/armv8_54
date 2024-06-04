@@ -103,20 +103,32 @@ static void arith_inst_exec(unsigned char opc:2, unsigned char rd:5, uint64_t rn
       }
 }
 
-static void read_write_to_mem(unsigned char sdt_l, uint64_t sdt_rt, uint64_t mem_address) {
+static void read_write_to_mem(unsigned char sdt_sf, unsigned char sdt_l, uint64_t sdt_rt, uint64_t mem_address) {
         if (sdt_l == 1) {
             // read from mem 
             // write to rt
 
-            static uint64_t data_load = readmem64(mem_address);
+            uint64_t data_load = readmem64(mem_address);
+
+            // If in 32-bit mode, make upper bits 0.
+            if (sdt_sf == 0) {
+                data_load = (uint32_t) data_load;
+            }
+
             write_general_registers(sdt_rt, data_load);
 
         } else {
             // read from rt
             // write to mem
 
-            static uint64_t data_store = (machine_state.general_registers)[sdt_rt];
-            writemem64(mem_address, data_store);
+            uint64_t data_store = (machine_state.general_registers)[sdt_rt];
+            
+            // Using the correct write with regards 32- or 64-bit mode.
+            if (sdt_sf == 0) {
+                writemem32(mem_address, data_store);
+            } else {
+                writemem64(mem_address, data_store);
+            }
         }
 }
 
