@@ -10,9 +10,9 @@ static void offset_program_counter(MachineState *alter_machine_state, int32_t en
         write_program_counter(offset);
 }
 
-static void arith_instr_exec(char opc:2, char rd:5, uint32_t rn_data, uint32_t op2) {
+static void arith_instr_exec(char opc:2, char rd:5, uint64_t rn_data, uint64_t op2) {
 	switch (opc) {
-			static uint32_t res;
+			static uint64_t res;
                         case 0: {
                             write_general_registers(rd, rn_data + op2);
                             break;
@@ -85,26 +85,25 @@ static void arith_instr_exec(char opc:2, char rd:5, uint32_t rn_data, uint32_t o
                     }
 }
 
-static void read_write_to_mem(unsigned char sdt_l, uint32_t sdt_rt, uint32_t mem_address) {
+static void read_write_to_mem(unsigned char sdt_l, uint64_t sdt_rt, uint64_t mem_address) {
         if (sdt_l == 1) {
             // read from mem 
             // write to rt
 
-            static uint32_t data_load = readmem32(mem_address);
+            static uint64_t data_load = readmem64(mem_address);
             write_general_registers(sdt_rt, data_load);
 
         } else {
             // read from rt
             // write to mem
 
-            static uint32_t data_store = (machine_state->general_registers)[sdt_rt];
-            writemem32(mem_address, data_store);
+            static uint64_t data_store = (machine_state->general_registers)[sdt_rt];
+            writemem64(mem_address, data_store);
         }
 }
 
 
 static void halt(void) {
-    MachineState *machine_state = read_machine_state();
     char *filename = get_output_file();
     print_output(machine_state, filename);
     exit(1);
@@ -130,7 +129,7 @@ static void dp_imm(void) {
             if (sh==1) {
                 dp_imm_imm12 = dp_imm_imm12 << 12;
             }
-            uint32_t dp_imm_rn_data = (machine_state->general_registers)[dp_imm_rn].data;
+            uint64_t dp_imm_rn_data = (machine_state->general_registers)[dp_imm_rn].data;
 
             arith_instr_exec(dp_imm_opc, dp_imm_rd, dp_imm_rn_data, dp_imm_imm12);
 
@@ -152,7 +151,7 @@ static void dp_imm(void) {
                                     // set all bits to one except imm16 bits (which these are will vary depending on if the imm16 was shifted earlier)
                                     // in 32 bit case upper 32 bits are all 0 (i.e. zero extended)
                                     // set rd to op
-                                    wide_move_operand = NEGATE_MASK(wide_move_operand);
+                                    wide_move_operand = ~wide_move_operand;
                                     write_general_registers(dp_imm_rd, wide_move_hw);
                                     break;
                                 }
@@ -165,7 +164,7 @@ static void dp_imm(void) {
                                     // mask rd data around bits that will be replaced with operand (dependent on hw * 16) 
                                     // and with operand bits
                                     // in 32 bit version zero extend to 64
-                                    uint32_t wide_move_rd_data = (machine_state->general_registers)[dp_imm_rd].data;
+                                    uint64_t wide_move_rd_data = (machine_state->general_registers)[dp_imm_rd].data;
                                     if (hw == 0) {
                                        wide_move_rd_data = BIT_MASK(wide_move_rd_data, 16, 31) << 16;
                                     } else if (hw == 1) {
@@ -190,9 +189,9 @@ static void dp_reg(void) {
         char dp_reg_operand:6 = (inst->dp_reg).operand;
         char dp_reg_rn:5 = (inst->dp_reg).rn;
         char dp_reg_rd:5 = (inst->rd);
-        uint32_t dp_reg_rn_data = (machine_state->general_registers)[dp_reg_rn].data;
-        uint32_t dp_reg_rm_data = (machine_state->general_registers)[dp_reg_rm].data;
-        static uint32_t res;
+        uint64_t dp_reg_rn_data = (machine_state->general_registers)[dp_reg_rn].data;
+        uint64_t dp_reg_rm_data = (machine_state->general_registers)[dp_reg_rm].data;
+        static uint64_t res;
         if (dp_reg_m == 0) {
             char dp_reg_shift = (GET_BIT(dp_reg_opr, 1) << 1) & (GET_BIT(dp_reg_opr, 2));
             // get data from registers rn, rm
@@ -201,9 +200,9 @@ static void dp_reg(void) {
             // then execute instruction Rd = Rn (op) Op2
             
             switch (dp_reg_shift) {
-                case 0: { dp_reg_rm_data = dp_reg_rm_data << dp_reg_operand }
-                case 1: { dp_reg_rm_data = dp_reg_rm_data >> dp_reg_operand }
-                case 2: { dp_reg_rm_data = (((int32_t)dp_reg_rm_data) >> dp_reg_operand) }
+                case 0: { dp_reg_rm_data = dp_reg_rm_data << dp_reg_operand  break;}
+                case 1: { dp_reg_rm_data = dp_reg_rm_data >> dp_reg_operand break;}
+                case 2: { dp_reg_rm_data = (((int64_t)dp_reg_rm_data) >> dp_reg_operand) break;}
             }
 
             if (GET_BIT(dp_reg_opr, 0) == 0) {
@@ -217,13 +216,13 @@ static void dp_reg(void) {
                 // handle case of N = 0,1
                 // logical instructions
                 if (dp_reg_shift == 3) {
-                uint32_t right_shift = dp_reg_rm_data >> dp_reg_operand;
-                    uint32_t rotate_bits = dp_reg_rm_data << (32-dp_reg_operand);
+                    uint64_t right_shift = dp_reg_rm_data >> dp_reg_operand;
+                    uint64_t rotate_bits = dp_reg_rm_data << (32-dp_reg_operand);
                     dp_reg_rm_data  = right_shift | rotate_bits;
                 }
 
                 if (GET_BIT(dp_reg_opr, 3) == 1) {
-                    NEGATE_MASK(dp_reg_rm_data);
+                    dp_reg_rm_data = ~dp_reg_rm_data;
                 }
 
                 switch (dp_reg_opc) {
@@ -263,7 +262,7 @@ static void dp_reg(void) {
             char multiply_x:1 = GET_BIT(dp_reg_operand, 0);
             char multiply_ra:5 = BIT_MASK(dp_reg_operand, 1, 5);
 
-            uint32_t multiply_ra_data = (machine_state->general_registers)[multiply_ra].data;
+            uint64_t multiply_ra_data = (machine_state->general_registers)[multiply_ra].data;
             if (multiply_x == 0) {
                 res = multiply_ra_data + (dp_reg_rn_data * dp_reg_rm_data);
             } else {
@@ -281,21 +280,21 @@ static void sdt(void) {
     unsigned char sdt_sf:1 = (inst->sf);
     unsigned char sdt_opc:2 = (inst->opc);
     unsigned char sdt_rt:4 = (inst->rt);
-    uint32_t sdt_rt_data = (machine_state->general_registers)[sdt_rt].data;
-    uint32_t sdt_xn_data = (machine_state->general_registers)[sdt_xn].data;
+    uint64_t sdt_rt_data = (machine_state->general_registers)[sdt_rt].data;
+    uint64_t sdt_xn_data = (machine_state->general_registers)[sdt_xn].data;
     SDTOffsetType sdt_type = (inst->single_data_transfer).offset_type;
 
     switch (sdt_type) {
             case REGISTER_OFFSET: {
                 unsigned char sdt_xm:5 = (inst->single_data_transfer).offset.xm;
-                uint32_t sdt_xm_data =  (machine_state->general_registers)[sdt_xm].data;
-                uint32_t mem_address = sdt_xm_data + sdt_xn_data;
+                uint64_t sdt_xm_data =  (machine_state->general_registers)[sdt_xm].data;
+                uint64_t mem_address = sdt_xm_data + sdt_xn_data;
                 read_write_mem(sdt_l, sdt_rt, mem_address);
             }
             case PRE_INDEX_OFFSET: {
                 int16_t sdt_simm9 = (inst->single_data_transfer).offset.simm9;
                 if (sdt_simm9 > -256 && sdt_simm9 < 255) {
-                        uint32_t mem_address = sdt_xn_data + sdt_simm9;
+                        uint64_t mem_address = sdt_xn_data + sdt_simm9;
                         read_write_mem(sdt_l, sdt_rt, mem_address);
                         write_general_registers(sdt_xn, mem_address);
                 } else {
@@ -312,12 +311,12 @@ static void sdt(void) {
                 }
             case UNSIGNED_OFFSET:
                 uint16_t sdt_imm12 = (inst->single_data_transfer).offset.imm12;
-                uint32_t uoffset = sdt_imm12 * 4;
+                uint64_t uoffset = sdt_imm12 * 8;
                 read_write_mem(sdt_l, sdt_rt, sdt_xn_data + uoffset);
 }
 
 static void load_lit(void) {
-    uint32_t sdt_pc = (machine_state->program_counter).data;
+    uint64_t sdt_pc = (machine_state->program_counter).data;
     int32_t sdt_simm19 = (inst->load_literal).simm19;
     read_write_mem(1, sdt_rt, sdt_pc + sdt_simm19 * 4);
 }
