@@ -107,7 +107,7 @@ static void bucket_free_all(Bucket head) {
  * @param bucket_ptr a pointer to the bucket to be appended
  * @returns `true` if the bucket was modified, `false` if addition fails (i.e. if memory allocation fails)
  */
-static bool bucket_add(Bucket *head_ptr, Entry entry) {
+static bool bucket_add(Bucket *head_ptr, const Entry entry) {
     Bucket prepended = malloc(sizeof(struct bucket));
     if (prepended == NULL) return false;
     *prepended = (struct bucket) { .entry = entry, .tail = *head_ptr };
@@ -294,6 +294,7 @@ static bool symtable_resize(SymbolTable symtable) {
         // clear the buckets in the old symbol table and copy the new ones over
         symtable_free_buckets(symtable);
         memcpy(symtable, new_table, sizeof(struct symtable));
+        free(new_table);
         return true;
     }
 }
@@ -309,18 +310,12 @@ bool symtable_set(SymbolTable symtable, const char *key, const uint32_t address)
     Bucket *head_ptr = &symtable->buckets[bucket_index];
     if (!bucket_contains(*head_ptr, key)) {
         // add a new entry; resize if needed
-        Entry *entry_ptr = malloc(sizeof(Entry));
-        if (entry_ptr == NULL) return false;
         char *str = malloc((strlen(key) + 1) * sizeof(char));
-        if (str == NULL) {
-            free(entry_ptr);
-            return false;
-        }
+        if (str == NULL) return false;
         strcpy(str, key);
-        *entry_ptr = (Entry) { .label = str, .address = address };
-        if (!bucket_add(head_ptr, *entry_ptr)) {
+        Entry entry = { .label = str, .address = address };
+        if (!bucket_add(head_ptr, entry)) {
             free(str);
-            free(entry_ptr);
             return false;
         }
         symtable->size++;
