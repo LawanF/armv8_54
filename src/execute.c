@@ -10,7 +10,7 @@ static void offset_program_counter(MachineState machine_state, int32_t enc_addre
     write_program_counter(offset);
 }
 
-static void add(unsigned char rd:5, uint64_t rn_data, uint64_t op2, unsigned char sf:1) {
+static void add(unsigned char rd, uint64_t rn_data, uint64_t op2, unsigned char sf) {
     uint64_t res = rn_data + op2;
     if (sf == 0) {
         write_general_registers(rd,(uint32_t)res);
@@ -19,7 +19,7 @@ static void add(unsigned char rd:5, uint64_t rn_data, uint64_t op2, unsigned cha
     }
 }
 
-static void adds(unsigned char rd:5, uint64_t rn_data, uint64_t op2, unsigned char sf:1) {
+static void adds(unsigned char rd, uint64_t rn_data, uint64_t op2, unsigned char sf) {
     uint64_t res = rn_data + dp_imm_imm12;
     
     if (sf == 0) { 
@@ -55,7 +55,7 @@ static void adds(unsigned char rd:5, uint64_t rn_data, uint64_t op2, unsigned ch
     }
 }
 
-static void sub(unsigned char rd:5, uint64_t rn_data, uint64_t op2, unsigned char sf:1) {
+static void sub(unsigned char rd, uint64_t rn_data, uint64_t op2, unsigned char sf) {
     uint64_t res = rn_data - op2;
     if (sf == 0) {
         write_general_registers(rd, (uint32_t)res);
@@ -64,7 +64,7 @@ static void sub(unsigned char rd:5, uint64_t rn_data, uint64_t op2, unsigned cha
     }
 }
 
-static void subs(unsigned char rd:5, uint64_t rn_data, uint64_t op2, unsigned char sf:1) {
+static void subs(unsigned char rd, uint64_t rn_data, uint64_t op2, unsigned char sf) {
     uint64_t res = rn_data - op2;
     
     if (sf == 0) {
@@ -100,7 +100,7 @@ static void subs(unsigned char rd:5, uint64_t rn_data, uint64_t op2, unsigned ch
     }
 }
 
-static void arith_inst_exec(unsigned char opc:2, unsigned char rd:5, uint64_t rn_data, uint64_t op2, unsigned char sf:1) {
+static void arith_inst_exec(unsigned char opc, unsigned char rd, uint64_t rn_data, uint64_t op2, unsigned char sf) {
 	switch (opc) {
             case 0: {
                 add(rd, rn_data, op2, sf);
@@ -157,7 +157,7 @@ static void halt(MachineState machine_state) {
     exit(1);
 }
 
-static void movn(unsigned char dp_imm_rd:5, uint64_t wide_move_operand, unsigned char sf:1) {
+static void movn(unsigned char dp_imm_rd, uint64_t wide_move_operand, unsigned char sf) {
     // ~OP by xor with 1111...
     // set all bits to one except imm16 bits (which these are will vary depending on if the imm16 was shifted earlier)
     // in 32 bit case upper 32 bits are all 0 (i.e. zero extended)
@@ -169,11 +169,11 @@ static void movn(unsigned char dp_imm_rd:5, uint64_t wide_move_operand, unsigned
     write_general_registers(dp_imm_rd, wide_move_operand);
 }
 
-static void movz(unsigned char dp_imm_rd:5, uint64_t wide_move_operand) {
+static void movz(unsigned char dp_imm_rd, uint64_t wide_move_operand) {
     write_general_registers(dp_imm_rd, wide_move_operand);
 }
 
-static void movk(unsigned char dp_imm_rd:5, uint64_t wide_move_operand, unsigned char wide_move_hw:2, unsigned char sf) {
+static void movk(unsigned char dp_imm_rd, uint64_t wide_move_operand, unsigned char wide_move_hw, unsigned char sf) {
     // get rd data
     // mask rd data around bits that will be replaced with operand (dependent on wide_move_hw * 16)
     // and with operand bits
@@ -200,9 +200,9 @@ static void movk(unsigned char dp_imm_rd:5, uint64_t wide_move_operand, unsigned
 
 static void dp_imm(MachineState machine_state, Instruction *inst) {
     DPImmOperandType dpimm_operand_type = (inst->dp_imm).operand_type;
-    unsigned char dp_imm_opc:2 = (inst->opc);
-    unsigned char dp_imm_rd:5 = (inst->rd);
-    unsigned char dp_imm_sf:1 = (inst->sf);
+    unsigned char dp_imm_opc = (inst->opc);
+    unsigned char dp_imm_rd = (inst->rd);
+    unsigned char dp_imm_sf = (inst->sf);
     switch (dpimm_operand_type) {
         case ARITH_OPERAND: {
             // get imm12, rn
@@ -212,8 +212,8 @@ static void dp_imm(MachineState machine_state, Instruction *inst) {
 
             uint32_t dp_imm_imm12 = (inst->dp_imm).operand.arith_operand.imm12;
 
-            unsigned char dp_imm_rn:5 = (inst->dp_imm).operand.arith_operand.rn;
-            unsigned char dp_imm_sh:1 = (inst->dp_imm).operand.arith_operand.sh;
+            unsigned char dp_imm_rn = (inst->dp_imm).operand.arith_operand.rn;
+            unsigned char dp_imm_sh = (inst->dp_imm).operand.arith_operand.sh;
 
             if (sh==1) {
                 dp_imm_imm12 = dp_imm_imm12 << 12;
@@ -232,7 +232,7 @@ static void dp_imm(MachineState machine_state, Instruction *inst) {
                     // ^ separate 32 bit inst? do i need error checks for values that aren't 0 or 1
 
                     uint16_t wide_move_imm16 = (inst->dp_imm).operand.wide_move_operand.imm16;
-                    unsigned char wide_move_hw:2 = (inst->dp_imm).operand.wide_move_operand.hw;
+                    unsigned char wide_move_hw = (inst->dp_imm).operand.wide_move_operand.hw;
 
                     uint32_t wide_move_operand = wide_move_imm16 << (wide_move_hw * 16);
                     case 0: {
@@ -255,14 +255,14 @@ static void dp_imm(MachineState machine_state, Instruction *inst) {
 
 
 static void dp_reg(MachineState machine_state, Instruction *inst) {
-        unsigned char dp_reg_sf:1 = (inst->sf);
-        unsigned char dp_reg_opc:2 = (inst->opc);
-        unsigned char dp_reg_m:1 = (inst->dp_reg).m;
-        unsigned char dp_reg_opr:4 = (inst->dp_reg).dp_reg.opr;
-        unsigned char dp_reg_rm:5 = (inst->dp_reg).dp_reg.rm;
-        unsigned char dp_reg_operand:6 = (inst->dp_reg).operand;
-        unsigned char dp_reg_rn:5 = (inst->dp_reg).rn;
-        unsigned char dp_reg_rd:5 = (inst->rd);
+        unsigned char dp_reg_sf = (inst->sf);
+        unsigned char dp_reg_opc = (inst->opc);
+        unsigned char dp_reg_m = (inst->dp_reg).m;
+        unsigned char dp_reg_opr = (inst->dp_reg).dp_reg.opr;
+        unsigned char dp_reg_rm = (inst->dp_reg).dp_reg.rm;
+        unsigned char dp_reg_operand = (inst->dp_reg).operand;
+        unsigned char dp_reg_rn = (inst->dp_reg).rn;
+        unsigned char dp_reg_rd = (inst->rd);
         uint64_t dp_reg_rn_data = (machine_state.general_registers)[dp_reg_rn].data;
         uint64_t dp_reg_rm_data = (machine_state.general_registers)[dp_reg_rm].data;
         static uint64_t res;
@@ -366,8 +366,8 @@ static void dp_reg(MachineState machine_state, Instruction *inst) {
             }
         } else {
             // multiply
-            unsigned char multiply_x:1 = GET_BIT(dp_reg_operand, 0);
-            unsigned char multiply_ra:5 = BITMASK(dp_reg_operand, 1, 5);
+            unsigned char multiply_x = GET_BIT(dp_reg_operand, 0);
+            unsigned char multiply_ra = BITMASK(dp_reg_operand, 1, 5);
 
             uint64_t multiply_ra_data = (machine_state.general_registers)[multiply_ra].data;
             if (multiply_x == 0) {
@@ -383,18 +383,18 @@ static void dp_reg(MachineState machine_state, Instruction *inst) {
 
 
 static void sdt(MachineState machine_state, Instruction *inst) {
-    unsigned char sdt_l:1 = (inst->single_data_transfer).l;
-    unsigned char sdt_xn:5 = (inst->single_data_transfer).xn;
-    unsigned char sdt_sf:1 = (inst->sf);
-    unsigned char sdt_opc:2 = (inst->opc);
-    unsigned char sdt_rt:4 = (inst->rt);
+    unsigned char sdt_l = (inst->single_data_transfer).l;
+    unsigned char sdt_xn = (inst->single_data_transfer).xn;
+    unsigned char sdt_sf = (inst->sf);
+    unsigned char sdt_opc = (inst->opc);
+    unsigned char sdt_rt = (inst->rt);
     uint64_t sdt_rt_data = (machine_state.general_registers)[sdt_rt].data;
     uint64_t sdt_xn_data = (machine_state.general_registers)[sdt_xn].data;
     SDTOffsetType sdt_type = (inst->single_data_transfer).offset_type;
 
     switch (sdt_type) {
         case REGISTER_OFFSET: {
-            unsigned char sdt_xm:5 = (inst->single_data_transfer).offset.xm;
+            unsigned char sdt_xm = (inst->single_data_transfer).offset.xm;
             uint64_t sdt_xm_data =  (machine_state.general_registers)[sdt_xm].data;
             uint64_t mem_address = sdt_xm_data + sdt_xn_data;
             read_write_mem(sdt_l, sdt_rt, mem_address, sdt_sf);
@@ -425,7 +425,7 @@ static void sdt(MachineState machine_state, Instruction *inst) {
 static void load_lit(MachineState machine_state, Instruction *inst) {
     uint64_t sdt_pc = (machine_state.program_counter).data;
     int32_t sdt_simm19 = (inst->load_literal).simm19;
-    unsigned char sdt_sf:1 = (inst->sf);
+    unsigned char sdt_sf = (inst->sf);
     read_write_mem(1, sdt_rt, sdt_pc + sdt_simm19 * 4, sdt_sf);
 }
 
@@ -445,12 +445,12 @@ static void branch(MachineState machine_state, Instruction *inst) {
         case REGISTER_BRANCH: {
             // use machine state function to read register branch_xn
             // then write address in branch_xn to PC
-            char register_branch_xn:5 = (inst->branch).operand.register_branch.xn;
+            char register_branch_xn = (inst->branch).operand.register_branch.xn;
             write_program_counter((machine_state.general_registers)[register_branch_xn].data);
             break;
         }
         case COND_BRANCH: {
-                char eval_cond:4 = (inst->branch).operand.cond_branch.cond;
+                char eval_cond = (inst->branch).operand.cond_branch.cond;
                 ProcessorStateRegister branch_pstate = (machine_state.pstate);
                 switch (eval_cond) {
                     case 0: {
@@ -532,3 +532,4 @@ void execute(Instruction *inst) {
         }
     }
 }
+1
