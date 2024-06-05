@@ -1,6 +1,11 @@
+#include <assert.h>
 #include <stdint.h>
 #include <stdlib.h>
+#include "emulate.h"
 #include "execute.h"
+#include "fileio.h"
+#include "instructions.h"
+#include "memory.h"
 #include "registers.h"
 
 static void offset_program_counter(MachineState machine_state, int32_t enc_address) {
@@ -20,10 +25,10 @@ static void add(unsigned char rd, uint64_t rn_data, uint64_t op2, unsigned char 
 }
 
 static void adds(unsigned char rd, uint64_t rn_data, uint64_t op2, unsigned char sf) {
-    uint64_t res = rn_data + dp_imm_imm12;
+    uint64_t res = rn_data + op2;
     
     if (sf == 0) { 
-        res = (uint32_t)res
+        res = (uint32_t)res;
         set_pstate_flag('N', GET_BIT(res, 31));
     } else {
         set_pstate_flag('N', GET_BIT(res, 63));
@@ -38,7 +43,7 @@ static void adds(unsigned char rd, uint64_t rn_data, uint64_t op2, unsigned char
         set_pstate_flag('Z', 0);
     }
 
-    if (res < rn_data || res < dp_imm+imm12) {
+    if (res < rn_data || res < op2) {
         // set carry flag to 1
         set_pstate_flag('C', 1);
     } else {
@@ -68,7 +73,7 @@ static void subs(unsigned char rd, uint64_t rn_data, uint64_t op2, unsigned char
     uint64_t res = rn_data - op2;
     
     if (sf == 0) {
-        res = (uint32_t)res
+        res = (uint32_t)res;
         set_pstate_flag('N', GET_BIT(res, 31));
     } else {
         set_pstate_flag('N', GET_BIT(res, 63));
@@ -121,7 +126,7 @@ static void arith_inst_exec(unsigned char opc, unsigned char rd, uint64_t rn_dat
       }
 }
 
-static void read_write_to_mem(unsigned char sdt_l, uint64_t sdt_rt, uint64_t mem_address, unsigned char sdt_sf) {
+static void read_write_mem(MachineState machine_state, unsigned char sdt_l, uint64_t sdt_rt, uint64_t mem_address, unsigned char sdt_sf) {
         if (sdt_l == 1) {
             // read from mem 
             // write to rt
@@ -139,7 +144,7 @@ static void read_write_to_mem(unsigned char sdt_l, uint64_t sdt_rt, uint64_t mem
             // read from rt
             // write to mem
 
-            uint64_t data_store = (machine_state.general_registers)[sdt_rt];
+            uint64_t data_store = (machine_state.general_registers)[sdt_rt].data;
             
             // Using the correct write with regards 32- or 64-bit mode.
             if (sdt_sf == 0) {
@@ -153,7 +158,7 @@ static void read_write_to_mem(unsigned char sdt_l, uint64_t sdt_rt, uint64_t mem
 
 static void halt(MachineState machine_state) {
     unsigned char *filename = get_output_file();
-    print_output(machine_state, filename);
+    print_output(&machine_state, filename);
     exit(1);
 }
 
@@ -173,7 +178,7 @@ static void movz(unsigned char dp_imm_rd, uint64_t wide_move_operand) {
     write_general_registers(dp_imm_rd, wide_move_operand);
 }
 
-static void movk(unsigned char dp_imm_rd, uint64_t wide_move_operand, unsigned char wide_move_hw, unsigned char sf) {
+static void movk(MachineState machine_state, unsigned char dp_imm_rd, uint64_t wide_move_operand, unsigned char wide_move_hw, unsigned char sf) {
     // get rd data
     // mask rd data around bits that will be replaced with operand (dependent on wide_move_hw * 16)
     // and with operand bits
@@ -191,7 +196,7 @@ static void movk(unsigned char dp_imm_rd, uint64_t wide_move_operand, unsigned c
 
     // 0-extend if in 32-bit mode. Check if hw is within bounds.
     if (sf == 0) {
-        assert(wide_move_hw =< 1);
+        assert(wide_move_hw <= 1);
         new_rd_data = (uint32_t) new_rd_data;
     }
 
@@ -215,7 +220,7 @@ static void dp_imm(MachineState machine_state, Instruction *inst) {
             unsigned char dp_imm_rn = (inst->dp_imm).operand.arith_operand.rn;
             unsigned char dp_imm_sh = (inst->dp_imm).operand.arith_operand.sh;
 
-            if (sh==1) {
+            if (dp_imm_sh == 1) {
                 dp_imm_imm12 = dp_imm_imm12 << 12;
             }
             uint64_t dp_imm_rn_data = (machine_state.general_registers)[dp_imm_rn].data;
@@ -225,16 +230,17 @@ static void dp_imm(MachineState machine_state, Instruction *inst) {
             break;
         }
         case WIDE_MOVE_OPERAND: {
+            uint16_t wide_move_imm16 = (inst->dp_imm).operand.wide_move_operand.imm16;
+            unsigned char wide_move_hw = (inst->dp_imm).operand.wide_move_operand.hw;
+
+            uint32_t wide_move_operand = wide_move_imm16 << (wide_move_hw * 16);
+
             switch (dp_imm_opc) {
                     // get imm16, hw
                     // operand = imm16 << (hw * 16)
                     // In the 32-bit version of the move instuction, hw can only take the values 00 or 01 (representing shifts of 0 or 16 bits)
                     // ^ separate 32 bit inst? do i need error checks for values that aren't 0 or 1
 
-                    uint16_t wide_move_imm16 = (inst->dp_imm).operand.wide_move_operand.imm16;
-                    unsigned char wide_move_hw = (inst->dp_imm).operand.wide_move_operand.hw;
-
-                    uint32_t wide_move_operand = wide_move_imm16 << (wide_move_hw * 16);
                     case 0: {
                         movn(dp_imm_rd, wide_move_operand, dp_imm_sf);
                         break;
@@ -244,7 +250,7 @@ static void dp_imm(MachineState machine_state, Instruction *inst) {
                         break;
                     }
                     case 3: {
-                        movk(dp_imm_rd, wide_move_operand);
+                        movk(machine_state, dp_imm_rd, wide_move_operand, wide_move_hw, dp_imm_sf);
                         break;
                     }
             }
@@ -255,67 +261,66 @@ static void dp_imm(MachineState machine_state, Instruction *inst) {
 
 
 static void dp_reg(MachineState machine_state, Instruction *inst) {
-        unsigned char dp_reg_sf = (inst->sf);
-        unsigned char dp_reg_opc = (inst->opc);
-        unsigned char dp_reg_m = (inst->dp_reg).m;
-        unsigned char dp_reg_opr = (inst->dp_reg).dp_reg.opr;
-        unsigned char dp_reg_rm = (inst->dp_reg).dp_reg.rm;
-        unsigned char dp_reg_operand = (inst->dp_reg).operand;
-        unsigned char dp_reg_rn = (inst->dp_reg).rn;
-        unsigned char dp_reg_rd = (inst->rd);
-        uint64_t dp_reg_rn_data = (machine_state.general_registers)[dp_reg_rn].data;
-        uint64_t dp_reg_rm_data = (machine_state.general_registers)[dp_reg_rm].data;
-        static uint64_t res;
-        if (dp_reg_m == 0) {
-            char dp_reg_shift = BITMASK(dp_reg_opr, 1, 2);
-            // get data from registers rn, rm
-            // perform shift on rm for cases 00, 01, 10, case 11 only done in logical case
-            // op2 = rm shifted operand many bits
-            // then execute instuction Rd = Rn (op) Op2
-            
-            switch (dp_reg_shift) {
-                case 0: { 
-                    /* lsl */ 
-                    dp_reg_rm_data = dp_reg_rm_data << dp_reg_operand;
-                    break;
+    unsigned char dp_reg_sf = (inst->sf);
+    unsigned char dp_reg_opc = (inst->opc);
+    unsigned char dp_reg_m = (inst->dp_reg).m;
+    unsigned char dp_reg_opr = (inst->dp_reg).opr;
+    unsigned char dp_reg_rm = (inst->dp_reg).rm;
+    unsigned char dp_reg_operand = (inst->dp_reg).operand;
+    unsigned char dp_reg_rn = (inst->dp_reg).rn;
+    unsigned char dp_reg_rd = (inst->rd);
+    uint64_t dp_reg_rn_data = (machine_state.general_registers)[dp_reg_rn].data;
+    uint64_t dp_reg_rm_data = (machine_state.general_registers)[dp_reg_rm].data;
+    static uint64_t res;
+    if (dp_reg_m == 0) {
+        char dp_reg_shift = BITMASK(dp_reg_opr, 1, 2);
+        // get data from registers rn, rm
+        // perform shift on rm for cases 00, 01, 10, case 11 only done in logical case
+        // op2 = rm shifted operand many bits
+        // then execute instuction Rd = Rn (op) Op2
+        
+        switch (dp_reg_shift) {
+            case 0: { 
+                /* lsl */ 
+                dp_reg_rm_data = dp_reg_rm_data << dp_reg_operand;
+                break;
+            }
+            case 1: { 
+                /* lsr */ 
+                dp_reg_rm_data = dp_reg_rm_data >> dp_reg_operand; 
+                break;
+            }
+            case 2: { 
+                /* asr */
+                if (dp_reg_sf == 0) {
+                    dp_reg_rm_data = (((int32_t)dp_reg_rm_data) >> dp_reg_operand);
+                } else {    
+                    dp_reg_rm_data = (((int64_t)dp_reg_rm_data) >> dp_reg_operand); 
                 }
-                case 1: { 
-                    /* lsr */ 
-                    dp_reg_rm_data = dp_reg_rm_data >> dp_reg_operand; 
-                    break;
-                }
-                case 2: { 
-                    /* asr */
-                    if (dp_reg_sf == 0) {
-                        dp_reg_rm_data = (((int32_t)dp_reg_rm_data) >> dp_reg_operand);
-                    } else {    
-                        dp_reg_rm_data = (((int64_t)dp_reg_rm_data) >> dp_reg_operand); 
-                    }
-                    break;
-                }
+                break;
+            }
+        }
+
+
+        if (GET_BIT(dp_reg_opr, 0) == 0) {
+            // arithmetic
+            // same as for dp_imm
+
+            arith_inst_exec(dp_reg_opc, dp_reg_rd, dp_reg_rn_data, dp_reg_rm_data, dp_reg_sf);
+        } else {
+            // logical
+            // handle shift case 11
+            // handle case of N = 0,1
+            // logical instuctions
+            if (dp_reg_shift == 3) {
+                // ror
+                unsigned char size = dp_reg_sf ? 64 : 32;
+                if (!dp_reg_sf) dp_reg_operand &= 31; // dp_reg_operand %= 32
+                dp_reg_rm_data = (dp_reg_rm_data >> dp_reg_operand) | (dp_reg_rm_data << (size - dp_reg_operand));
             }
 
-
-            if (GET_BIT(dp_reg_opr, 0) == 0) {
-                // arithmetic
-                // same as for dp_imm
-
-                arith_inst_exec(dp_reg_opc, dp_reg_rd, dp_reg_rn_data, dp_reg_rm_data, dp_reg_sf);
-            } else {
-                // logical
-                // handle shift case 11
-                // handle case of N = 0,1
-                // logical instuctions
-                if (dp_reg_shift == 3) {
-                    // ror
-                    unsigned char size = dp_reg_sf ? 64 : 32;
-                    if (!dp_reg_sf) dp_reg_operand &= 31; // dp_reg_operand %= 32
-                    dp_reg_rm_data = (dp_reg_rm_data >> dp_reg_operand) | (dp_reg_rm_data << (size - dp_reg_operand));
-                }
-
-                if (GET_BIT(dp_reg_opr, 3) == 1) {
-                    if (!dp_reg_sf) {
-
+            if (GET_BIT(dp_reg_opr, 3) == 1) {
+                if (!dp_reg_sf) {
                     dp_reg_rm_data = ~dp_reg_rm_data;
                 }
 
@@ -361,24 +366,24 @@ static void dp_reg(MachineState machine_state, Instruction *inst) {
                 if (dp_reg_sf == 0) {
                     dp_reg_rm_data = (uint32_t)dp_reg_rm_data;
                 }
-
                 write_general_registers(dp_reg_rd, res);
             }
-        } else {
-            // multiply
-            unsigned char multiply_x = GET_BIT(dp_reg_operand, 0);
-            unsigned char multiply_ra = BITMASK(dp_reg_operand, 1, 5);
+        } 
+    } else {
+        // multiply
+        unsigned char multiply_x = GET_BIT(dp_reg_operand, 0);
+        unsigned char multiply_ra = BITMASK(dp_reg_operand, 1, 5);
 
-            uint64_t multiply_ra_data = (machine_state.general_registers)[multiply_ra].data;
-            if (multiply_x == 0) {
-                // madd
-                res = multiply_ra_data + (dp_reg_rn_data * dp_reg_rm_data);
-            } else {
-                // msub
-                res = multiply_ra_data - (dp_reg_rn_data * dp_reg_rm_data);
-            }
-            write_general_registers(dp_reg_rd, res);
+        uint64_t multiply_ra_data = (machine_state.general_registers)[multiply_ra].data;
+        if (multiply_x == 0) {
+            // madd
+            res = multiply_ra_data + (dp_reg_rn_data * dp_reg_rm_data);
+        } else {
+            // msub
+            res = multiply_ra_data - (dp_reg_rn_data * dp_reg_rm_data);
         }
+        write_general_registers(dp_reg_rd, res);
+    }
 }
 
 
@@ -397,26 +402,26 @@ static void sdt(MachineState machine_state, Instruction *inst) {
             unsigned char sdt_xm = (inst->single_data_transfer).offset.xm;
             uint64_t sdt_xm_data =  (machine_state.general_registers)[sdt_xm].data;
             uint64_t mem_address = sdt_xm_data + sdt_xn_data;
-            read_write_mem(sdt_l, sdt_rt, mem_address, sdt_sf);
+            read_write_mem(machine_state, sdt_l, sdt_rt, mem_address, sdt_sf);
             break;
         }
         case PRE_INDEX_OFFSET: {
             int16_t sdt_simm9 = (inst->single_data_transfer).offset.simm9;
             uint64_t mem_address = sdt_xn_data + sdt_simm9;
-            read_write_mem(sdt_l, sdt_rt, mem_address, sdt_sf);
+            read_write_mem(machine_state, sdt_l, sdt_rt, mem_address, sdt_sf);
             write_general_registers(sdt_xn, mem_address);
             break;
         }
         case POST_INDEX_OFFSET: {
             int16_t sdt_simm9 = (inst->single_data_transfer).offset.simm9;
-            read_write_mem(sdt_l, sdt_rt, sdt_xn_data, sdt_sf);
+            read_write_mem(machine_state, sdt_l, sdt_rt, sdt_xn_data, sdt_sf);
             write_general_registers(sdt_xn, sdt_xn_data + sdt_simm9);
             break;
         }
         case UNSIGNED_OFFSET: {
             uint16_t sdt_imm12 = (inst->single_data_transfer).offset.imm12;
             uint64_t uoffset = sdt_imm12 * 8;
-            read_write_mem(sdt_l, sdt_rt, sdt_xn_data + uoffset, sdt_sf);
+            read_write_mem(machine_state, sdt_l, sdt_rt, sdt_xn_data + uoffset, sdt_sf);
             break;
         }
     }
@@ -425,8 +430,9 @@ static void sdt(MachineState machine_state, Instruction *inst) {
 static void load_lit(MachineState machine_state, Instruction *inst) {
     uint64_t sdt_pc = (machine_state.program_counter).data;
     int32_t sdt_simm19 = (inst->load_literal).simm19;
+    unsigned char sdt_rt = (inst->rt);
     unsigned char sdt_sf = (inst->sf);
-    read_write_mem(1, sdt_rt, sdt_pc + sdt_simm19 * 4, sdt_sf);
+    read_write_mem(machine_state, 1, sdt_rt, sdt_pc + sdt_simm19 * 4, sdt_sf);
 }
 
 static void branch(MachineState machine_state, Instruction *inst) {
@@ -434,7 +440,7 @@ static void branch(MachineState machine_state, Instruction *inst) {
     // how to specify PC when writing to machine state
 
 
-    enum BRANCH_OPERAND_TYPE branch_operand_type = (inst->branch).operand_type;
+    BranchOperandType branch_operand_type = (inst->branch).operand_type;
 
     switch (branch_operand_type) {
         case UNCOND_BRANCH: {
@@ -501,11 +507,11 @@ static void branch(MachineState machine_state, Instruction *inst) {
 
 void execute(Instruction *inst) {
     if (inst == NULL) return;
-    enum CommandFormat inst_command_format = inst->command_format;
-    switch (inst_command_format) {
-        
-	    MachineState machine_state = read_machine_state();
+    CommandFormat inst_command_format = inst->command_format;
 
+    MachineState machine_state = read_machine_state();
+
+    switch (inst_command_format) {
     	case HALT: {
             halt(machine_state);
             break;
@@ -532,4 +538,3 @@ void execute(Instruction *inst) {
         }
     }
 }
-1

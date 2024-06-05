@@ -1,3 +1,4 @@
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include "execute.h"
@@ -43,7 +44,8 @@ int main(int argc, char **argv) {
     while (1) {
         MachineState machine_state = read_machine_state();
         uint64_t cur_pc = machine_state.program_counter.data;
-        execute(decode(cur_pc));
+        Instruction inst = decode(cur_pc);
+        execute(&inst);
         increment_pc();
     }
 
