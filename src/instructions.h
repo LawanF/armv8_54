@@ -13,7 +13,6 @@
 // Returns a 1 bit with i zeros to the right of it
 #define FILL_BIT(i) (0x1UL << (i))
 // Negates a number 32-bit number n
-#define NEGATE_MASK(n) ((n) ^ (0xffffffffUL))
 
 // enum for specifying type of instruction
 typedef enum { UNKNOWN, HALT, DP_IMM, DP_REG, SINGLE_DATA_TRANSFER, LOAD_LITERAL, BRANCH } CommandFormat;
