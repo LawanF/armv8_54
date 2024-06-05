@@ -8,7 +8,7 @@
  */
 
 // binary representation of HALT instruction
-#define HALT_BIN 0x8a000000
+#define HALT_BIN 0x8a000000UL
 #define UNKNOWN_INSTRUCTION ((Instruction) { .command_format = UNKNOWN })
 #define HALT_INSTRUCTION ((Instruction) { .command_format = HALT })
 

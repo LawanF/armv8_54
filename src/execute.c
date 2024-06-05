@@ -1,4 +1,5 @@
 #include <assert.h>
+#include <stdio.h>
 #include <stdint.h>
 #include <stdlib.h>
 #include "emulate.h"
@@ -157,7 +158,7 @@ static void read_write_mem(MachineState machine_state, unsigned char sdt_l, uint
 
 
 static void halt(MachineState machine_state) {
-    unsigned char *filename = get_output_file();
+    char *filename = get_output_file();
     print_output(&machine_state, filename);
     exit(1);
 }
@@ -391,9 +392,9 @@ static void sdt(MachineState machine_state, Instruction *inst) {
     unsigned char sdt_l = (inst->single_data_transfer).l;
     unsigned char sdt_xn = (inst->single_data_transfer).xn;
     unsigned char sdt_sf = (inst->sf);
-    unsigned char sdt_opc = (inst->opc);
+    unsigned char sdt_opc = (inst->opc); // Unused...
     unsigned char sdt_rt = (inst->rt);
-    uint64_t sdt_rt_data = (machine_state.general_registers)[sdt_rt].data;
+    uint64_t sdt_rt_data = (machine_state.general_registers)[sdt_rt].data; // Unused...
     uint64_t sdt_xn_data = (machine_state.general_registers)[sdt_xn].data;
     SDTOffsetType sdt_type = (inst->single_data_transfer).offset_type;
 
@@ -451,7 +452,7 @@ static void branch(MachineState machine_state, Instruction *inst) {
         case REGISTER_BRANCH: {
             // use machine state function to read register branch_xn
             // then write address in branch_xn to PC
-            char register_branch_xn = (inst->branch).operand.register_branch.xn;
+            unsigned char register_branch_xn = (inst->branch).operand.register_branch.xn;
             write_program_counter((machine_state.general_registers)[register_branch_xn].data);
             break;
         }
@@ -535,6 +536,10 @@ void execute(Instruction *inst) {
         case BRANCH: {
             branch(machine_state, inst);
 	        break;
+        }
+        case UNKNOWN: {
+            fprintf(stderr, "execute: UNKNOWN instruction type passed.");
+            exit(1);
         }
     }
 }

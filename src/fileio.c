@@ -112,7 +112,7 @@ void print_output(MachineState *machine_state, char *filename) {
 	if (output == NULL) {
 	    fprintf(stderr, "print_output: can't open %s, errno %d\n", filename, errno);
 	}
-    }
+}
 
     // Printing register content
     printf_with_err("Registers:\n");
@@ -132,7 +132,7 @@ void print_output(MachineState *machine_state, char *filename) {
     printf_with_err("PSTATE : %c%c%c%c\n", pstate.neg ? 'N' : '-', pstate.zero ? 'Z' : '-', pstate.carry ? 'C' : '-', pstate.overflow ? 'V' : '-');
 
     // Printing non-zero memory
-    printf_with_err("Non-zero memory:");
+    printf_with_err("Non-zero memory:\n");
 
     // Locates non-zero memory and prints the data
     locate_non_zero_mem();

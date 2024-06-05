@@ -1,5 +1,7 @@
 #include <assert.h>
+#include <stdlib.h>
 #include "fetch.h"
+#include "memory.h"
 
 /*
     A function that takes the address held in the Program Counter
