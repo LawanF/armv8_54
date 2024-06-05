@@ -24,12 +24,12 @@ static void adds(unsigned char rd:5, uint64_t rn_data, uint64_t op2, unsigned ch
     
     if (sf == 0) { 
         res = (uint32_t)res
-        write_general_registers(rd, res);
         set_pstate_flag('N', GET_BIT(res, 31));
-    else {
-        write_general_registers(rd, res);
+    } else {
         set_pstate_flag('N', GET_BIT(res, 63));
     }
+    write_general_registers(rd, res);
+
     if (res == 0) {
         // set zero flag to 1
         set_pstate_flag('Z', 1);
@@ -37,6 +37,7 @@ static void adds(unsigned char rd:5, uint64_t rn_data, uint64_t op2, unsigned ch
         // set zero flag to 0
         set_pstate_flag('Z', 0);
     }
+
     if (res < rn_data || res < dp_imm+imm12) {
         // set carry flag to 1
         set_pstate_flag('C', 1);
@@ -44,6 +45,7 @@ static void adds(unsigned char rd:5, uint64_t rn_data, uint64_t op2, unsigned ch
         // set carry flag to 0
         set_pstate_flag('C', 0);
     }
+
     if ((rn_data > 0 && op2 > 0 && res < 0) || (rn_data < 0 && op2 < 0 && res > 0)) {
         // set signed overflow flag to 1
         set_pstate_flag('V', 1);
@@ -51,9 +53,6 @@ static void adds(unsigned char rd:5, uint64_t rn_data, uint64_t op2, unsigned ch
         // set signed overflow flag to 0
         set_pstate_flag('V', 0);
     }
-
-    // HOW ARE WE HANDLING SIGNED / UNSIGNED INTEGERS
-    // figure out how we are handling the size of the register - is the result meant to be stored as 32 or 64 bit int
 }
 
 static void sub(unsigned char rd:5, uint64_t rn_data, uint64_t op2, unsigned char sf:1) {
@@ -67,14 +66,15 @@ static void sub(unsigned char rd:5, uint64_t rn_data, uint64_t op2, unsigned cha
 
 static void subs(unsigned char rd:5, uint64_t rn_data, uint64_t op2, unsigned char sf:1) {
     uint64_t res = rn_data - op2;
+    
     if (sf == 0) {
         res = (uint32_t)res
-        write_general_registers(rd, res);
         set_pstate_flag('N', GET_BIT(res, 31));
-    else {
-        write_general_registers(rd, res);
+    } else {
         set_pstate_flag('N', GET_BIT(res, 63));
     }
+    write_general_registers(rd, res);
+
     if (res == 0) {
         // set zero flag to 1
         set_pstate_flag('Z', 1);
@@ -82,6 +82,7 @@ static void subs(unsigned char rd:5, uint64_t rn_data, uint64_t op2, unsigned ch
         // set zero flag to 0
         set_pstate_flag('Z', 0);
     }
+
     if (res < rn_data || res < op2) {
         // set carry flag to 1
         set_pstate_flag('C', 1);
@@ -89,6 +90,7 @@ static void subs(unsigned char rd:5, uint64_t rn_data, uint64_t op2, unsigned ch
         // set carry flag to 0
         set_pstate_flag('C', 0);
     }
+
     if ((rn_data < 0 && op2 > 0 && res > 0) || (rn_data > 0 && op2 < 0 && res < 0)) {
         // set signed overflow flag to 1
         set_pstate_flag('V', 1);
@@ -171,21 +173,29 @@ static void movz(unsigned char dp_imm_rd:5, uint64_t wide_move_operand) {
     write_general_registers(dp_imm_rd, wide_move_operand);
 }
 
-static void movk(unsigned char dp_imm_rd:5, uint64_t wide_move_operand, unsigned char hw:2) {
+static void movk(unsigned char dp_imm_rd:5, uint64_t wide_move_operand, unsigned char wide_move_hw:2, unsigned char sf) {
     // get rd data
-    // mask rd data around bits that will be replaced with operand (dependent on hw * 16)
+    // mask rd data around bits that will be replaced with operand (dependent on wide_move_hw * 16)
     // and with operand bits
     // in 32 bit version zero extend to 64
     uint64_t wide_move_rd_data = (machine_state.general_registers)[dp_imm_rd].data;
 
     // Get top bits.
-    uint64_t new_rd_data = BITMASK(wide_move_rd_data, 16 + (hw * 16), 63) << (16 + (hw * 16));
+    uint64_t new_rd_data = BITMASK(wide_move_rd_data, 16 + (wide_move_hw * 16), 63) << (16 + (wide_move_hw * 16));
 
     // Get bottom bits.
-    new_rd_data |= BITMASK(wide_move_rd_data, 0, hw * 15);
+    new_rd_data |= BITMASK(wide_move_rd_data, 0, (wide_move_hw * 16) - 1);
 
-    wide_move_rd_data = wide_move_rd_data & wide_move_operand;
-    write_general_registers(dp_imm_rd, wide_move_hw);
+    // Insert operand.
+    new_rd_data |= wide_move_operand;
+
+    // 0-extend if in 32-bit mode. Check if hw is within bounds.
+    if (sf == 0) {
+        assert(wide_move_hw =< 1);
+        new_rd_data = (uint32_t) new_rd_data;
+    }
+
+    write_general_registers(dp_imm_rd, new_rd_data);
 }
 
 static void dp_imm(MachineState machine_state, Instruction *inst) {
