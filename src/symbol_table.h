@@ -15,6 +15,10 @@ bool symtable_contains(SymbolTable symtable, const char *key);
 
 bool symtable_get(SymbolTable symtable, const char *key, uint32_t *dest);
 
-bool symtable_remove(SymbolTable symtable, const char *key, uint32_t *dest);
+bool single_symtable_remove(SymbolTable symtable, const char *key, uint32_t *dest);
 
-bool symtable_set(SymbolTable symtable, const char *key, const uint32_t address);
+bool multi_symtable_remove(SymbolTable symtable, const char *key, uint32_t *dest);
+
+bool single_symtable_set(SymbolTable symtable, const char *key, const uint32_t address);
+
+bool multi_symtable_add(SymbolTable symtable, const char *key, const uint32_t address);
