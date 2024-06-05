@@ -248,6 +248,17 @@ bool symtable_get(SymbolTable symtable, const char *key, uint32_t *dest) {
     return bucket_get(symtable->buckets[bucket_index], key, dest);
 }
 
+/**
+ * For a multimap, this removes all entries under a given key in the symbol table.
+ * @param head_ptr the given symbol table
+ * @param key the string to search for in the bucket
+ * @param dest a pointer to which the previous associated address under `key` is written, if it exists.
+ * @returns `true` if at least one entry was removed, and `false` if the symbol table was unmodified.
+ */
+bool symtable_multimap_remove(SymbolTable symtable, const char *key, uint32_t *dest) {
+    // TODO
+}
+
 /** Removes the entry with a given key in the symbol table.
  * If `dest` is not `NULL`, `dest` is written with the previous associated address under that key.
  * @param head_ptr the given symbol table
