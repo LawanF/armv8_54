@@ -43,10 +43,7 @@ int main(int argc, char **argv) {
     // Run the machine, waiting for the halt instruction to exit.
     while (1) {
         MachineState machine_state = read_machine_state();
-        uint64_t cur_pc = machine_state.program_counter.data;
-        printf("current pc: %08llx\n", cur_pc);
         uint32_t inst_data = fetch(&machine_state);
-        printf("current instruction: %08x\n", inst_data);
         Instruction inst = decode(inst_data);
         execute(&inst);
         increment_pc();
