@@ -160,7 +160,7 @@ static void read_write_mem(MachineState machine_state, unsigned char sdt_l, uint
 static void halt(MachineState machine_state) {
     char *filename = get_output_file();
     print_output(&machine_state, filename);
-    exit(1);
+    exit(0);
 }
 
 static void movn(unsigned char dp_imm_rd, uint64_t wide_move_operand, unsigned char sf) {

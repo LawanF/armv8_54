@@ -108,7 +108,7 @@ void print_output(MachineState *machine_state, char *filename) {
     // Write to the file if it exists
     FILE *output;
     if (filename != NULL) {
-	output = freopen(filename, "a+", stdout);
+	output = freopen(filename, "w", stdout);
 	if (output == NULL) {
 	    fprintf(stderr, "print_output: can't open %s, errno %d\n", filename, errno);
 	}

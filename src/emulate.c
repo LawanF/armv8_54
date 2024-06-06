@@ -33,7 +33,7 @@ int main(int argc, char **argv) {
 
     // If output file is given, store it in output_file.
     if (argc == 3) {
-        strcpy(output_file, argv[2]);
+        output_file = argv[2];
     }
 
     // Initialise machine state and memory, and load the input file.
