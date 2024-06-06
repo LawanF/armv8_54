@@ -270,7 +270,7 @@ bool multi_symtable_remove_first(SymbolTable symtable, const char *key, uint32_t
 /** Removes the entry with a given key in the symbol table.
  * If `dest` is not `NULL`, `dest` is written with the previous associated address under that key.
  * If the symbol table is in fact a multimap and not a single map, then `dest` is set with the
- * first associated address found, and all matching entries are removed.
+ * first associated address found (the last one added), and all matching entries are removed.
  * @param head_ptr the given symbol table
  * @param key the string to search for in the bucket
  * @param dest a pointer to which the previous associated address under `key` is written, if it exists.
