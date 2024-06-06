@@ -237,7 +237,7 @@ bool symtable_contains(SymbolTable symtable, const char *key) {
 }
 
 /** Searches for an entry with the given label `key` in the symbol table.
- * If `dest` is not `NULL`, `dest` is written with the address if such an entry is found.
+ * If `dest` is not `NULL`, `dest` is written with the (first) address if such an entry is found.
  * @param symtable the symbol table to be searched through
  * @param key the symbol to be searched for
  * @param dest a pointer to which to write the associated address, if it is found
@@ -249,24 +249,15 @@ bool symtable_get(SymbolTable symtable, const char *key, uint32_t *dest) {
 }
 
 /**
- * For a multimap, this removes all entries under a given key in the symbol table.
+ * For a multimap, this removes one entries under a given key in the symbol table.
+ * If `dest` is not `NULL`, `dest` is written with the first associated address under that key,
+ * if it is found (the last entry that was added, if it exists).
  * @param head_ptr the given symbol table
  * @param key the string to search for in the bucket
  * @param dest a pointer to which the previous associated address under `key` is written, if it exists.
  * @returns `true` if at least one entry was removed, and `false` if the symbol table was unmodified.
  */
-bool symtable_multimap_remove(SymbolTable symtable, const char *key, uint32_t *dest) {
-    // TODO
-}
-
-/** Removes the entry with a given key in the symbol table.
- * If `dest` is not `NULL`, `dest` is written with the previous associated address under that key.
- * @param head_ptr the given symbol table
- * @param key the string to search for in the bucket
- * @param dest a pointer to which the previous associated address under `key` is written, if it exists.
- * @returns `true` if the entry was removed, and `false` if the symbol table was unmodified.
- */
-bool symtable_remove(SymbolTable symtable, const char *key, uint32_t *dest) {
+bool multi_symtable_remove_first(SymbolTable symtable, const char *key, uint32_t *dest) {
     uint16_t bucket_index = symtable_bucket_index(symtable, key);
     Bucket *head_ptr = &symtable->buckets[bucket_index];
     if (bucket_remove(head_ptr, key, dest)) {
@@ -276,7 +267,35 @@ bool symtable_remove(SymbolTable symtable, const char *key, uint32_t *dest) {
     return false;
 }
 
-extern bool symtable_set(SymbolTable symtable, const char *key, const uint32_t address);
+/** Removes the entry with a given key in the symbol table.
+ * If `dest` is not `NULL`, `dest` is written with the previous associated address under that key.
+ * If the symbol table is in fact a multimap and not a single map, then `dest` is set with the
+ * first associated address found, and all matching entries are removed.
+ * @param head_ptr the given symbol table
+ * @param key the string to search for in the bucket
+ * @param dest a pointer to which the previous associated address under `key` is written, if it exists.
+ * @returns `true` if the entry was removed, and `false` if the symbol table was unmodified.
+ */
+bool single_symtable_remove(SymbolTable symtable, const char *key, uint32_t *dest) {
+    bool modified = multi_symtable_remove_first(symtable, key, dest);
+    // remove any duplicate entries, if the symtable is a multimap
+    while (modified && multi_symtable_remove_first(symtable, key, NULL)) /* EMPTY */;
+    return modified;
+}
+
+/** Removes all entries with a given key in the symbol table.
+ * If `dest` is not `NULL`, `dest` is written with the previous associated address under that key.
+ * @param head_ptr the given symbol table
+ * @param key the string to search for in the bucket
+ * @param dest a pointer to which the previous associated address under `key` is written, if it exists.
+ * @returns `true` if the entry was removed, and `false` if the symbol table was unmodified.
+ * @see single_symtable_remove
+ */
+bool multi_symtable_remove_all(SymbolTable symtable, const char *key, uint32_t *dest) {
+    return single_symtable_remove(symtable, key, dest);
+}
+
+extern bool multi_symtable_add(SymbolTable symtable, const char *key, const uint32_t address);
 
 /** Resizes the symbol table to contain twice the number of buckets.
  * @param symtable the symbol table to resize
@@ -294,7 +313,7 @@ static bool symtable_resize(SymbolTable symtable) {
     bool success = true;
     for (int i = 0; i < symtable->size; i++) {
         Entry e = entries[i];
-        success = success && symtable_set(new_table, e.label, e.address);
+        success = success && multi_symtable_add(new_table, e.label, e.address);
     }
     free(entries);
     if (!success) {
@@ -310,18 +329,18 @@ static bool symtable_resize(SymbolTable symtable) {
     }
 }
 
-/** Adds a given entry with key and associated address to the symbol table.
+/** Adds a given entry with key and associated address to the symbol table multimap.
+ * Does not remove any other entries under the same key.
  * @param symtable the symbol table to add to
  * @param key the label to be associated
  * @param address the location in memory of the label
  * @returns `true` if addition succeeded, and `false` otherwise
  */
-bool symtable_set(SymbolTable symtable, const char *key, const uint32_t address) {
+bool multi_symtable_add(SymbolTable symtable, const char *key, const uint32_t address) {
+    // add a new entry; resize if needed
     uint16_t bucket_index = symtable_bucket_index(symtable, key);
     Bucket *head_ptr = &symtable->buckets[bucket_index];
-    // remove any old entry
-    symtable_remove(symtable, key, NULL);
-    // add a new entry; resize if needed
+    // include the nul character in the size to be allocated
     char *str = malloc((strlen(key) + 1) * sizeof(char));
     if (str == NULL) return false;
     strcpy(str, key);
@@ -340,4 +359,16 @@ bool symtable_set(SymbolTable symtable, const char *key, const uint32_t address)
         return false;
     }
     return true;
+}
+
+/** Adds a given entry with key and associated address to the symbol table.
+ * @param symtable the symbol table to add to
+ * @param key the label to be associated
+ * @param address the location in memory of the label
+ * @returns `true` if addition succeeded, and `false` otherwise
+ */
+bool single_symtable_set(SymbolTable symtable, const char *key, const uint32_t address) {
+    // remove any old entry/entries
+    single_symtable_remove(symtable, key, NULL);
+    return multi_symtable_add(symtable, key, address);
 }
