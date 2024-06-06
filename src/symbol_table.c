@@ -249,15 +249,15 @@ bool symtable_get(SymbolTable symtable, const char *key, uint32_t *dest) {
 }
 
 /**
- * For a multimap, this removes one entries under a given key in the symbol table.
- * If `dest` is not `NULL`, `dest` is written with the first associated address under that key,
- * if it is found (the last entry that was added, if it exists).
+ * For a multimap, this removes one entry under a given key in the symbol table.
+ * If `dest` is not `NULL`, `dest` is written with the last associated entry that was added,
+ * if it exists.
  * @param head_ptr the given symbol table
  * @param key the string to search for in the bucket
  * @param dest a pointer to which the previous associated address under `key` is written, if it exists.
  * @returns `true` if at least one entry was removed, and `false` if the symbol table was unmodified.
  */
-bool multi_symtable_remove_first(SymbolTable symtable, const char *key, uint32_t *dest) {
+bool multi_symtable_remove_last(SymbolTable symtable, const char *key, uint32_t *dest) {
     uint16_t bucket_index = symtable_bucket_index(symtable, key);
     Bucket *head_ptr = &symtable->buckets[bucket_index];
     if (bucket_remove(head_ptr, key, dest)) {
@@ -277,9 +277,9 @@ bool multi_symtable_remove_first(SymbolTable symtable, const char *key, uint32_t
  * @returns `true` if the entry was removed, and `false` if the symbol table was unmodified.
  */
 bool single_symtable_remove(SymbolTable symtable, const char *key, uint32_t *dest) {
-    bool modified = multi_symtable_remove_first(symtable, key, dest);
+    bool modified = multi_symtable_remove_last(symtable, key, dest);
     // remove any duplicate entries, if the symtable is a multimap
-    while (modified && multi_symtable_remove_first(symtable, key, NULL)) /* EMPTY */;
+    while (modified && multi_symtable_remove_last(symtable, key, NULL)) /* EMPTY */;
     return modified;
 }
 

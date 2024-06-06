@@ -21,6 +21,6 @@ bool single_symtable_set(SymbolTable symtable, const char *key, const uint32_t a
 
 bool multi_symtable_add(SymbolTable symtable, const char *key, const uint32_t address);
 
-bool multi_symtable_remove_first(SymbolTable symtable, const char *key, uint32_t *dest);
+bool multi_symtable_remove_last(SymbolTable symtable, const char *key, uint32_t *dest);
 
 bool multi_symtable_remove_all(SymbolTable symtable, const char *key, uint32_t *dest);
