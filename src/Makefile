@@ -10,7 +10,11 @@ CFLAGS  ?= -std=c17 -g\
 all: assemble emulate
 
 assemble: assemble.o
-emulate: emulate.o
+
+EMULATE_DEPS := emulate_files
+EMULATE_SRC := $(wildcard $(EMULATE_DEPS)/*?.c)
+EMULATE_OBJ := $(subst %.c, %.o, $(EMULATE_SRC))
+emulate: emulate.o $(EMULATE_OBJ)
 
 clean:
 	$(RM) *.o assemble emulate
