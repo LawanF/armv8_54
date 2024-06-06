@@ -1,5 +1,7 @@
 #include "decode.h"
 #include "instruction_constants.h"
+#include "instructions.h"
+#include <stdio.h>
 
 /* Functions for decoding operands
  * These functions assume that the instruction is in the correct group,
@@ -51,7 +53,7 @@ static SDTOffset decode_sdt_offset(SDTOffsetType offset_type, uint32_t inst_data
 // Decodes a DP (immediate) instruction, returning it as a copy.
 static Instruction decode_dp_imm(uint32_t inst_data) {
     DPImmOperandType operand_type;
-    char opi = BITMASK(inst_data, DP_IMM_OPI_START, DP_IMM_OPI_END);
+    unsigned char opi = BITMASK(inst_data, DP_IMM_OPI_START, DP_IMM_OPI_END);
     switch (opi) {
         case ARITH_OPI: operand_type = ARITH_OPERAND; break;
         case WIDE_MOVE_OPI: operand_type = WIDE_MOVE_OPERAND; break;
@@ -62,7 +64,7 @@ static Instruction decode_dp_imm(uint32_t inst_data) {
         .sf  = GET_BIT(inst_data, DP_SF_BIT),
         .opc = BITMASK(inst_data, DP_OPC_START, DP_OPC_END),
         .rd  = BITMASK(inst_data, RD_RT_START, RD_RT_END),
-        .dp_imm = { .operand_type = operand_type, .operand = decode_dp_imm_operand(opi, inst_data) }
+        .dp_imm = { .operand_type = operand_type, .operand = decode_dp_imm_operand(operand_type, inst_data) }
     };
 }
 

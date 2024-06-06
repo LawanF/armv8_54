@@ -2,7 +2,7 @@
 #include <stdio.h>
 #include <stdint.h>
 #include <stdlib.h>
-#include "emulate.h"
+#include "../emulate.h"
 #include "execute.h"
 #include "fileio.h"
 #include "instructions.h"

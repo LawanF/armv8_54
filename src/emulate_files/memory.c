@@ -14,7 +14,7 @@ static unsigned char memory[MEMORY_SIZE];
 /*
     Clears memory, setting all values to 0.
 */
-void initmem() {
+void initmem(void) {
     memset(memory, 0, MEMORY_SIZE * sizeof(char));
 }
 

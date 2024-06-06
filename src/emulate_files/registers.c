@@ -21,7 +21,7 @@ void init_machine_state(void) {
     ms_pointer->program_counter.data = 0;
     ms_pointer->program_counter.writable = 1;
 
-    ms_pointer->pstate.zero = 0;
+    ms_pointer->pstate.zero = 1;
     ms_pointer->pstate.neg = 0;
     ms_pointer->pstate.carry = 0;
     ms_pointer->pstate.overflow = 0;

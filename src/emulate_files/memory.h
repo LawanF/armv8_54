@@ -4,7 +4,7 @@
 
 #define MEMORY_SIZE 2097152
 
-extern void initmem();
+extern void initmem(void);
 
 extern void loadtomem(void *arr, uint32_t numbytes);
 
