@@ -303,7 +303,7 @@ static void dp_reg(MachineState machine_state, Instruction *inst) {
         }
 
 
-        if (GET_BIT(dp_reg_opr, 0) == 0) {
+        if (GET_BIT(dp_reg_opr, 3) == 1) {
             // arithmetic
             // same as for dp_imm
 
@@ -320,55 +320,53 @@ static void dp_reg(MachineState machine_state, Instruction *inst) {
                 dp_reg_rm_data = (dp_reg_rm_data >> dp_reg_operand) | (dp_reg_rm_data << (size - dp_reg_operand));
             }
 
-            if (GET_BIT(dp_reg_opr, 3) == 1) {
-                if (!dp_reg_sf) {
-                    dp_reg_rm_data = ~dp_reg_rm_data;
-                }
-
-                switch (dp_reg_opc) {
-                    case 0: {
-                        // and / bic
-                        res = dp_reg_rn_data & dp_reg_rm_data;
-                        break;
-                    }
-                    case 1: {
-                        // orr / orn
-                        res = dp_reg_rn_data | dp_reg_rm_data;
-                        break;
-                    }
-                    case 2: {
-                        // eor / eon
-                        res = dp_reg_rn_data ^ dp_reg_rm_data;
-                        break;
-                    }
-                    case 3: {
-                        // ands / bics
-                        res = dp_reg_rn_data & dp_reg_rm_data;
-                        // set flags 
-                        if (!dp_reg_sf) {
-                            set_pstate_flag('N', GET_BIT(res, 31));
-                        } else {
-                            set_pstate_flag('N', GET_BIT(res, 63));
-                        }
-                        if (res == 0) {
-                            // set zero register Z to 1
-                            set_pstate_flag('Z', 1);
-                        } else {
-                            // set zero register Z to 0
-                            set_pstate_flag('Z', 0);
-                        }
-                        // set registers C and V to 0
-                        set_pstate_flag('C', 0);
-                        set_pstate_flag('V', 0);
-                        break;
-                    }
-                }
-
-                if (dp_reg_sf == 0) {
-                    dp_reg_rm_data = (uint32_t)dp_reg_rm_data;
-                }
-                write_general_registers(dp_reg_rd, res);
+            if (GET_BIT(dp_reg_opr, 0) == 1) {
+                dp_reg_rm_data = ~dp_reg_rm_data;
             }
+
+            switch (dp_reg_opc) {
+                case 0: {
+                    // and / bic
+                    res = dp_reg_rn_data & dp_reg_rm_data;
+                    break;
+                }
+                case 1: {
+                    // orr / orn
+                    res = dp_reg_rn_data | dp_reg_rm_data;
+                    break;
+                }
+                case 2: {
+                    // eor / eon
+                    res = dp_reg_rn_data ^ dp_reg_rm_data;
+                    break;
+                }
+                case 3: {
+                    // ands / bics
+                    res = dp_reg_rn_data & dp_reg_rm_data;
+                    // set flags 
+                    if (!dp_reg_sf) {
+                        set_pstate_flag('N', GET_BIT(res, 31));
+                    } else {
+                        set_pstate_flag('N', GET_BIT(res, 63));
+                    }
+                    if (res == 0) {
+                        // set zero register Z to 1
+                        set_pstate_flag('Z', 1);
+                    } else {
+                        // set zero register Z to 0
+                        set_pstate_flag('Z', 0);
+                    }
+                    // set registers C and V to 0
+                    set_pstate_flag('C', 0);
+                    set_pstate_flag('V', 0);
+                    break;
+                }
+            }
+
+            if (dp_reg_sf == 0) {
+                dp_reg_rm_data = (uint32_t)dp_reg_rm_data;
+            }
+            write_general_registers(dp_reg_rd, res);
         } 
     } else {
         // multiply
