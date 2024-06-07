@@ -37,7 +37,7 @@ void loadtomem(void *arr, uint32_t numbytes) {
 void checkaddress32(uint32_t address) {
     // Check if address is a multiple of 4.
     if ((address % WORD_BYTES) != 0) {
-        fprintf(stderr, "checkaddress32: address %08x is not multiple of %d\n", address, WORD_BYTES);
+        fprintf(stderr, "checkaddress32: address %08x is not a multiple of %d\n", address, WORD_BYTES);
         exit(1);
     }
 
