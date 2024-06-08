@@ -8,7 +8,7 @@ extern void initmem(void);
 
 extern void loadtomem(void *arr, uint32_t numbytes);
 
-extern void checkaddress32(uint32_t address);
+extern void check_address_boundary(uint32_t address);
 
 extern uint32_t readmem32(uint32_t address);
 

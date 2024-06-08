@@ -102,8 +102,8 @@
 #define SDT_REGISTER_MASK_LOWER_END   15
 #define SDT_REGISTER_MASK_UPPER_BIT   21
 // offset 0XXXXXXXXXI1 gives pre/post-index:  0[ simm9:9 ][ i:1 ]1
-#define SDT_INDEX_MASK_LOWER_BIT SDT_XN_START
-#define SDT_INDEX_MASK_UPPER_BIT SDT_XN_END
+#define SDT_INDEX_MASK_LOWER_BIT 10
+#define SDT_INDEX_MASK_UPPER_BIT 21
 
 // For decoding the operand:
 
