@@ -293,7 +293,7 @@ static void dp_reg(MachineState machine_state, Instruction *inst) {
             case 2: { 
                 /* asr */
                 if (dp_reg_sf == 0) {
-                    dp_reg_rm_data = (((int32_t)dp_reg_rm_data) >> dp_reg_operand);
+                    dp_reg_rm_data = (uint32_t) (((int32_t)dp_reg_rm_data) >> dp_reg_operand);
                 } else {    
                     dp_reg_rm_data = (((int64_t)dp_reg_rm_data) >> dp_reg_operand); 
                 }
@@ -363,7 +363,7 @@ static void dp_reg(MachineState machine_state, Instruction *inst) {
             }
 
             if (dp_reg_sf == 0) {
-                dp_reg_rm_data = (uint32_t)dp_reg_rm_data;
+                res = (uint32_t) res;
             }
             write_general_registers(dp_reg_rd, res);
         } 
