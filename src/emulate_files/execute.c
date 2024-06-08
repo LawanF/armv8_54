@@ -381,6 +381,11 @@ static void dp_reg(MachineState machine_state, Instruction *inst) {
             // msub
             res = multiply_ra_data - (dp_reg_rn_data * dp_reg_rm_data);
         }
+        
+        if (dp_reg_sf == 0) {
+            res  = (uint32_t)res;
+        }
+
         write_general_registers(dp_reg_rd, res);
     }
 }
@@ -408,18 +413,30 @@ static void sdt(MachineState machine_state, Instruction *inst) {
             int16_t sdt_simm9 = (inst->single_data_transfer).offset.simm9;
             uint64_t mem_address = sdt_xn_data + sdt_simm9;
             read_write_mem(machine_state, sdt_l, sdt_rt, mem_address, sdt_sf);
+            if (!sdt_sf) {
+                mem_address = (uint32_t)mem_address;
+            }
             write_general_registers(sdt_xn, mem_address);
             break;
         }
         case POST_INDEX_OFFSET: {
             int16_t sdt_simm9 = (inst->single_data_transfer).offset.simm9;
             read_write_mem(machine_state, sdt_l, sdt_rt, sdt_xn_data, sdt_sf);
-            write_general_registers(sdt_xn, sdt_xn_data + sdt_simm9);
+            uint64_t mem_address = sdt_xn_data + sdt_simm9;
+            if (!sdt_sf) {
+                mem_address = (uint32_t)mem_address;
+            }
+            write_general_registers(sdt_xn, mem_address);
             break;
         }
         case UNSIGNED_OFFSET: {
             uint16_t sdt_imm12 = (inst->single_data_transfer).offset.imm12;
-            uint64_t uoffset = sdt_imm12 * 8;
+            uint64_t uoffset = sdt_imm12;
+            if (!sdt_sf) {
+                uoffset *= 4;
+            } else {
+                uoffset *= 8;
+            }
             read_write_mem(machine_state, sdt_l, sdt_rt, sdt_xn_data + uoffset, sdt_sf);
             break;
         }
