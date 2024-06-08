@@ -120,7 +120,7 @@ void print_output(MachineState *machine_state, char *filename) {
     // Prints the output of each general register
     for (int i = 0; i < NUM_GENERAL_REGISTERS; i++) {
 	Register gen_reg = machine_state->general_registers[i];
-	printf_with_err("X%02d = %016x\n", i, gen_reg.data);
+	printf_with_err("X%02d = %016llx\n", i, gen_reg.data);
     }
 
     // Prints the output of the program counter

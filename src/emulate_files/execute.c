@@ -140,7 +140,6 @@ static void read_write_mem(MachineState machine_state, unsigned char sdt_l, uint
             }
 
             write_general_registers(sdt_rt, data_load);
-
         } else {
             // read from rt
             // write to mem
@@ -370,8 +369,8 @@ static void dp_reg(MachineState machine_state, Instruction *inst) {
         } 
     } else {
         // multiply
-        unsigned char multiply_x = GET_BIT(dp_reg_operand, 0);
-        unsigned char multiply_ra = BITMASK(dp_reg_operand, 1, 5);
+        unsigned char multiply_x = GET_BIT(dp_reg_operand, 5);
+        unsigned char multiply_ra = BITMASK(dp_reg_operand, 0, 4);
 
         uint64_t multiply_ra_data = (machine_state.general_registers)[multiply_ra].data;
         if (multiply_x == 0) {
@@ -553,7 +552,7 @@ void execute(Instruction *inst) {
 	        break;
         }
         case UNKNOWN: {
-            fprintf(stderr, "execute: UNKNOWN instruction type passed.");
+            fprintf(stderr, "execute: UNKNOWN instruction type passed.\n");
             exit(1);
         }
     }

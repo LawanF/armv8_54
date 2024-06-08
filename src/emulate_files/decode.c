@@ -161,8 +161,7 @@ static Instruction decode_single_data_transfer(uint32_t inst_data) {
     // when U=1, offset is used for imm12 (unsigned)
     if (u) {
         offset_type = UNSIGNED_OFFSET;
-    }
-    else if (GET_BIT(inst_data, SDT_REGISTER_MASK_UPPER_BIT)
+    } else if (GET_BIT(inst_data, SDT_REGISTER_MASK_UPPER_BIT)
              && (BITMASK(inst_data, SDT_REGISTER_MASK_LOWER_START, SDT_REGISTER_MASK_LOWER_END)
                  == SDT_REGISTER_MASK_LOWER)) {
         offset_type = REGISTER_OFFSET;
@@ -172,6 +171,7 @@ static Instruction decode_single_data_transfer(uint32_t inst_data) {
         char i = GET_BIT(inst_data, SDT_INDEX_I_BIT);
         offset_type = i ? PRE_INDEX_OFFSET : POST_INDEX_OFFSET;
     } else return UNKNOWN_INSTRUCTION;
+
     return (Instruction) {
         .command_format = SINGLE_DATA_TRANSFER,
         .sf = GET_BIT(inst_data, SDT_SF_BIT),
