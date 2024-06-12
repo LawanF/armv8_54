@@ -33,7 +33,6 @@ static void adds(unsigned char rd, uint64_t rn_data, uint64_t op2, unsigned char
         res = (uint32_t) res;
     }
     
-    
     if (sf == 0) { 
         set_pstate_flag('N', GET_BIT(res, 31));
     } else {
@@ -79,7 +78,10 @@ static void subs(unsigned char rd, uint64_t rn_data, uint64_t op2, unsigned char
     uint64_t res = rn_data - op2;
     
     if (sf == 0) {
-        res = (uint32_t)res;
+        op2 = (uint32_t) op2;
+        rn_data = (uint32_t) rn_data;
+        res = (uint32_t) res;
+
         set_pstate_flag('N', GET_BIT(res, 31));
     } else {
         set_pstate_flag('N', GET_BIT(res, 63));
@@ -94,7 +96,12 @@ static void subs(unsigned char rd, uint64_t rn_data, uint64_t op2, unsigned char
         set_pstate_flag('Z', 0);
     }
 
-    if (res < rn_data || res < op2) {
+    unsigned char sign_index = sf ? 63 : 31;
+    bool rn_neg  = GET_BIT(rn_data, sign_index);
+    bool op2_neg = GET_BIT(op2, sign_index);
+    bool res_neg = GET_BIT(res, sign_index);
+
+    if (op2 <= rn_data) {
         // set carry flag to 1
         set_pstate_flag('C', 1);
     } else {
@@ -102,7 +109,7 @@ static void subs(unsigned char rd, uint64_t rn_data, uint64_t op2, unsigned char
         set_pstate_flag('C', 0);
     }
 
-    if ((rn_data < 0 && op2 > 0 && res > 0) || (rn_data > 0 && op2 < 0 && res < 0)) {
+    if ((rn_neg && !op2_neg && !res_neg) || (!rn_neg && op2_neg && res_neg)) {
         // set signed overflow flag to 1
         set_pstate_flag('V', 1);
     } else {
