@@ -198,10 +198,8 @@ static void movk(MachineState machine_state, unsigned char dp_imm_rd, uint64_t w
 
     // Get bottom bits.
     new_rd_data |= BITMASK(wide_move_rd_data, 0, (wide_move_hw * 16) - 1);
-
     // Insert operand.
     new_rd_data |= wide_move_operand;
-
     // 0-extend if in 32-bit mode. Check if hw is within bounds.
     if (sf == 0) {
         assert(wide_move_hw <= 1);
@@ -238,10 +236,10 @@ static void dp_imm(MachineState machine_state, Instruction *inst) {
             break;
         }
         case WIDE_MOVE_OPERAND: {
-            uint16_t wide_move_imm16 = (inst->dp_imm).operand.wide_move_operand.imm16;
+            uint64_t wide_move_imm16 = (inst->dp_imm).operand.wide_move_operand.imm16;
             unsigned char wide_move_hw = (inst->dp_imm).operand.wide_move_operand.hw;
 
-            uint32_t wide_move_operand = wide_move_imm16 << (wide_move_hw * 16);
+            uint64_t wide_move_operand = wide_move_imm16 << (wide_move_hw * 16);
 
             switch (dp_imm_opc) {
                     // get imm16, hw
