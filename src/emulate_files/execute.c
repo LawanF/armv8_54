@@ -27,9 +27,14 @@ static void add(unsigned char rd, uint64_t rn_data, uint64_t op2, unsigned char 
 
 static void adds(unsigned char rd, uint64_t rn_data, uint64_t op2, unsigned char sf) {
     uint64_t res = rn_data + op2;
+    if (sf == 0) {
+        rn_data = (uint32_t) rn_data;
+        op2 = (uint32_t) op2;
+        res = (uint32_t) res;
+    }
+    
     
     if (sf == 0) { 
-        res = (uint32_t)res;
         set_pstate_flag('N', GET_BIT(res, 31));
     } else {
         set_pstate_flag('N', GET_BIT(res, 63));
@@ -296,7 +301,7 @@ static void dp_reg(MachineState machine_state, Instruction *inst) {
             case 2: { 
                 /* asr */
                 if (dp_reg_sf == 0) {
-                    dp_reg_rm_data = (((int32_t)dp_reg_rm_data) >> dp_reg_operand);
+                    dp_reg_rm_data = (uint32_t) (((int32_t)dp_reg_rm_data) >> dp_reg_operand);
                 } else {    
                     dp_reg_rm_data = (((int64_t)dp_reg_rm_data) >> dp_reg_operand); 
                 }
@@ -318,7 +323,10 @@ static void dp_reg(MachineState machine_state, Instruction *inst) {
             if (dp_reg_shift == 3) {
                 // ror
                 unsigned char size = dp_reg_sf ? 64 : 32;
-                if (!dp_reg_sf) dp_reg_operand &= 31; // dp_reg_operand %= 32
+                if (!dp_reg_sf) {
+                    dp_reg_operand &= 31; // dp_reg_operand %= 32
+                    dp_reg_rm_data = (uint32_t) dp_reg_rm_data;
+                }
                 dp_reg_rm_data = (dp_reg_rm_data >> dp_reg_operand) | (dp_reg_rm_data << (size - dp_reg_operand));
             }
 
@@ -366,7 +374,7 @@ static void dp_reg(MachineState machine_state, Instruction *inst) {
             }
 
             if (dp_reg_sf == 0) {
-                dp_reg_rm_data = (uint32_t)dp_reg_rm_data;
+                res = (uint32_t) res;
             }
             write_general_registers(dp_reg_rd, res);
         } 
