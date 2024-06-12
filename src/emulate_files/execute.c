@@ -174,7 +174,10 @@ static void movn(unsigned char dp_imm_rd, uint64_t wide_move_operand, unsigned c
     write_general_registers(dp_imm_rd, wide_move_operand);
 }
 
-static void movz(unsigned char dp_imm_rd, uint64_t wide_move_operand) {
+static void movz(unsigned char dp_imm_rd, uint64_t wide_move_operand, unsigned char sf) {
+    if (sf == 0) {
+        wide_move_operand = (uint32_t)wide_move_operand;
+    }
     write_general_registers(dp_imm_rd, wide_move_operand);
 }
 
@@ -246,7 +249,7 @@ static void dp_imm(MachineState machine_state, Instruction *inst) {
                         break;
                     }
                     case 2: {
-                        movz(dp_imm_rd, wide_move_operand);
+                        movz(dp_imm_rd, wide_move_operand, dp_imm_sf);
                         break;
                     }
                     case 3: {
