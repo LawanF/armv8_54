@@ -182,6 +182,15 @@ SymbolTable symtable_new(float load_factor) {
     return symtable_num_buckets(load_factor, /* num_buckets = */ 1);
 }
 
+/** Determines whether a symbol table is empty.
+ * @param symtable the given symbol table to be checked
+ * @returns true if and only if the given symbol table
+ * is empty
+ */
+bool symtable_empty(SymbolTable symtable) {
+    return symtable->size == 0;
+}
+
 /** Returns a pointer to an array of `symtable->size` entries in the symbol table
  * @param symtable the given symbol table
  * @returns an unsorted copy of the entries in the symtable, or `NULL` if memory allocation failed

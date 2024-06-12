@@ -11,6 +11,8 @@ SymbolTable symtable_new(float load_factor);
 
 void symtable_free(SymbolTable symtable);
 
+bool symtable_empty(SymbolTable symtable);
+
 bool symtable_contains(SymbolTable symtable, const char *key);
 
 bool symtable_get(SymbolTable symtable, const char *key, uint32_t *dest);
