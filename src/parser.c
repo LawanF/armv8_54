@@ -4,39 +4,62 @@
 #include <stdbool.h>
 #include "parser.h"
 #include "instructions.h"
-#define binsearch(list, list_size) {(char *) bsearch(type_ptr, list[0], list_size, sizeof(char *), strcmp)}
 
-
-void set_command_format(char *type, Instruction *current_instr) {
-    char **type_ptr = &type;
-    char *found_type;
-
-    found_type = binsearch(str_dp_imm, NUM_DP_IMM_INSTS);
-    if (found_type != NULL) { current_instr->command_format = DP_IMM; }
-
-    found_type = binsearch(str_dp_reg, NUM_DP_REG_INSTS);
-    if (found_type != NULL) { current_instr->command_format = DP_REG; }
-
-    found_type = binsearch(str_branch, NUM_BRANCH_INSTS);
-    if (found_type != NULL) { current_instr->command_format = BRANCH; }
-
-    found_type = binsearch(str_sdt, NUM_SDT_INSTS);
-    if (found_type != NULL) { /* uhhh what do i do here idk bc like it could be 
-                             load literal or single data transfer */ }
-
-    current_instr->command_format = UNKNOWN;
+bool match_string(char **s, const char *token) {
+    int len = strlen(token);
+    if (strncmp(*s, token, len) != 0) return false;
+    *s += len;
+    return true;
 }
 
-bool parse_register(char *reg_str) {
+bool parse_from(char **tokens, char **s, char **chosen) {
+    bool result = true;
+    for (int i = 0; tokens[i] != NULL; i++) {
+        if (symbol(s, tokens[i])) {
+            // write the token chosen
+            *chosen = tokens[i];
+            return true;
+        }
+    }
+    return false;
+}
+
+bool skip_whitespace(char **s) {
+    bool skipped = false;
+    for (; !isspace(**s); (*s)++) { skipped = true; }
+    return skipped;
+}
+
+char bool_to_bit(bool result) {
+    return result ? 1 : 0;
+}
+
+// a 32-bit integer takes at most 10 characters (2^32 - 1 = 4,294,967,295)
+#define MAX_32_INT_SIZE = 10
+
+bool parse_uint(char **s, uint32_t *dest) {
+    char num[MAX_32_INT_SIZE + 2]; // for one nul character, and one to check bounds
+    fgets(num, *s, MAX_32_INT_SIZE + 1);
     
+    if ()
 }
 
+typedef enum regwidth { _32_BIT, _64_BIT } regwidth;
 
-Instruction *decode_string(char *line, char **line_ptr) {
-    Instruction instruction;
-
-    // Set the command format
+bool parse_reg(char **s, int *index, regwidth *width) {
+    switch (**s) {
+        case 'x':
+            *width = _64_BIT;
+            break;
+        case 'w':
+            *width = _32_BIT;
+            break;
+        default:
+            return false;
+    }
+    
+    (*s)++;
+    
+    return parse_uint(s, index);
 }
-
-
 
