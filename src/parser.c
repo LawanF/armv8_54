@@ -81,3 +81,17 @@ bool parse_reg(char **s, int *index, regwidth *width) {
     return parse_uint(s, index);
 }
 
+typedef enum { LSL, LSR, ASR, ROR } shift_type;
+
+typedef enum { ZERO_SHIFT, TWELVE_SHIFT } discrete_shift;
+
+bool parse_discrete_shift(char **src, discrete_shift *shift) {
+    // TODO
+    return false;
+}
+
+bool parse_immediate_shift(char **src, shift_type *shift_type, uint8_t *shift_amount) {
+    // TODO
+    return false;
+}
+
