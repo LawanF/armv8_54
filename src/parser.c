@@ -2,20 +2,22 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdbool.h>
+#include <errno.h>
+#include <ctype.h>
+#include <stdint.h>
 #include "parser.h"
-#include "instructions.h"
 
-bool match_string(char **s, const char *token) {
+bool match_string(char **src, const char *token) {
     int len = strlen(token);
-    if (strncmp(*s, token, len) != 0) return false;
-    *s += len;
+    if (strncmp(*src, token, len) != 0) return false;
+    *src += len;
     return true;
 }
 
-bool parse_from(char **tokens, char **s, char **chosen) {
+bool parse_from(char **src, char **tokens, char **chosen) {
     bool result = true;
     for (int i = 0; tokens[i] != NULL; i++) {
-        if (symbol(s, tokens[i])) {
+        if (match_string(src, tokens[i])) {
             // write the token chosen
             *chosen = tokens[i];
             return true;
@@ -24,9 +26,9 @@ bool parse_from(char **tokens, char **s, char **chosen) {
     return false;
 }
 
-bool skip_whitespace(char **s) {
+bool skip_whitespace(char **src) {
     bool skipped = false;
-    for (; !isspace(**s); (*s)++) { skipped = true; }
+    for (; !isspace(**src); (*src)++) skipped = true;
     return skipped;
 }
 
@@ -34,14 +36,30 @@ char bool_to_bit(bool result) {
     return result ? 1 : 0;
 }
 
-// a 32-bit integer takes at most 10 characters (2^32 - 1 = 4,294,967,295)
-#define MAX_32_INT_SIZE = 10
+bool parse_uint(char **src, uint32_t *dest, int base) {
+    char *s = *src;
+    uint32_t res = strtoul(*src, &s, base);
+    if (errno == ERANGE || errno == EINVAL) {
+        // value is either out of the range of unsigned long
+        // or the base is invalid
+        return false;
+    }
+    *src = s;
+    *dest = res;
+    return true;
+}
 
-bool parse_uint(char **s, uint32_t *dest) {
-    char num[MAX_32_INT_SIZE + 2]; // for one nul character, and one to check bounds
-    fgets(num, *s, MAX_32_INT_SIZE + 1);
-    
-    if ()
+bool parse_int(char **src, int32_t *dest, int base) {
+    char *s = *src;
+    uint32_t res = strtol(*src, &s, base);
+    if (errno == ERANGE || errno == EINVAL) {
+        // value is either out of the range of long
+        // or the base is invalid
+        return false;
+    }
+    *src = s;
+    *dest = res;
+    return true;
 }
 
 typedef enum regwidth { _32_BIT, _64_BIT } regwidth;
