@@ -49,7 +49,7 @@ void check_address_boundary(uint32_t address) {
     check_address_word(address);
 
     if (address % WORD_BYTES != 0) {
-        fprintf(stderr, "check_address_boundary: address is not a multiple of %d", WORD_BYTES);
+        fprintf(stderr, "check_address_boundary: address %08x is not a multiple of %d", address, WORD_BYTES);
         exit(1);
     }
 }
