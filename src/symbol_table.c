@@ -8,7 +8,7 @@
 #include <stdbool.h>
 #include <string.h>
 
-#define MAX_NUM_BUCKETS (0x1UL << 15)
+#define MAX_NUM_BUCKETS (0x1UL << 15) // 2^15 = 32768 buckets
 
 /**
  * A structure representing an entry in a bucket.
