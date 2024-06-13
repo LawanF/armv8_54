@@ -285,6 +285,9 @@ static void dp_reg(MachineState machine_state, Instruction *inst) {
     uint64_t dp_reg_rn_data = (machine_state.general_registers)[dp_reg_rn].data;
     uint64_t dp_reg_rm_data = (machine_state.general_registers)[dp_reg_rm].data;
     static uint64_t res;
+
+    if (dp_reg_sf == 0) dp_reg_rm_data = (uint32_t) dp_reg_rm_data;
+
     if (dp_reg_m == 0) {
         char dp_reg_shift = BITMASK(dp_reg_opr, 1, 2);
         // get data from registers rn, rm
@@ -299,8 +302,8 @@ static void dp_reg(MachineState machine_state, Instruction *inst) {
                 break;
             }
             case 1: { 
-                /* lsr */ 
-                dp_reg_rm_data = dp_reg_rm_data >> dp_reg_operand; 
+                /* lsr */
+                dp_reg_rm_data = dp_reg_rm_data >> dp_reg_operand;
                 break;
             }
             case 2: { 
@@ -360,10 +363,12 @@ static void dp_reg(MachineState machine_state, Instruction *inst) {
                     res = dp_reg_rn_data & dp_reg_rm_data;
                     // set flags 
                     if (!dp_reg_sf) {
+                        res = (uint32_t) res;
                         set_pstate_flag('N', GET_BIT(res, 31));
                     } else {
                         set_pstate_flag('N', GET_BIT(res, 63));
                     }
+
                     if (res == 0) {
                         // set zero register Z to 1
                         set_pstate_flag('Z', 1);
