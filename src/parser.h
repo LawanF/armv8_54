@@ -5,9 +5,12 @@
 #define NUM_BRANCH_INSTS 9
 #define NUM_SDT_INSTS 2
 
-const char *const str_dp_imm[] = {"add", "adds", "and", "ands", "bic", "bics", "cmn", "cmp", "eon", "eor", "mov", "movk", "movn", "movz", "mvn", "neg", "negs", "orn", "orr", "sub", "subs", "tst"};
-const char *const str_dp_reg[] = {"madd", "mneg", "msub", "mul"};
-const char *const str_branch[] = {"b", "b.al", "b.eq", "b.ge", "b.gt", "b.le", "b.lt", "b.ne", "br"};
-const char *const str_sdt[] = {"ldr", "str"};
+const char *const arith_ops[]     = {"add", "adds", "sub", "subs"};
+const char *const logic_ops[]     = {"and", "ands", "bic", "bics", "eon", "eor", "orn", "orr"};
+const char *const comp_ops[]      = {"cmn", "cmp"};
+const char *const neg_ops[]       = {"neg", "negs"};
+const char *const w_move_ops[]    = {"movk", "movn", "movz"};
+const char *const mul_arith_ops[] = {"madd", "msub"};
+const char *const mul_neg_ops[]   = {"mneg", "mul"};
 
 #endif
