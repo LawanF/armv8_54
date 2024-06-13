@@ -215,7 +215,7 @@ static CommandFormat decode_format(uint32_t inst_data) {
  * If the instruction is malformed or unknown, the Instruction's command_format field will be UNKNOWN. */
 Instruction decode(uint32_t inst_data) {
     switch (decode_format(inst_data)) {
-        case HALT:                 return (Instruction) { .command_format = HALT };
+        case HALT:                 return HALT_INSTRUCTION;
         case DP_IMM:               return decode_dp_imm(inst_data);
         case DP_REG:               return decode_dp_reg(inst_data);
         case SINGLE_DATA_TRANSFER: return decode_single_data_transfer(inst_data);
