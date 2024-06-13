@@ -483,7 +483,10 @@ static void branch(MachineState machine_state, Instruction *inst) {
             // use machine state function to read register branch_xn
             // then write address in branch_xn to PC
             unsigned char register_branch_xn = (inst->branch).operand.register_branch.xn;
-            write_program_counter((machine_state.general_registers)[register_branch_xn].data);
+            // since the program counter increments by 4 on a fetch, we need to subtract 4
+            // to the new address
+            uint64_t branch_pc = (machine_state.general_registers)[register_branch_xn].data - 4;
+            write_program_counter(branch_pc);
             break;
         }
         case COND_BRANCH: {
