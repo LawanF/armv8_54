@@ -1,5 +1,6 @@
 #include "decode.h"
 #include "instruction_constants.h"
+#include "instructions.h"
 
 /* Functions for decoding operands
  * These functions assume that the instruction is in the correct group,
@@ -51,7 +52,7 @@ static SDTOffset decode_sdt_offset(SDTOffsetType offset_type, uint32_t inst_data
 // Decodes a DP (immediate) instruction, returning it as a copy.
 static Instruction decode_dp_imm(uint32_t inst_data) {
     DPImmOperandType operand_type;
-    char opi = BITMASK(inst_data, DP_IMM_OPI_START, DP_IMM_OPI_END);
+    unsigned char opi = BITMASK(inst_data, DP_IMM_OPI_START, DP_IMM_OPI_END);
     switch (opi) {
         case ARITH_OPI: operand_type = ARITH_OPERAND; break;
         case WIDE_MOVE_OPI: operand_type = WIDE_MOVE_OPERAND; break;
@@ -62,7 +63,7 @@ static Instruction decode_dp_imm(uint32_t inst_data) {
         .sf  = GET_BIT(inst_data, DP_SF_BIT),
         .opc = BITMASK(inst_data, DP_OPC_START, DP_OPC_END),
         .rd  = BITMASK(inst_data, RD_RT_START, RD_RT_END),
-        .dp_imm = { .operand_type = operand_type, .operand = decode_dp_imm_operand(opi, inst_data) }
+        .dp_imm = { .operand_type = operand_type, .operand = decode_dp_imm_operand(operand_type, inst_data) }
     };
 }
 
@@ -160,8 +161,7 @@ static Instruction decode_single_data_transfer(uint32_t inst_data) {
     // when U=1, offset is used for imm12 (unsigned)
     if (u) {
         offset_type = UNSIGNED_OFFSET;
-    }
-    else if (GET_BIT(inst_data, SDT_REGISTER_MASK_UPPER_BIT)
+    } else if (GET_BIT(inst_data, SDT_REGISTER_MASK_UPPER_BIT)
              && (BITMASK(inst_data, SDT_REGISTER_MASK_LOWER_START, SDT_REGISTER_MASK_LOWER_END)
                  == SDT_REGISTER_MASK_LOWER)) {
         offset_type = REGISTER_OFFSET;
@@ -171,6 +171,7 @@ static Instruction decode_single_data_transfer(uint32_t inst_data) {
         char i = GET_BIT(inst_data, SDT_INDEX_I_BIT);
         offset_type = i ? PRE_INDEX_OFFSET : POST_INDEX_OFFSET;
     } else return UNKNOWN_INSTRUCTION;
+
     return (Instruction) {
         .command_format = SINGLE_DATA_TRANSFER,
         .sf = GET_BIT(inst_data, SDT_SF_BIT),
@@ -214,7 +215,7 @@ static CommandFormat decode_format(uint32_t inst_data) {
  * If the instruction is malformed or unknown, the Instruction's command_format field will be UNKNOWN. */
 Instruction decode(uint32_t inst_data) {
     switch (decode_format(inst_data)) {
-        case HALT:                 return (Instruction) { .command_format = HALT };
+        case HALT:                 return HALT_INSTRUCTION;
         case DP_IMM:               return decode_dp_imm(inst_data);
         case DP_REG:               return decode_dp_reg(inst_data);
         case SINGLE_DATA_TRANSFER: return decode_single_data_transfer(inst_data);

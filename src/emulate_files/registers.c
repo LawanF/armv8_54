@@ -21,7 +21,7 @@ void init_machine_state(void) {
     ms_pointer->program_counter.data = 0;
     ms_pointer->program_counter.writable = 1;
 
-    ms_pointer->pstate.zero = 0;
+    ms_pointer->pstate.zero = 1;
     ms_pointer->pstate.neg = 0;
     ms_pointer->pstate.carry = 0;
     ms_pointer->pstate.overflow = 0;
@@ -58,7 +58,6 @@ void write_general_registers(int index, uint64_t value) {
     the logic of what that might be is  dealt with separately
 */
 void write_program_counter(uint32_t address) {
-    checkaddress32(address);
     MachineState *ms_pointer = &machine_state;
     ms_pointer->program_counter.data = address;
 }

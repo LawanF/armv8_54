@@ -8,7 +8,7 @@
  */
 
 // binary representation of HALT instruction
-#define HALT_BIN 0x8a000000
+#define HALT_BIN 0x8a000000UL
 #define UNKNOWN_INSTRUCTION ((Instruction) { .command_format = UNKNOWN })
 #define HALT_INSTRUCTION ((Instruction) { .command_format = HALT })
 
@@ -98,12 +98,12 @@
 // offset 1XXXXX011010 gives register offset: 1[ xm:5      ]011010
 // (i.e. combining lower mask and upper bit)
 #define SDT_REGISTER_MASK_LOWER       0x1AUL // 011010
-#define SDT_REGISTER_MASK_LOWER_START SDT_XN_START
+#define SDT_REGISTER_MASK_LOWER_START 10
 #define SDT_REGISTER_MASK_LOWER_END   15
 #define SDT_REGISTER_MASK_UPPER_BIT   21
 // offset 0XXXXXXXXXI1 gives pre/post-index:  0[ simm9:9 ][ i:1 ]1
-#define SDT_INDEX_MASK_LOWER_BIT SDT_XN_START
-#define SDT_INDEX_MASK_UPPER_BIT SDT_XN_END
+#define SDT_INDEX_MASK_LOWER_BIT 10
+#define SDT_INDEX_MASK_UPPER_BIT 21
 
 // For decoding the operand:
 

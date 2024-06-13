@@ -108,11 +108,11 @@ void print_output(MachineState *machine_state, char *filename) {
     // Write to the file if it exists
     FILE *output;
     if (filename != NULL) {
-	output = freopen(filename, "a+", stdout);
+	output = freopen(filename, "w", stdout);
 	if (output == NULL) {
 	    fprintf(stderr, "print_output: can't open %s, errno %d\n", filename, errno);
 	}
-    }
+}
 
     // Printing register content
     printf_with_err("Registers:\n");
@@ -120,7 +120,7 @@ void print_output(MachineState *machine_state, char *filename) {
     // Prints the output of each general register
     for (int i = 0; i < NUM_GENERAL_REGISTERS; i++) {
 	Register gen_reg = machine_state->general_registers[i];
-	printf_with_err("X%02d = %016x\n", i, gen_reg.data);
+	printf_with_err("X%02d = %016llx\n", i, gen_reg.data);
     }
 
     // Prints the output of the program counter
@@ -132,7 +132,7 @@ void print_output(MachineState *machine_state, char *filename) {
     printf_with_err("PSTATE : %c%c%c%c\n", pstate.neg ? 'N' : '-', pstate.zero ? 'Z' : '-', pstate.carry ? 'C' : '-', pstate.overflow ? 'V' : '-');
 
     // Printing non-zero memory
-    printf_with_err("Non-zero memory:");
+    printf_with_err("Non-zero memory:\n");
 
     // Locates non-zero memory and prints the data
     locate_non_zero_mem();

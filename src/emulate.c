@@ -1,11 +1,12 @@
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include "execute.h"
-#include "decode.h"
-#include "fetch.h"
-#include "fileio.h"
-#include "memory.h"
-#include "registers.h"
+#include "emulate_files/execute.h"
+#include "emulate_files/decode.h"
+#include "emulate_files/fetch.h"
+#include "emulate_files/fileio.h"
+#include "emulate_files/memory.h"
+#include "emulate_files/registers.h"
 
 // Pointer to output file name if it is given.
 static char *output_file = NULL;
@@ -32,7 +33,7 @@ int main(int argc, char **argv) {
 
     // If output file is given, store it in output_file.
     if (argc == 3) {
-        strcpy(output_file, argv[2]);
+        output_file = argv[2];
     }
 
     // Initialise machine state and memory, and load the input file.
@@ -42,8 +43,9 @@ int main(int argc, char **argv) {
     // Run the machine, waiting for the halt instruction to exit.
     while (1) {
         MachineState machine_state = read_machine_state();
-        uint64_t cur_pc = machine_state.program_counter.data;
-        execute(decode(cur_pc));
+        uint32_t inst_data = fetch(&machine_state);
+        Instruction inst = decode(inst_data);
+        execute(&inst);
         increment_pc();
     }
 

@@ -14,7 +14,7 @@ static unsigned char memory[MEMORY_SIZE];
 /*
     Clears memory, setting all values to 0.
 */
-void initmem() {
+void initmem(void) {
     memset(memory, 0, MEMORY_SIZE * sizeof(char));
 }
 
@@ -31,31 +31,9 @@ void loadtomem(void *arr, uint32_t numbytes) {
 
 /*
     Takes a 21-bit address as uint32_t.
-    Checks if address is less than or equal to (MEMORY_SIZE - 4) and
-    if address adheres to 4-byte boundary (for readmem32 and writemem32).
-*/
-void checkaddress32(uint32_t address) {
-    // Check if address is a multiple of 4.
-    if ((address % WORD_BYTES) != 0) {
-        fprintf(stderr, "checkaddress32: address %08x is not multiple of %d\n", address, WORD_BYTES);
-        exit(1);
-    }
-
-    // Check if address is within bounds of memory.
-    if (address > MEMORY_SIZE - WORD_BYTES) {
-        fprintf(stderr, "checkaddress32: address %08x is out of bounds\n", address);
-        exit(1);
-    }
-}
-
-/*
-    Takes a 21-bit address as uint32_t.
     Returns a pointer to the byte at that address as unsigned char.
 */
 static unsigned char *fetchbyte(uint32_t address) {
-    // Check address.
-    checkaddress32(address);
-
     return &memory[address];
 }
 
