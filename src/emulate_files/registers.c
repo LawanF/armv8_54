@@ -58,7 +58,6 @@ void write_general_registers(int index, uint64_t value) {
     the logic of what that might be is  dealt with separately
 */
 void write_program_counter(uint32_t address) {
-    check_address_boundary(address);
     MachineState *ms_pointer = &machine_state;
     ms_pointer->program_counter.data = address;
 }
