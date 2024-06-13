@@ -31,37 +31,9 @@ void loadtomem(void *arr, uint32_t numbytes) {
 
 /*
     Takes a 21-bit address as uint32_t.
-    Checks if address is within MEMORY_SIZE for reading words.
-*/
-static void check_address_word(uint32_t address) {
-    if (address > MEMORY_SIZE - WORD_BYTES) {
-        fprintf(stderr, "checkaddress32: address %08x is out of bounds\n", address);
-        exit(1);
-    }
-}
-
-/*
-    Takes a 21-bit address as uint32_t.
-    Checks if address adheres to word-byte boundary and
-    if address is within MEMORY_SIZE for reading words.
-*/
-void check_address_boundary(uint32_t address) {
-    check_address_word(address);
-
-    if (address % WORD_BYTES != 0) {
-        fprintf(stderr, "check_address_boundary: address %08x is not a multiple of %d", address, WORD_BYTES);
-        exit(1);
-    }
-}
-
-/*
-    Takes a 21-bit address as uint32_t.
     Returns a pointer to the byte at that address as unsigned char.
 */
 static unsigned char *fetchbyte(uint32_t address) {
-    // Check address.
-    check_address_word(address);
-
     return &memory[address];
 }
 
