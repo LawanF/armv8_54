@@ -150,15 +150,43 @@ bool parse_discrete_shift(char **src, discrete_shift *shift) {
     return true;
 }
 
+// Parses a shift type, a string that is one of ["lsl", "lsr", "asr", "ror"].
+static bool parse_shift_type(char **src, shift_type *dest_type) {
+    bool success = false;
+    if (match_string(src, "lsl")) {
+        *dest_type = LSL; success = true;
+    } else if (match_string(src, "lsr")) {
+        *dest_type = LSR; success = true;
+    } else if (match_string(src, "asr")) {
+        *dest_type = ASR; success = true;
+    } else if (match_string(src, "ror")) {
+        *dest_type = ROR; success = true;
+    }
+    return success;
+}
+
 /** Parses an immediate shift, a string of the form ", [shift] #[imm]", where
  * [shift] is one of ["lsl", "lsr", "asr", "ror"], and [imm] is an integer
- * from 0 to 63. Additional validation will be required to ensue the value is
+ * from 0 to 63. Additional validation will be required to ensure the value is
  * between 0 and 31 for the 32-bit variant of instructions.
  * @returns `true` (and writes fields) if parsing succeeds,
  * and `false` otherwise
  */
-bool parse_immediate_shift(char **src, shift_type *shift_type, uint8_t *shift_amount) {
-    // TODO
-    return false;
+bool parse_immediate_shift(char **src, shift_type *dest_type, uint8_t *dest_amount) {
+    char *s = *src;
+    shift_type type;
+    uint32_t amount;
+    bool success = match_char(&s, ',')
+                && skip_whitespace(&s)
+                && parse_shift_type(&s, &type)
+                && skip_whitespace(&s)
+                && parse_immediate(&s, &amount)
+                && (0 <= amount && amount < 64);
+    if (!success) return false;
+
+    *src = s;
+    *dest_type = type;
+    *dest_amount = amount;
+    return true;
 }
 
