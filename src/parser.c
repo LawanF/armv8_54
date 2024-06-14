@@ -84,10 +84,10 @@ bool parse_reg(char **src, int *index, regwidth *width) {
     regwidth w;
     int ind;
 
-    if (match_string(&s, "x")) {
+    if (match_char(&s, 'x')) {
         // 32-bit width
         w = _32_BIT;
-    } else if (match_string(&s, "w")){
+    } else if (match_char(&s, 'w')){
         // 64-bit width
         w = _64_BIT;
     } else {
