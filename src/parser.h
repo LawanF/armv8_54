@@ -5,6 +5,8 @@
 #define NUM_BRANCH_INSTS 9
 #define NUM_SDT_INSTS 2
 
+#define STRARRAY_LEN(arr) (sizeof(arr) / sizeof(char *))
+
 const char *const arith_ops[]     = {"add", "adds", "sub", "subs"};
 const char *const logic_ops[]     = {"and", "ands", "bic", "bics", "eon", "eor", "orn", "orr"};
 const char *const comp_ops[]      = {"cmn", "cmp"};
