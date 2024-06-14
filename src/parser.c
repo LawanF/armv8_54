@@ -101,9 +101,9 @@ bool parse_immediate(char **src, uint32_t *dest) {
  * If the string is of the form "xzr" or "wzr", then this corresponds to the
  * zero register, and the same applies but with n as 31.
  */
-bool parse_reg(char **src, int *index, regwidth *width) {
+bool parse_reg(char **src, int *index, RegisterWidth *width) {
     char *s = *src;
-    regwidth w;
+    RegisterWidth w;
     int ind;
 
     if (match_char(&s, 'x')) {
@@ -137,7 +137,7 @@ bool parse_reg(char **src, int *index, regwidth *width) {
   * @returns `true` (and writes to `discrete_shift`) if parsing succeeds,
   * and `false` otherwise
   */
-bool parse_discrete_shift(char **src, discrete_shift *shift) {
+bool parse_discrete_shift(char **src, DiscreteShift *shift) {
     char *s = *src;
     unsigned int shift_amount;
     bool success = match_char(&s, ',')
@@ -154,10 +154,10 @@ bool parse_discrete_shift(char **src, discrete_shift *shift) {
 }
 
 // Parses a shift type, a string that is one of ["lsl", "lsr", "asr", "ror"].
-static bool parse_shift_type(char **src, shift_type *dest_type) {
+static bool parse_shift_type(char **src, ShiftType *shift_type) {
     for (int i = 0; i < ARRAY_LEN(shift_types); i++) {
         if (match_string(src, shift_types[i])) {
-            *dest_type = i;
+            *shift_type = i;
             return true;
         }
     }
@@ -171,9 +171,9 @@ static bool parse_shift_type(char **src, shift_type *dest_type) {
  * @returns `true` (and writes fields) if parsing succeeds,
  * and `false` otherwise
  */
-bool parse_immediate_shift(char **src, shift_type *dest_type, uint8_t *dest_amount) {
+bool parse_immediate_shift(char **src, ShiftType *shift_type, uint8_t *shift_amount) {
     char *s = *src;
-    shift_type type;
+    ShiftType type;
     uint32_t amount;
     bool success = match_char(&s, ',')
                 && skip_whitespace(&s)
@@ -184,8 +184,8 @@ bool parse_immediate_shift(char **src, shift_type *dest_type, uint8_t *dest_amou
     if (!success) return false;
 
     *src = s;
-    *dest_type = type;
-    *dest_amount = amount;
+    *shift_type = type;
+    *shift_amount = amount;
     return true;
 }
 

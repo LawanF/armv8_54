@@ -18,9 +18,9 @@ const char *const w_move_ops[]    = {"movk", "movn", "movz"};
 const char *const mul_arith_ops[] = {"madd", "msub"};
 const char *const mul_neg_ops[]   = {"mneg", "mul"};
 
-typedef enum regwidth { _32_BIT, _64_BIT } regwidth;
-typedef enum { LSL, LSR, ASR, ROR } shift_type;
-typedef enum { ZERO_SHIFT, TWELVE_SHIFT } discrete_shift;
+typedef enum regwidth { _32_BIT, _64_BIT } RegisterWidth;
+typedef enum { LSL, LSR, ASR, ROR } ShiftType;
+typedef enum { ZERO_SHIFT, TWELVE_SHIFT } DiscreteShift;
 const char *const shift_types[]   = {"lsl", "lsr", "asr", "ror"};
 
 bool match_char(char **src, const char token);
@@ -30,8 +30,8 @@ bool skip_whitespace(char **src);
 bool parse_uint(char **src, uint32_t *dest, int base);
 bool parse_int(char **src, int32_t *dest, int base);
 bool parse_immediate(char **src, uint32_t *dest);
-bool parse_reg(char **src, int *index, regwidth *width);
-bool parse_discrete_shift(char **src, discrete_shift *shift);
-bool parse_immediate_shift(char **src, shift_type *dest_type, uint8_t *dest_amount);
+bool parse_reg(char **src, int *index, RegisterWidth *width);
+bool parse_discrete_shift(char **src, DiscreteShift *shift);
+bool parse_immediate_shift(char **src, ShiftType *shift_type, uint8_t *shift_amount);
 
 #endif
