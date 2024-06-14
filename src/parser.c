@@ -148,17 +148,13 @@ bool parse_discrete_shift(char **src, discrete_shift *shift) {
 
 // Parses a shift type, a string that is one of ["lsl", "lsr", "asr", "ror"].
 static bool parse_shift_type(char **src, shift_type *dest_type) {
-    bool success = false;
-    if (match_string(src, "lsl")) {
-        *dest_type = LSL; success = true;
-    } else if (match_string(src, "lsr")) {
-        *dest_type = LSR; success = true;
-    } else if (match_string(src, "asr")) {
-        *dest_type = ASR; success = true;
-    } else if (match_string(src, "ror")) {
-        *dest_type = ROR; success = true;
+    for (int i = 0; i < STRARRAY_LEN(shift_types); i++) {
+        if (match_string(src, shift_types[i])) {
+            *dest_type = i;
+            return true;
+        }
     }
-    return success;
+    return false;
 }
 
 /** Parses an immediate shift, a string of the form ", [shift] #[imm]", where
