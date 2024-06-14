@@ -32,10 +32,6 @@ bool skip_whitespace(char **src) {
     return skipped;
 }
 
-char bool_to_bit(bool result) {
-    return result ? 1 : 0;
-}
-
 bool parse_uint(char **src, uint32_t *dest, int base) {
     char *s = *src;
     uint32_t res = strtoul(*src, &s, base);
