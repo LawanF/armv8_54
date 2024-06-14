@@ -8,6 +8,18 @@
 #include "parser.h"
 #include "emulate_files/registers.h"
 
+/** Matches a single character, incrementing src and returning true if and only
+ * if the first character in src matches that of token.
+ */
+bool match_char(char **src, const char token) {
+    if (src == NULL || *src == NULL) return false;
+    if (**src != '\0' && **src == token) {
+        (*src)++;
+        return true;
+    }
+    return false;
+}
+
 bool match_string(char **src, const char *token) {
     int len = strlen(token);
     if (strncmp(*src, token, len) != 0) return false;
