@@ -13,4 +13,8 @@ const char *const w_move_ops[]    = {"movk", "movn", "movz"};
 const char *const mul_arith_ops[] = {"madd", "msub"};
 const char *const mul_neg_ops[]   = {"mneg", "mul"};
 
+typedef enum { LSL, LSR, ASR, ROR } shift_type;
+typedef enum { ZERO_SHIFT, TWELVE_SHIFT } discrete_shift;
+const char *const shift_types[]   = {"lsl", "lsr", "asr", "ror"};
+
 #endif

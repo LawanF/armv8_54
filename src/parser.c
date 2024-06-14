@@ -125,10 +125,6 @@ bool parse_reg(char **src, int *index, regwidth *width) {
     *src = s; *index = ind; *width = w; return true;
 }
 
-typedef enum { LSL, LSR, ASR, ROR } shift_type;
-
-typedef enum { ZERO_SHIFT, TWELVE_SHIFT } discrete_shift;
-
 /** Parses a discrete (left) shift, a string of the form ", lsl #0"
   * or ", lsl #12".
   * @returns `true` (and writes to `discrete_shift`) if parsing succeeds,
