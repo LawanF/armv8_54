@@ -1,5 +1,8 @@
 #ifndef PARSER_H
 #define PARSER_H
+
+#include <stdint.h>
+
 #define NUM_DP_IMM_INSTS 22
 #define NUM_DP_REG_INSTS 4
 #define NUM_BRANCH_INSTS 9
@@ -15,8 +18,20 @@ const char *const w_move_ops[]    = {"movk", "movn", "movz"};
 const char *const mul_arith_ops[] = {"madd", "msub"};
 const char *const mul_neg_ops[]   = {"mneg", "mul"};
 
+typedef enum regwidth { _32_BIT, _64_BIT } regwidth;
 typedef enum { LSL, LSR, ASR, ROR } shift_type;
 typedef enum { ZERO_SHIFT, TWELVE_SHIFT } discrete_shift;
 const char *const shift_types[]   = {"lsl", "lsr", "asr", "ror"};
+
+bool match_char(char **src, const char token);
+bool match_string(char **src, const char *token);
+bool parse_from(char **src, char **tokens, char **chosen);
+bool skip_whitespace(char **src);
+bool parse_uint(char **src, uint32_t *dest, int base);
+bool parse_int(char **src, int32_t *dest, int base);
+bool parse_immediate(char **src, uint32_t *dest);
+bool parse_reg(char **src, int *index, regwidth *width);
+bool parse_discrete_shift(char **src, discrete_shift *shift);
+bool parse_immediate_shift(char **src, shift_type *dest_type, uint8_t *dest_amount);
 
 #endif

@@ -91,8 +91,6 @@ bool parse_immediate(char **src, uint32_t *dest) {
     return true;
 }
 
-typedef enum regwidth { _32_BIT, _64_BIT } regwidth;
-
 /** Parses the string corresponding to a register.
  * If the string begins with "wn" or "rn", with 0 <= n < NUM_GENERAL_REGISTERS,
  * then `index` is written with n and the corresponding width written to `width`.
