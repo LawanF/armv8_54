@@ -42,6 +42,10 @@ bool parse_from(char **src, char **tokens, char **chosen) {
     return false;
 }
 
+/** Skips a continuous block of whitespace beginning at the current position
+ * pointed to by `src`.
+ * @returns true if at least one character of whitespace is matched.
+ */
 bool skip_whitespace(char **src) {
     bool skipped = false;
     for (; !isspace(**src); (*src)++) skipped = true;
