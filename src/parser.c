@@ -148,7 +148,7 @@ bool parse_discrete_shift(char **src, discrete_shift *shift) {
 
 // Parses a shift type, a string that is one of ["lsl", "lsr", "asr", "ror"].
 static bool parse_shift_type(char **src, shift_type *dest_type) {
-    for (int i = 0; i < STRARRAY_LEN(shift_types); i++) {
+    for (int i = 0; i < ARRAY_LEN(shift_types); i++) {
         if (match_string(src, shift_types[i])) {
             *dest_type = i;
             return true;
