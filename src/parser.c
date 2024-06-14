@@ -6,6 +6,7 @@
 #include <ctype.h>
 #include <stdint.h>
 #include "parser.h"
+#include "emulate_files/registers.h"
 
 bool match_string(char **src, const char *token) {
     int len = strlen(token);
@@ -66,24 +67,30 @@ typedef enum regwidth { _32_BIT, _64_BIT } regwidth;
  * If the string is of the form "xzr" or "wzr", then this corresponds to the
  * zero register, and the same applies but with n as 31.
  */
-bool parse_reg(char **s, int *index, regwidth *width) {
+bool parse_reg(char **src, int *index, regwidth *width) {
+    char *s = *src;
     regwidth w;
     int ind;
 
-    switch (**s) {
-        case 'x':
-            *width = _64_BIT;
-            break;
-        case 'w':
-            *width = _32_BIT;
-            break;
-        default:
-            return false;
+    if (match_string(&s, "x")) {
+        // 32-bit width
+        w = _32_BIT;
+    } else if (match_string(&s, "w")){
+        // 64-bit width
+        w = _64_BIT;
+    } else {
+        return false;
     }
-    
-    (*s)++;
-    
-    return parse_uint(s, index, 10);
+
+    if (match_string(&s, "zr")) {
+        ind = NUM_GENERAL_REGISTERS;
+    } else if (parse_int(&s, &ind, /* base = */ 10)
+               && 0 <= ind && ind < NUM_GENERAL_REGISTERS) {
+        // EMPTY
+    } else return false;
+
+    // success
+    *src = s; *index = ind; *width = w; return true;
 }
 
 typedef enum { LSL, LSR, ASR, ROR } shift_type;
