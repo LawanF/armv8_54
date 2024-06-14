@@ -60,7 +60,16 @@ bool parse_int(char **src, int32_t *dest, int base) {
 
 typedef enum regwidth { _32_BIT, _64_BIT } regwidth;
 
+/** Parses the string corresponding to a register.
+ * If the string begins with "wn" or "rn", with 0 <= n < NUM_GENERAL_REGISTERS,
+ * then `index` is written with n and the corresponding width written to `width`.
+ * If the string is of the form "xzr" or "wzr", then this corresponds to the
+ * zero register, and the same applies but with n as 31.
+ */
 bool parse_reg(char **s, int *index, regwidth *width) {
+    regwidth w;
+    int ind;
+
     switch (**s) {
         case 'x':
             *width = _64_BIT;
@@ -74,7 +83,7 @@ bool parse_reg(char **s, int *index, regwidth *width) {
     
     (*s)++;
     
-    return parse_uint(s, index);
+    return parse_uint(s, index, 10);
 }
 
 typedef enum { LSL, LSR, ASR, ROR } shift_type;
