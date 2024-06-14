@@ -60,13 +60,15 @@ bool parse_uint(char **src, uint32_t *dest, int base) {
 
 bool parse_int(char **src, int32_t *dest, int base) {
     char *s = *src;
-    uint32_t res = strtol(*src, &s, base);
+    int32_t res = strtol(*src, &s, base);
     if (errno == ERANGE || errno == EINVAL) {
         // value is either out of the range of long
         // or the base is invalid
         return false;
     }
-    *src = s; *dest = res; return true;
+    *src = s;
+    *dest = res;
+    return true;
 }
 
 /** Parses an immediate value: a string of the form "#imm", where
@@ -81,7 +83,9 @@ bool parse_immediate(char **src, uint32_t *dest) {
           && parse_uint(&s, &val, /* base = */ 10))) {
         return false;
     }
-    *src = s; *dest = val; return true;
+    *src = s;
+    *dest = val;
+    return true;
 }
 
 typedef enum regwidth { _32_BIT, _64_BIT } regwidth;
@@ -134,8 +138,7 @@ bool parse_discrete_shift(char **src, discrete_shift *shift) {
                 && skip_whitespace(&s)
                 && match_string(&s, "lsl")
                 && skip_whitespace(&s)
-                && match_char(&s, '#')
-                && parse_uint(&s, &shift_amount, /* base = */ 10)
+                && parse_immediate(&s, &shift_amount)
                 && (shift_amount == 0 || shift_amount == 12);
     if (!success) return false;
 
