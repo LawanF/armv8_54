@@ -116,13 +116,18 @@ bool parse_reg(char **src, int *index, regwidth *width) {
 
     if (match_string(&s, "zr")) {
         ind = NUM_GENERAL_REGISTERS;
-    } else if (parse_int(&s, &ind, /* base = */ 10)
-               && 0 <= ind && ind < NUM_GENERAL_REGISTERS) {
-        // EMPTY
-    } else return false;
+    } else {
+        if (!(parse_int(&s, &ind, /* base = */ 10)
+              && 0 <= ind && ind < NUM_GENERAL_REGISTERS)) {
+            return false;
+        }
+    }
 
     // success
-    *src = s; *index = ind; *width = w; return true;
+    *src = s;
+    *index = ind;
+    *width = w;
+    return true;
 }
 
 /** Parses a discrete (left) shift, a string of the form ", lsl #0"
