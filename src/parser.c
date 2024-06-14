@@ -117,7 +117,7 @@ bool parse_reg(char **src, int *index, RegisterWidth *width) {
     }
 
     if (match_string(&s, "zr")) {
-        ind = NUM_GENERAL_REGISTERS;
+        ind = ZERO_REG_INDEX;
     } else {
         if (!(parse_int(&s, &ind, /* base = */ 10)
               && 0 <= ind && ind < NUM_GENERAL_REGISTERS)) {

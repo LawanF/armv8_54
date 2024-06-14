@@ -8,6 +8,9 @@
 #define NUM_BRANCH_INSTS 9
 #define NUM_SDT_INSTS 2
 
+// the representation of the zero register
+#define ZERO_REG_INDEX 31
+
 #define ARRAY_LEN(arr) (sizeof(arr) / sizeof(void *))
 
 const char *const arith_ops[]     = {"add", "adds", "sub", "subs"};
