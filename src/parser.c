@@ -20,6 +20,9 @@ bool match_char(char **src, const char token) {
     return false;
 }
 
+/** Matches a string of nul-terminated characters, incrementing src and
+ * returning true if and only if the beginning of src matches all of token.
+ */
 bool match_string(char **src, const char *token) {
     int len = strlen(token);
     if (strncmp(*src, token, len) != 0) return false;
