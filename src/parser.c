@@ -66,9 +66,22 @@ bool parse_int(char **src, int32_t *dest, int base) {
         // or the base is invalid
         return false;
     }
-    *src = s;
-    *dest = res;
-    return true;
+    *src = s; *dest = res; return true;
+}
+
+/** Parses an immediate value: a string of the form "#imm", where
+ * imm is an unsigned integer, setting `dest` to be this value if
+ * parsing succeeds.
+ * @returns true if and only if parsing succeeds
+ */
+bool parse_immediate(char **src, uint32_t *dest) {
+    char *s = *src;
+    uint32_t val;
+    if (!(match_char(&s, '#')
+          && parse_uint(&s, &val, /* base = */ 10))) {
+        return false;
+    }
+    *src = s; *dest = val; return true;
 }
 
 typedef enum regwidth { _32_BIT, _64_BIT } regwidth;
