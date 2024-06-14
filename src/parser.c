@@ -109,11 +109,35 @@ typedef enum { LSL, LSR, ASR, ROR } shift_type;
 
 typedef enum { ZERO_SHIFT, TWELVE_SHIFT } discrete_shift;
 
+/** Parses a discrete (left) shift, a string of the form ", lsl #0"
+  * or ", lsl #12".
+  * @returns `true` (and writes to `discrete_shift`) if parsing succeeds,
+  * and `false` otherwise
+  */
 bool parse_discrete_shift(char **src, discrete_shift *shift) {
-    // TODO
-    return false;
+    char *s = *src;
+    unsigned int shift_amount;
+    bool success = match_char(&s, ',')
+                && skip_whitespace(&s)
+                && match_string(&s, "lsl")
+                && skip_whitespace(&s)
+                && match_char(&s, '#')
+                && parse_uint(&s, &shift_amount, /* base = */ 10)
+                && (shift_amount == 0 || shift_amount == 12);
+    if (!success) return false;
+
+    *src = s;
+    *shift = shift_amount ? TWELVE_SHIFT : ZERO_SHIFT;
+    return true;
 }
 
+/** Parses an immediate shift, a string of the form ", [shift] #[imm]", where
+ * [shift] is one of ["lsl", "lsr", "asr", "ror"], and [imm] is an integer
+ * from 0 to 63. Additional validation will be required to ensue the value is
+ * between 0 and 31 for the 32-bit variant of instructions.
+ * @returns `true` (and writes fields) if parsing succeeds,
+ * and `false` otherwise
+ */
 bool parse_immediate_shift(char **src, shift_type *shift_type, uint8_t *shift_amount) {
     // TODO
     return false;
