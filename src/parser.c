@@ -36,7 +36,7 @@ bool parse_from(char **src, const char * const tokens[], int *index) {
     for (int i = 0; tokens[i] != NULL; i++) {
         if (match_string(src, tokens[i])) {
             // write the token index chosen
-            *chosen = i;
+            *index = i;
             return true;
         }
     }
