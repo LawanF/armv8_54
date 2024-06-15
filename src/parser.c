@@ -189,3 +189,130 @@ bool parse_immediate_shift(char **src, ShiftType *shift_type, uint8_t *shift_amo
     return true;
 }
 
+bool parse_mov_dp_imm(char **src, char *rd) {
+    // movk, movn, movz
+    // <Rd>, #<imm>{, lsl #<imm>} <- IS THIS MEANT TO BE {, <shift> #<imm>}
+
+    char *s = *src;
+    Instruction inst = { .command_format = DP_IMM };
+    inst.dp_imm.operand_type = 1;
+    // write data from mnemonic
+
+    switch (w_move_ops) {
+        case match_string(&s, "movn"): {
+            inst.opc = 0;
+            break;
+        }
+        case match_string(&s, "movn"): {
+            inst.opc = 1;
+            break;
+        }
+        case match_string(&s, "movn"): {
+            inst.opc = 3;
+            break;
+        }
+        default: {
+            return false;
+        }
+    }
+
+    // set the registers not included in the string
+
+    char *s = *src;
+    char *opcode;
+    char rd_dest;
+    char rd_width;
+    char imm16;
+    ShiftType shift_type = 0;
+    uint8_t shift_amount = 0;
+    bool is_valid = parse_from(src, a_l_opcodes, opcode)
+                   && skip_whitespace(&s)
+                   && parse_reg(&s, &rd_dest, &rd_width)
+                   && skip_whitespace(&s)
+                   && parse_immediate(&s, &imm16);
+    if (!is_valid) return false;
+    parse_immediate_shift(&s, "lsl", &shift_amount);
+    if (!(shift_amount == 0 || shift_amount == 16 || shift_amount == 32 || shift_amount == 48)) return false;
+    inst.sf = rd_width;
+
+    // parse this type of shift #<imm>{, lsl #<imm>}
+    // then check its 0,16,32,48
+    // parse the shift -> 0, 1, 2, 3 etc. determines hw bit.
+
+    // set hw,imm16 value
+    switch (shift_amount) {
+        case 0: {
+            inst.dp_imm.operand.wide_move_operand.hw = 0;
+            break;
+        }
+        case 16: {
+            inst.dp_imm.operand.wide_move_operand.hw = 1;
+            break;
+        }
+        case 32: {
+            inst.dp_imm.operand.wide_move_operand.hw = 2;
+            break;
+        }
+        case 48: {
+            inst.dp_imm.operand.wide_move_operand.hw = 3;
+            break;
+        }
+        default: {
+            return false;
+        }
+    }
+
+    inst.dp_imm.operand.wide_move_operand.imm16 = imm16;
+
+    *src = s;
+    *instruction = inst;
+    return true;
+}
+
+bool parse_wide_move_operand(char **src, char *rd, char *rm) {
+    // cmp, cmn
+    // neg, negs
+    // tst
+    // mvn
+    // <Rn>, <Rm>{, <shift> #<imm>}
+
+    char *s = *src;
+    Instruction inst = { .command_format = DP_IMM };
+    inst.dp_imm.operand_type = 1;
+    // write data from mnemonic
+
+
+    char *s = *src;
+    char *opcode;
+    char rd_dest;
+    char rd_width;
+    char rm_dest;
+    char rm_width;
+    ShiftType shift_type;
+    uint8_t shift_amount;
+    bool success = parse_from(src, a_l_opcodes, opcode)
+                   && skip_whitespace(&s)
+                   && parse_reg(&s, &rd_dest, &rd_width)
+                   && skip_whitespace(&s)
+                   && parse_reg(&s, &rm_dest, &rm_width)
+                   && skip_whitespace(&s)
+                   && parse_immediate_shift(&s, &shift_type, &shift_amount);
+    return success;
+}
+
+bool parse_mov(char **src, char *rd, char *rn) {
+    // <Rd>, <Rn>
+
+    char *s = *src;
+    char *opcode;
+    char rd_dest;
+    char rd_width;
+    char rn_dest;
+    char rn_width;
+    bool success = parse_from(src, a_l_opcodes, opcode)
+                   && skip_whitespace(&s)
+                   && parse_reg(&s, &rd_dest, &rd_width)
+                   && skip_whitespace(&s)
+                   && parse_reg(&s, &rm_dest, &rm_width);
+    return success;
+}
