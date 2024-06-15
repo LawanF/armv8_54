@@ -28,7 +28,7 @@ const char *const shift_types[]   = {"lsl", "lsr", "asr", "ror"};
 
 bool match_char(char **src, const char token);
 bool match_string(char **src, const char *token);
-bool parse_from(char **src, char **tokens, char **chosen);
+bool parse_from(char **src, const char * const tokens[], const char **chosen);
 bool skip_whitespace(char **src);
 bool parse_uint(char **src, uint32_t *dest, int base);
 bool parse_int(char **src, int32_t *dest, int base);

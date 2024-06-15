@@ -7,6 +7,7 @@
 #include <stdint.h>
 #include "parser.h"
 #include "emulate_files/registers.h"
+#include "emulate_files/instructions.h"
 
 /** Matches a single character, incrementing src and returning true if and only
  * if the first character in src matches that of token.
@@ -30,7 +31,7 @@ bool match_string(char **src, const char *token) {
     return true;
 }
 
-bool parse_from(char **src, char **tokens, char **chosen) {
+bool parse_from(char **src, const char * const tokens[], const char **chosen) {
     bool result = true;
     for (int i = 0; tokens[i] != NULL; i++) {
         if (match_string(src, tokens[i])) {
