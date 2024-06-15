@@ -316,3 +316,53 @@ bool parse_mov(char **src, char *rd, char *rn) {
                    && parse_reg(&s, &rm_dest, &rm_width);
     return success;
 }
+
+bool parse_mul(char **src, bool three_reg, Instruction *instruction) {
+    // <Rd>, <Rn>, <Rm>, <Ra>
+
+    char *s = *src;
+    // write data we know from precondition
+    Instruction inst = { .command_format = DP_REG, .opc = 0, .dp_reg.opr = 8,
+                         .dp_reg.m = 1 };
+
+    // save data from mnemonic
+    char x;
+    if (match_string(&s, "madd") || match_string(&s, "mul")) {
+        x = 0;
+    } else if (match_string(&s, "msub") || match_string(&s, "mneg")) {
+        x = 1;
+    } else { return false; }
+
+    // check instruction string for data
+    regwidth rd_width;
+    regwidth rn_width;
+    regwidth rm_width;
+    regwidth ra_width;
+    bool success = skip_whitespace(&s)
+                   && parse_reg(&s, &inst.rd, &rd_width)
+                   && skip_whitespace(&s)
+                   && parse_reg(&s, &inst.dp_reg.rn, &rn_width)
+                   && (rd_width == rn_width)
+                   && skip_whitespace(&s)
+                   && parse_reg(&s, &inst.dp_reg.rm, &rm_width)
+                   && (rn_width == rm_width); 
+
+    // write to ra, checking if its three reg or not
+    if (three_reg) {
+        inst.dp_reg.operand = ZERO_REG_INDEX;
+        ra_width = rm_width; // set it as the same as another width to not affect the check later
+    } else {
+        success &= skip_whitespace(&s)
+                  && parse_reg(&s, &inst.dp_reg.operand, &ra_width);
+    }
+    inst.dp_reg.operand |= (x << 5);
+
+    // writing check
+    if (!success) { return false; }
+    
+    // final width check + write sign flag
+    if (rm_width != ra_width) { return false; }
+    inst.sf = (ra_width == _32_BIT) ? 0 : 1;
+
+    return true;
+}
