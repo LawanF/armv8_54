@@ -318,6 +318,7 @@ bool parse_mul(char **src, bool three_reg, Instruction *instruction) {
     if (rm_width != ra_width) { return false; }
     inst.sf = (ra_width == _32_BIT) ? 0 : 1;
 
+    *instruction = inst;
     return true;
 }
 
