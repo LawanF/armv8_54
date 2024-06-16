@@ -14,12 +14,12 @@ str w2, [w0, w1] @ Set pin 9 as output.
 
 @ Waiting procedure.
 wait1:
-ldr x7, [x6, #0x4] @ Load current time.
-add x8, x7, #0xf424, lsl #4 @ Time offset of one million.
+ldr w7, [w6, #0x4] @ Load current time.
+add w8, w7, #0xf424, lsl #4 @ Time offset of one million.
 wait1_loop:
-ldr x7, [w6, #0x4] @ Update current time.
-sub x9, x7, x8 @ Calculate time difference.
-cmp x10, x9
+ldr w7, [w6, #0x4] @ Update current time.
+sub w9, w7, w8 @ Calculate time difference.
+cmp w10, w9
 b.ge wait1_loop
 
 @ GPSET
@@ -27,12 +27,12 @@ str w5, [w0, w3] @ Set GPSET for pin 9.
 
 @ Waiting procedure.
 wait2:
-ldr x7, [x6, #0x4] @ Load current time.
-add x8, x7, #0xf424, lsl #4 @ Time offset of one million.
+ldr w7, [w6, #0x4] @ Load current time.
+add w8, w7, #0xf424, lsl #4 @ Time offset of one million.
 wait2_loop:
-ldr x7, [w6, #0x4] @ Update current time.
-sub x9, x7, x8 @ Calculate time difference.
-cmp x10, x9
+ldr w7, [w6, #0x4] @ Update current time.
+sub w9, w7, w8 @ Calculate time difference.
+cmp w10, w9
 b.ge wait2_loop
 
 str w5, [w, w4] @ Set GPCLR for pin 9.
