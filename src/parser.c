@@ -189,9 +189,9 @@ bool parse_immediate_shift(char **src, ShiftType *shift_type, uint8_t *shift_amo
     return true;
 }
 
-bool parse_mov_dp_imm(char **src, char *rd) {
+bool parse_mov_dp_imm(char **src, Instruction *inst) {
     // movk, movn, movz
-    // <Rd>, #<imm>{, lsl #<imm>} <- IS THIS MEANT TO BE {, <shift> #<imm>}
+    // <Rd>, #<imm>{, lsl #<imm>}
 
     char *s = *src;
     Instruction inst = { .command_format = DP_IMM };
@@ -199,16 +199,22 @@ bool parse_mov_dp_imm(char **src, char *rd) {
     // write data from mnemonic
 
     switch (w_move_ops) {
-        case match_string(&s, "movn"): {
-            inst.opc = 0;
+        case "movn": {
+            if (match_string(&s, "movn")) {
+                inst.opc = 0;
+            }
             break;
         }
-        case match_string(&s, "movn"): {
-            inst.opc = 1;
+        case "movz": {
+            if (match_string(&s, "movz")) {
+                inst.opc = 1;
+            }
             break;
         }
-        case match_string(&s, "movn"): {
-            inst.opc = 3;
+        case "movk": {
+            if (match_string(&s, "movk")) {
+                inst.opc = 3;
+            }
             break;
         }
         default: {
@@ -218,22 +224,17 @@ bool parse_mov_dp_imm(char **src, char *rd) {
 
     // set the registers not included in the string
 
-    char *s = *src;
     char *opcode;
-    char rd_dest;
-    char rd_width;
-    char imm16;
     ShiftType shift_type = 0;
     uint8_t shift_amount = 0;
     bool is_valid = parse_from(src, a_l_opcodes, opcode)
                    && skip_whitespace(&s)
-                   && parse_reg(&s, &rd_dest, &rd_width)
+                   && parse_reg(&s, &inst.rd, &inst.sf)
                    && skip_whitespace(&s)
-                   && parse_immediate(&s, &imm16);
+                   && parse_immediate(&s, &inst.dp_imm.operand.wide_move_operand.imm16);
     if (!is_valid) return false;
     parse_immediate_shift(&s, "lsl", &shift_amount);
     if (!(shift_amount == 0 || shift_amount == 16 || shift_amount == 32 || shift_amount == 48)) return false;
-    inst.sf = rd_width;
 
     // parse this type of shift #<imm>{, lsl #<imm>}
     // then check its 0,16,32,48
@@ -291,7 +292,7 @@ bool parse_mul(char **src, bool three_reg, Instruction *instruction) {
     regwidth rn_width;
     regwidth rm_width;
     regwidth ra_width;
-    bool success = skip_whitespace(&s)
+    bool is_valid = skip_whitespace(&s)
                    && parse_reg(&s, &inst.rd, &rd_width)
                    && skip_whitespace(&s)
                    && parse_reg(&s, &inst.dp_reg.rn, &rn_width)
@@ -305,13 +306,13 @@ bool parse_mul(char **src, bool three_reg, Instruction *instruction) {
         inst.dp_reg.operand = ZERO_REG_INDEX;
         ra_width = rm_width; // set it as the same as another width to not affect the check later
     } else {
-        success &= skip_whitespace(&s)
+        is_valid &= skip_whitespace(&s)
                   && parse_reg(&s, &inst.dp_reg.operand, &ra_width);
     }
     inst.dp_reg.operand |= (x << 5);
 
     // writing check
-    if (!success) { return false; }
+    if (!is_valid) { return false; }
     
     // final width check + write sign flag
     if (rm_width != ra_width) { return false; }
@@ -319,3 +320,26 @@ bool parse_mul(char **src, bool three_reg, Instruction *instruction) {
 
     return true;
 }
+
+bool parse_offset_type(char **src, Instruction *inst) {
+    char *s_imm = *src;
+    char *s_pre = *src;
+    char *s_post = *src;
+    char *s_reg = *src;
+    char *s_lit = *src;
+
+    if (match_char(&s_reg, '[')
+        && parse_reg(&s, &inst.single_data_transfer.offset 
+}
+
+
+
+
+
+
+
+
+
+
+
+
