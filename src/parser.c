@@ -632,3 +632,23 @@ bool parse_b(char **src, Instruction *instruction, uint32_t cur_pos, SymbolTable
     // write data from the rest of the instruction
     return parse_literal(&s, cur_pos, instruction, lit_type, known_table, unknown_table);
 }
+
+bool parse_br(char **src, Instruction *instruction) {
+    // xn
+
+    char *s = *src;
+    Instruction inst = { .command_format = BRANCH };
+    // check we're on the right mnemonic
+    if (match_string(&s, "br")) {
+        inst.branch.operand_type = REGISTER_BRANCH;
+    } else { return false; }
+
+    // save register
+    regwidth width;
+    bool is_valid = skip_whitespace(&s)
+                    && parse_reg(&s, &inst.branch.operand.register_branch, &width);
+    if (!is_valid) { return false; }
+
+    *instruction = inst;
+    return true;
+}
