@@ -2,6 +2,7 @@
 #define PARSER_H
 
 #include <stdint.h>
+#include <stdlib.h>
 
 #define NUM_DP_IMM_INSTS 22
 #define NUM_DP_REG_INSTS 4
@@ -13,14 +14,14 @@
 
 #define ARRAY_LEN(arr) (sizeof(arr) / sizeof(void *))
 
-const char *const arith_ops[]     = {"add", "adds", "sub", "subs"};
-const char *const logic_ops[]     = {"and", "ands", "bic", "bics", "eon", "eor", "orn", "orr"};
-const char *const comp_ops[]      = {"cmn", "cmp"};
-const char *const neg_ops[]       = {"neg", "negs"};
-const char *const w_move_ops[]    = {"movk", "movn", "movz"};
-const char *const mul_arith_ops[] = {"madd", "msub"};
-const char *const mul_neg_ops[]   = {"mneg", "mul"};
-const char *branch_conds[] = { "b.eq", "b.ne", "b.ge", "b.lt", "b.gt", "b.le", "b.al" };
+const char *const arith_ops[]     = {"add", "adds", "sub", "subs", NULL};
+const char *const logic_ops[]     = {"and", "ands", "bic", "bics", "eon", "eor", "orn", "orr", NULL};
+const char *const comp_ops[]      = {"cmn", "cmp", NULL};
+const char *const neg_ops[]       = {"neg", "negs", NULL};
+const char *const w_move_ops[]    = {"movk", "movn", "movz", NULL};
+const char *const mul_arith_ops[] = {"madd", "msub", NULL};
+const char *const mul_neg_ops[]   = {"mneg", "mul", NULL};
+const char *const branch_conds[] = { "b.eq", "b.ne", "b.ge", "b.lt", "b.gt", "b.le", "b.al", NULL};
 const int branch_encodings[] = { 0, 1, 10, 11, 12, 13, 14 };
 
 typedef enum { COND_BRANCH, UNCOND_BRANCH, LOAD } LiteralInstr;
