@@ -637,3 +637,17 @@ bool parse_br(char **src, Instruction *instruction) {
     *instruction = inst;
     return true;
 }
+
+bool parse_instruction(char **src, Instruction *instruction, uint32_t cur_pos, SymbolTable known_table, SymbolTable unknown_table) {
+    char *s = *src;
+    Instruction inst;
+    bool is_valid = parse_add_sub(&s, &inst)
+                    && parse_mov_dp_imm(&s, &inst)
+                    && parse_mul(&s, &inst) 
+                    && parse_load_store(&s, &inst)
+                    && parse_b(&s, &inst, cur_pos, known_table, unknown_table)
+                    && parse_br(&s, &inst);
+    instruction = inst;
+    return is_valid;
+}
+
