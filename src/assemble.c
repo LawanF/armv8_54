@@ -1,4 +1,5 @@
 #include <stdlib.h>
+#include "symbol_table.c"
 
 static char *input_file = NULL;
 static char *output_file = NULL;
