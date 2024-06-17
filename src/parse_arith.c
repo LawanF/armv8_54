@@ -83,7 +83,7 @@ static bool parse_arith_reg_op2(
  * @returns true and modifies src to point towards the beginning of the
  * unconsumed input, if and only if parsing succeeds
  */
-bool parse_arith(char **src, Instruction *instruction) {
+bool parse_add_sub(char **src, Instruction *instruction) {
     Instruction inst = *instruction;
     char *s = *src;
     ArithOpc opc;
