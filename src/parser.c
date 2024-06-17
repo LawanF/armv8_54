@@ -428,18 +428,14 @@ bool parse_mov_dp_imm(char **src, Instruction *instruction) {
     // set imm16
     inst.dp_imm.operand.wide_move_operand.imm16 = immediate;
     parse_immediate_shift(&s, &shift_type, &shift_amount);
-
+    // parse this type of shift #<imm>{, lsl #<imm>}
+    // then check its 0,16,32,48
+    // parse the shift -> 0, 1, 2, 3 etc. determines hw bit.
     if (!(shift_type == LSL
           && (shift_amount == 0
               || shift_amount == 16
               || shift_amount == 32
               || shift_amount == 48))) return false;
-
-    // parse this type of shift #<imm>{, lsl #<imm>}
-    // then check its 0,16,32,48
-    // parse the shift -> 0, 1, 2, 3 etc. determines hw bit.
-
-    // set hw,imm16 value
     inst.dp_imm.operand.wide_move_operand.hw = shift_amount / 16;
     inst.dp_imm.operand.wide_move_operand.imm16 = immediate;
 
