@@ -462,10 +462,10 @@ bool parse_mul(char **src, bool three_reg, Instruction *instruction) {
     } else { return false; }
 
     // check instruction string for data
-    regwidth rd_width;
-    regwidth rn_width;
-    regwidth rm_width;
-    regwidth ra_width;
+    RegisterWidth rd_width;
+    RegisterWidth rn_width;
+    RegisterWidth rm_width;
+    RegisterWidth ra_width;
     bool is_valid = skip_whitespace(&s)
                    && parse_reg(&s, &inst.rd, &rd_width)
                    && skip_whitespace(&s)
