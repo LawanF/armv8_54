@@ -332,10 +332,11 @@ bool parse_add_sub(char **src, Instruction *instruction) {
     const char *mnemonic;
     // choose this order so that "adds" is checked before "add"
     // in order to select the correct opcode
-    if      (parse_from(&s, adds_types, &mnemonic)) { opc = ADDS; }
-    else if (parse_from(&s, add_types,  &mnemonic)) { opc = ADD;  }
-    else if (parse_from(&s, subs_types, &mnemonic)) { opc = SUBS; }
-    else if (parse_from(&s, sub_types,  &mnemonic)) { opc = SUB;  }
+    int i;
+    if      (parse_from(&s, adds_types, &i)) { opc = ADDS; mnemonic = adds_types[i]; }
+    else if (parse_from(&s, add_types,  &i)) { opc = ADD;  mnemonic = add_types[i]; }
+    else if (parse_from(&s, subs_types, &i)) { opc = SUBS; mnemonic = subs_types[i]; }
+    else if (parse_from(&s, sub_types,  &i)) { opc = SUB;  mnemonic = sub_types[i]; }
     else return false;
     // set registers
     uint8_t rd = ZERO_REG_INDEX;
