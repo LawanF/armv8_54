@@ -329,12 +329,96 @@ bool parse_offset_type(char **src, Instruction *inst) {
     char *s_reg = *src;
     char *s_lit = *src;
 
+    int offset_xn;
+    RegisterWidth xn_width;
+    int offset_xm;
+    RegisterWidth xm_width;
+
+    int uoffset;
+
     if (match_char(&s_reg, '[')
-        && parse_reg(&s, &inst.single_data_transfer.offset 
+        && parse_reg(&s_reg, &offset_xn, &xn_width) 
+        && skip_whitespace(&s_reg)
+        && parse_reg(&s_reg, &offset_xm, &xm_width)
+        && match_char(&s_reg, ']')
+        && xn_width == xm_width) {
+            inst.single_data_transfer.xn = offset_xn;
+            inst.single_data_transfer.offset.xm = offset_xm;
+            inst.single_data_transfer.offset_type = REGISTER_OFFSET;
+            // ldr w0 [xn, xm] - REGISTER OFFSET
+            // what to do about ldr w0 [xn]; case
+            return true;
+    } else if (match_char(&s_post, '[')
+               && parse_reg(&s_post, &offset_xn, xn_width)
+               && match_char(&s_post, ']')
+               && skip_whitespace(&s_post)
+               && parse_immediate(&s_post, uoffset)) {
+            inst.single_data_transfer.xn = offset_xn;
+            inst.single_data_transfer.offset.simm9 = uoffset;
+            inst.single_data_transfer.offset_type = POST_INDEX_OFFSET;
+            // ldr w0 [xn], #imm - post index
+            return true;
+    } else if (match_char(&s_pre, '[')
+        && parse_reg(&s_pre, &offset_xn, &xn_width)
+        && skip_whitespace(&s_pre)
+        && parse_immediate(&s_pre, uoffset)
+        && match_char(&s_pre, ']')
+        && match_char(&s_pre, '!')) {
+            inst.single_data_transfer.xn = offset_xn;
+            inst.single_data_transfer.offset.simm9 = uoffset;
+            inst.single_data_transfer.offset_type = PRE_INDEX_OFFSET;
+            // ldr w0 [xn, #imm]! - pre index
+            return true;
+    } else if (match_char(&s_reg, '[')
+        && parse_reg(&s_imm, &offset_xn, &xn_width)
+        && skip_whitespace(&s_imm)
+        && parse_immediate(&s_imm, uoffset)
+        && match_char(&s_reg, ']')) {
+            inst.single_data_transfer.xn = offset_xn;
+            inst.single_data_transfer.offset.imm12 = uoffset;
+            inst.single_data_transfer.offset_type = UNSIGNED_OFFSET;
+            inst.single_data_transfer.u = 1;
+            // ldr w0 [xn #imm] - unsigned offset
+            return true;
+    } else if (parse_immediate(&s_lit, uoffset)) {
+            inst.load_literal.simm19 = uoffset;
+            inst.command_format = 5;
+            // ldr w0 #imm - load literal
+            return true;
+    } else {
+        return false;
+    }
 }
 
+bool parse_load(char **src, Instruction *inst) {
+    char *s = *src;
+    Instruction inst = { .command_format = SINGLE_DATA_TRANSFER };
+    inst.single_data_transfer.u = 0;
+    inst.single_data_transfer.l = 1;
 
+    bool is_valid = match_string(&s, "ldr")
+                    && skip_whitespace(&s)
+                    && parse_reg(&s, &inst.rt, &inst.sf)
+                    && skip_whitespace(&s)
+                    && parse_offset_type(&s, *inst);
 
+    if (!is_valid) return false;
+}
+
+bool parse_store(char **src, Instruction *inst) {
+    char *s = *src;
+    Instruction inst = { .command_format = SINGLE_DATA_TRANSFER };
+    inst.single_data_transfer.u = 0;
+    inst.single_data_transfer.l = 0;
+
+    bool is_valid = match_string(&s, "str")
+                    && skip_whitespace(&s)
+                    && parse_offset_type(&s, &inst);
+                    && skip_whitespace(&s)
+                    && parse_reg(&s, &inst.rt, &inst.sf)
+
+    if (!is_valid) return false;
+}
 
 
 
