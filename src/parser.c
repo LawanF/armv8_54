@@ -486,6 +486,7 @@ bool parse_offset_type(char **src, Instruction *inst) {
     char *s_post = *src;
     char *s_reg = *src;
     char *s_lit = *src;
+    char *s_lit_label = *src;
 
     int offset_xn;
     RegisterWidth xn_width;
@@ -543,19 +544,30 @@ bool parse_offset_type(char **src, Instruction *inst) {
             inst.command_format = 5;
             // ldr w0 #imm - load literal
             return true;
+    } else if (parse_label(&s_lit_label, uoffset)) {
+            inst.load_literal.simm19 = uoffset;
+            inst.command_format = 5;
+            // ldr w0 #imm - load literal
+            return true 
     } else {
         return false;
     }
 }
 
-bool parse_load(char **src, Instruction *inst) {
+bool parse_load_store(char **src, Instruction *inst) {
     char *s = *src;
     Instruction inst = { .command_format = SINGLE_DATA_TRANSFER };
     inst.single_data_transfer.u = 0;
-    inst.single_data_transfer.l = 1;
 
-    bool is_valid = match_string(&s, "ldr")
-                    && skip_whitespace(&s)
+    if (match_string(&s, "ldr")) {
+        inst.single_data_transfer.l = 1;
+    } else if (match_string(&s, "str")) {
+        inst.single_data_transfer.l = 0;
+    } else {
+        return false;
+    }
+
+    bool is_valid = skip_whitespace(&s)
                     && parse_reg(&s, &inst.rt, &inst.sf)
                     && skip_whitespace(&s)
                     && parse_offset_type(&s, *inst);
@@ -563,17 +575,3 @@ bool parse_load(char **src, Instruction *inst) {
     if (!is_valid) return false;
 }
 
-bool parse_store(char **src, Instruction *inst) {
-    char *s = *src;
-    Instruction inst = { .command_format = SINGLE_DATA_TRANSFER };
-    inst.single_data_transfer.u = 0;
-    inst.single_data_transfer.l = 0;
-
-    bool is_valid = match_string(&s, "str")
-                    && skip_whitespace(&s)
-                    && parse_offset_type(&s, &inst);
-                    && skip_whitespace(&s)
-                    && parse_reg(&s, &inst.rt, &inst.sf)
-
-    if (!is_valid) return false;
-}
