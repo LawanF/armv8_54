@@ -440,29 +440,8 @@ bool parse_mov_dp_imm(char **src, Instruction *instruction) {
     // parse the shift -> 0, 1, 2, 3 etc. determines hw bit.
 
     // set hw,imm16 value
-    switch (shift_amount) {
-        case 0: {
-            inst.dp_imm.operand.wide_move_operand.hw = 0;
-            break;
-        }
-        case 16: {
-            inst.dp_imm.operand.wide_move_operand.hw = 1;
-            break;
-        }
-        case 32: {
-            inst.dp_imm.operand.wide_move_operand.hw = 2;
-            break;
-        }
-        case 48: {
-            inst.dp_imm.operand.wide_move_operand.hw = 3;
-            break;
-        }
-        default: {
-            return false;
-        }
-    }
-
-    inst.dp_imm.operand.wide_move_operand.imm16 = imm16;
+    inst.dp_imm.operand.wide_move_operand.hw = shift_amount / 16;
+    inst.dp_imm.operand.wide_move_operand.imm16 = immediate;
 
     *src = s;
     *instruction = inst;
