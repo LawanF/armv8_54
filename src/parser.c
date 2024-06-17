@@ -427,8 +427,13 @@ bool parse_mov_dp_imm(char **src, Instruction *instruction) {
     if (!is_valid) return false;
     // set imm16
     inst.dp_imm.operand.wide_move_operand.imm16 = immediate;
-    parse_immediate_shift(&s, "lsl", &shift_amount);
-    if (!(shift_amount == 0 || shift_amount == 16 || shift_amount == 32 || shift_amount == 48)) return false;
+    parse_immediate_shift(&s, &shift_type, &shift_amount);
+
+    if (!(shift_type == LSL
+          && (shift_amount == 0
+              || shift_amount == 16
+              || shift_amount == 32
+              || shift_amount == 48))) return false;
 
     // parse this type of shift #<imm>{, lsl #<imm>}
     // then check its 0,16,32,48
