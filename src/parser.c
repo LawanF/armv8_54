@@ -319,7 +319,7 @@ static bool parse_arith_reg_op2(
  * unconsumed input, if and only if parsing succeeds
  */
 bool parse_add_sub(char **src, Instruction *instruction) {
-    Instruction inst = *instruction;
+    Instruction inst;
     char *s = *src;
     ArithOpc opc;
     bool success;
@@ -329,14 +329,14 @@ bool parse_add_sub(char **src, Instruction *instruction) {
     const char *const sub_types[]  = {"sub", "neg", NULL};
     const char *const subs_types[] = {"cmp", "subs", "negs", NULL};
     // set opcode
-    const char *mnemonic;
     // choose this order so that "adds" is checked before "add"
     // in order to select the correct opcode
     int i;
+    const char *mnemonic;
     if      (parse_from(&s, adds_types, &i)) { opc = ADDS; mnemonic = adds_types[i]; }
-    else if (parse_from(&s, add_types,  &i)) { opc = ADD;  mnemonic = add_types[i]; }
+    else if (parse_from(&s, add_types,  &i)) { opc = ADD;  mnemonic = add_types[i];  }
     else if (parse_from(&s, subs_types, &i)) { opc = SUBS; mnemonic = subs_types[i]; }
-    else if (parse_from(&s, sub_types,  &i)) { opc = SUB;  mnemonic = sub_types[i]; }
+    else if (parse_from(&s, sub_types,  &i)) { opc = SUB;  mnemonic = sub_types[i];  }
     else return false;
     // set registers
     uint8_t rd = ZERO_REG_INDEX;
@@ -396,7 +396,7 @@ bool parse_add_sub(char **src, Instruction *instruction) {
 }
 
 
-bool parse_mov_dp_imm(char **src, Instruction *inst) {
+bool parse_mov_dp_imm(char **src, Instruction *instruction) {
     // movk, movn, movz
     // <Rd>, #<imm>{, lsl #<imm>}
 
