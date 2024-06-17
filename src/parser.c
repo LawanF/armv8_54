@@ -1,3 +1,4 @@
+#include <cstdint>
 #include <string.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -417,12 +418,15 @@ bool parse_mov_dp_imm(char **src, Instruction *instruction) {
     char *opcode;
     ShiftType shift_type = 0;
     uint8_t shift_amount = 0;
-    bool is_valid = parse_from(src, a_l_opcodes, opcode)
-                 && skip_whitespace(&s)
+    uint32_t immediate;
+    bool is_valid = skip_whitespace(&s)
                  && parse_reg(&s, &inst.rd, &inst.sf)
                  && skip_whitespace(&s)
-                 && parse_immediate(&s, &inst.dp_imm.operand.wide_move_operand.imm16);
+                 && parse_immediate(&s, &immediate)
+                 && immediate < INT16_MAX;
     if (!is_valid) return false;
+    // set imm16
+    inst.dp_imm.operand.wide_move_operand.imm16 = immediate;
     parse_immediate_shift(&s, "lsl", &shift_amount);
     if (!(shift_amount == 0 || shift_amount == 16 || shift_amount == 32 || shift_amount == 48)) return false;
 
