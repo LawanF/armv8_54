@@ -623,11 +623,11 @@ bool parse_b(char **src, Instruction *instruction, uint32_t cur_pos, SymbolTable
     } else return false;
     if (!skip_whitespace(&s)) return false;
 
-    *instruction = inst;
-
     bool literal_valid = parse_literal(&s, cur_pos, &inst, lit_type, known_table, unknown_table);
     if (!literal_valid) return false;
     // write data from the rest of the instruction
+    *src = s;
+    *instruction = inst;
     return true;
 }
 
