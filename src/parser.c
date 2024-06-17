@@ -133,6 +133,51 @@ bool parse_reg(char **src, uint8_t *index, RegisterWidth *width) {
     return true;
 }
 
+void set_offset(Instruction *inst, uint32_t cur_pos, uint32_t target_pos) {
+    // calculate offset
+    int32_t offset = target_pos - cur_pos;
+
+    // set offset
+    switch (type) {
+        case COND_BRANCH:
+            inst->branch.operand.cond_branch.simm19 = target; 
+            break;
+        case UNCOND_BRANCH:
+            inst->branch.operand.uncond_branch.simm26 = target;
+            break;
+        case LOAD:
+            inst->load_literal.simm19 = target;
+            break;
+    }
+}
+
+bool parse_literal(char **src, uint32_t cur_pos, Instruction *inst, LiteralInstr type, SymbolTable known_table, SymbolTable unknown_table) {
+    // takes in a literal and based on the instruction, saves the data to the instruction
+    // whitespace is skipped before entering this function
+
+    char *s = *src;
+    bool is_valid;
+    
+    int32_t target;
+    // check if the literal is an immediate value
+    if (parse_immediate(&s, &target)) { 
+        // continue to set offset
+        set_offset(inst, cur_pos, target);
+    } else if (symtable_contains(known_table, &s)) { // check if the literal is a label that exists in the symbol table
+        // label exists in the symbol table
+        symtable_get(known_table, &s, &target);
+        // continue to set offset
+        set_offset(inst, cur_pos, target);
+    } else { // either the label is unknown or the line is invalid 
+        // parse the next word
+        char *label = strtok(s, " :");
+        is_valid = multi_symtable_add(unknown_table, label, cur_pos);
+        if (!is_valid) { return false; }
+    }
+
+    return true;
+}
+
 /** Parses a discrete (left) shift, a string of the form ", lsl #0"
   * or ", lsl #12".
   * @returns `true` (and writes to `discrete_shift`) if parsing succeeds,
@@ -575,3 +620,44 @@ bool parse_load_store(char **src, Instruction *inst) {
     if (!is_valid) return false;
 }
 
+bool parse_store(char **src, Instruction *inst) {
+    char *s = *src;
+    Instruction inst = { .command_format = SINGLE_DATA_TRANSFER };
+    inst.single_data_transfer.u = 0;
+    inst.single_data_transfer.l = 0;
+
+    bool is_valid = match_string(&s, "str")
+                    && skip_whitespace(&s)
+                    && parse_offset_type(&s, &inst);
+                    && skip_whitespace(&s)
+                    && parse_reg(&s, &inst.rt, &inst.sf)
+
+    if (!is_valid) return false;
+}
+
+bool parse_b(char **src, Instruction *instruction, uint32_t cur_pos, SymbolTable known_table, SymbolTable unknown_table) {
+    // <literal>
+
+    char *s = *src;
+    // write data we know from precondition
+    Instruction inst = { .command_format = BRANCH };
+
+    // write data from mnemonic
+    LiteralInstr lit_type;
+    char *mnemonic_index;
+    if (match_string(&s, "b ")) {
+        inst.branch.operand_type = UNCOND_BRANCH;
+        lit_type = UNCOND_BRANCH;
+    } else if (parse_from(branch_conds, &s, &mnemonic_index)) {
+        inst.branch.operand_type = COND_BRANCH;
+        lit_type = COND_BRANCH;
+        inst.branch.operand.cond_branch.cond = branch_encodings[mnemonic_index];
+        skip_whitespace(&s);
+    } else {
+        return false;
+    }
+    *instruction = inst;
+
+    // write data from the rest of the instruction
+    return parse_literal(&s, cur_pos, instruction, lit_type, known_table, unknown_table);
+}

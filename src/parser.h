@@ -20,7 +20,10 @@ const char *const neg_ops[]       = {"neg", "negs"};
 const char *const w_move_ops[]    = {"movk", "movn", "movz"};
 const char *const mul_arith_ops[] = {"madd", "msub"};
 const char *const mul_neg_ops[]   = {"mneg", "mul"};
+const char *branch_conds[] = { "b.eq", "b.ne", "b.ge", "b.lt", "b.gt", "b.le", "b.al" };
+const int branch_encodings[] = { 0, 1, 10, 11, 12, 13, 14 };
 
+typedef enum { COND_BRANCH, UNCOND_BRANCH, LOAD } LiteralInstr;
 typedef enum regwidth { _32_BIT, _64_BIT } RegisterWidth;
 typedef enum { LSL, LSR, ASR, ROR } ShiftType;
 typedef enum { ZERO_SHIFT, TWELVE_SHIFT } DiscreteShift;
