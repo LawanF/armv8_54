@@ -591,21 +591,6 @@ bool parse_load_store(char **src, Instruction *inst) {
     if (!is_valid) return false;
 }
 
-bool parse_store(char **src, Instruction *inst) {
-    char *s = *src;
-    Instruction inst = { .command_format = SINGLE_DATA_TRANSFER };
-    inst.single_data_transfer.u = 0;
-    inst.single_data_transfer.l = 0;
-
-    bool is_valid = match_string(&s, "str")
-                    && skip_whitespace(&s)
-                    && parse_offset_type(&s, &inst);
-                    && skip_whitespace(&s)
-                    && parse_reg(&s, &inst.rt, &inst.sf)
-
-    if (!is_valid) return false;
-}
-
 bool parse_b(char **src, Instruction *instruction, uint32_t cur_pos, SymbolTable known_table, SymbolTable unknown_table) {
     // <literal>
 
