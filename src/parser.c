@@ -305,6 +305,9 @@ static bool parse_arith_reg_op2(
     inst.dp_reg.rn = rn;
     inst.dp_reg.rm = rm;
     inst.dp_reg.operand = shift_amount;
+    // set instruction and string pointer
+    *src = s;
+    *instruction = inst;
     return true;
 }
 
