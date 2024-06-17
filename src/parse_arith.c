@@ -75,3 +75,85 @@ static bool parse_arith_reg_op2(
     inst.dp_reg.operand = shift_amount;
     return true;
 }
+
+/** Parses an instruction that has one of the forms:
+ * [add|adds|sub|subs] Rd, Rn, #imm{, lsl #(0|12)}
+ * [cmp|cmn] Rn, #imm{, lsl #(0|12)}
+ * [neg|negs] Rd, #imm{, lsl #(0|12)}
+ * @returns true and modifies src to point towards the beginning of the
+ * unconsumed input, if and only if parsing succeeds
+ */
+bool parse_arith(char **src, Instruction *instruction) {
+    Instruction inst = *instruction;
+    char *s = *src;
+    ArithOpc opc;
+    bool success;
+    // mnemonics and the aliases they map to
+    const char *const add_types[]  = {"add", NULL};
+    const char *const adds_types[] = {"adds", "cmn", NULL};
+    const char *const sub_types[]  = {"sub", "neg", NULL};
+    const char *const subs_types[] = {"cmp", "subs", "negs", NULL};
+    // set opcode
+    const char *mnemonic;
+    // choose this order so that "adds" is checked before "add"
+    // in order to select the correct opcode
+    if      (parse_from(&s, adds_types, &mnemonic)) { opc = ADDS; }
+    else if (parse_from(&s, add_types,  &mnemonic)) { opc = ADD;  }
+    else if (parse_from(&s, subs_types, &mnemonic)) { opc = SUBS; }
+    else if (parse_from(&s, sub_types,  &mnemonic)) { opc = SUB;  }
+    else return false;
+    // set registers
+    uint8_t rd = ZERO_REG_INDEX;
+    uint8_t rn = ZERO_REG_INDEX;
+    // the number of registers to parse for DP (immediate):
+    // the number for DP (register) will be one greater
+    int num_registers = 0;
+    uint8_t *register_indices[MAX_ARITH_IMM_REGS];
+    // reset string back to original to check how many registers to add
+    s = *src;
+    if (match_string(&s, "cmp") || match_string(&s, "cmn")) {
+        // "cmp Rn, <op2>" is an alias for "subs Rzr, Rn, <op2>"
+        // (and the same for cmn with adds)
+        num_registers = 1;
+        register_indices[0] = &rn;
+    } else if (match_string(&s, "negs") || match_string(&s, "neg")) {
+        // "neg(s) rd, <op2>" is an alias for "sub(s) rd, rzr, <op2>"
+        num_registers = 1;
+        register_indices[0] = &rd;
+    } else {
+        // all other instructions have two operands rd and rn
+        num_registers = 2;
+        register_indices[0] = &rd;
+        register_indices[1] = &rn;
+    }
+    // reset string back to original and parse the operands
+    s = *src;
+    RegisterWidth cur_width;
+    RegisterWidth next_width;
+    success = match_string(&s, mnemonic)
+           && skip_whitespace(&s);
+    if (!success) return false;
+    // check all registers are of the same width
+    for (int i = 0; i < num_registers; i++) {
+        success = parse_reg(&s, register_indices[i], &cur_width)
+               && match_char(&s, ',')
+               && skip_whitespace(&s);
+        if (!success) return false;
+        if (i == 0) {
+            next_width = cur_width;
+        } else if (cur_width != next_width) return false;
+    }
+    // set this width to be the overall width of the instruction
+    inst.sf = cur_width;
+    // now parse < op2 >
+    // first attempt to interpret it as a DP (immediate) instruction
+    success = parse_arith_imm_op2(&s, rn, &inst)
+           || parse_arith_reg_op2(&s, rn, &inst);
+    if (!success) return false;
+    // set rd and opc
+    inst.rd = rd;
+    inst.opc = opc;
+    *src = s;
+    *instruction = inst;
+    return true;
+}
