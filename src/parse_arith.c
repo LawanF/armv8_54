@@ -42,7 +42,6 @@ static bool parse_arith_imm_op2(
     return true;
 }
 
-
 /** Parses the register form of an arithmetic < op2 > operand, a
  * string of the form "Rn{, [shift] #[imm]}", and fills in the corresponding
  * Note that the opcode and register (rn) for this instruction will need to be
