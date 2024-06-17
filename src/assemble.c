@@ -28,6 +28,7 @@ int main(int argc, char **argv) {
     bool is_valid;
     while ( fgets(buffer, sizeof(buffer), in) != NULL ) {
         // ADD: resizing array for instructions
+        buffer[sizeof(buffer)-1] = NULL;
         src = buffer;
         Instruction inst;
         is_valid = parse_instruction(src, &inst, cur_pos, known_table, unknown_table); 
