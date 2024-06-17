@@ -15,9 +15,11 @@ int main(int argc, char **argv) {
 
     // initialise if there is anything?
 
-
     // loop read each line until EOF. parse each line, pass to encode, pass to binary file writer.
     // where does two pass come in
+    char buffer[20];
+    while ( fgets(buffer, sizeof(buffer), in) != NULL) {
+        parse_ins
 
     return EXIT_SUCCESS;
 }
