@@ -31,12 +31,12 @@ bool match_string(char **src, const char *token) {
     return true;
 }
 
-bool parse_from(char **src, const char * const tokens[], const char **chosen) {
+bool parse_from(char **src, const char * const tokens[], int *index) {
     bool result = true;
     for (int i = 0; tokens[i] != NULL; i++) {
         if (match_string(src, tokens[i])) {
-            // write the token chosen
-            *chosen = tokens[i];
+            // write the token index chosen
+            *chosen = i;
             return true;
         }
     }
