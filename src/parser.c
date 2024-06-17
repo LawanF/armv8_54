@@ -402,32 +402,15 @@ bool parse_mov_dp_imm(char **src, Instruction *instruction) {
 
     char *s = *src;
     Instruction inst = { .command_format = DP_IMM };
-    inst.dp_imm.operand_type = 1;
+    inst.dp_imm.operand_type = WIDE_MOVE_OPERAND;
     // write data from mnemonic
 
-    switch (w_move_ops) {
-        case "movn": {
-            if (match_string(&s, "movn")) {
-                inst.opc = 0;
-            }
-            break;
-        }
-        case "movz": {
-            if (match_string(&s, "movz")) {
-                inst.opc = 1;
-            }
-            break;
-        }
-        case "movk": {
-            if (match_string(&s, "movk")) {
-                inst.opc = 3;
-            }
-            break;
-        }
-        default: {
-            return false;
-        }
-    }
+    bool valid_mnemonic = true;
+    inst.opc = match_string(&s, "movn") ? 0
+             : match_string(&s, "movz") ? 1
+             : match_string(&s, "movk") ? 3
+             : (valid_mnemonic = false);
+    if (!valid_mnemonic) return false;
 
     // set the registers not included in the string
 
@@ -435,10 +418,10 @@ bool parse_mov_dp_imm(char **src, Instruction *instruction) {
     ShiftType shift_type = 0;
     uint8_t shift_amount = 0;
     bool is_valid = parse_from(src, a_l_opcodes, opcode)
-                   && skip_whitespace(&s)
-                   && parse_reg(&s, &inst.rd, &inst.sf)
-                   && skip_whitespace(&s)
-                   && parse_immediate(&s, &inst.dp_imm.operand.wide_move_operand.imm16);
+                 && skip_whitespace(&s)
+                 && parse_reg(&s, &inst.rd, &inst.sf)
+                 && skip_whitespace(&s)
+                 && parse_immediate(&s, &inst.dp_imm.operand.wide_move_operand.imm16);
     if (!is_valid) return false;
     parse_immediate_shift(&s, "lsl", &shift_amount);
     if (!(shift_amount == 0 || shift_amount == 16 || shift_amount == 32 || shift_amount == 48)) return false;
