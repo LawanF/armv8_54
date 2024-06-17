@@ -340,7 +340,153 @@ bool parse_add_sub(char **src, Instruction *instruction) {
     // set rd and opc
     inst.rd = rd;
     inst.opc = opc;
+
     *src = s;
     *instruction = inst;
     return true;
+}
+
+
+bool parse_mov_dp_imm(char **src, Instruction *inst) {
+    // movk, movn, movz
+    // <Rd>, #<imm>{, lsl #<imm>}
+
+    char *s = *src;
+    Instruction inst = { .command_format = DP_IMM };
+    inst.dp_imm.operand_type = 1;
+    // write data from mnemonic
+
+    switch (w_move_ops) {
+        case "movn": {
+            if (match_string(&s, "movn")) {
+                inst.opc = 0;
+            }
+            break;
+        }
+        case "movz": {
+            if (match_string(&s, "movz")) {
+                inst.opc = 1;
+            }
+            break;
+        }
+        case "movk": {
+            if (match_string(&s, "movk")) {
+                inst.opc = 3;
+            }
+            break;
+        }
+        default: {
+            return false;
+        }
+    }
+
+    // set the registers not included in the string
+
+    char *opcode;
+    ShiftType shift_type = 0;
+    uint8_t shift_amount = 0;
+    bool is_valid = parse_from(src, a_l_opcodes, opcode)
+                   && skip_whitespace(&s)
+                   && parse_reg(&s, &inst.rd, &inst.sf)
+                   && skip_whitespace(&s)
+                   && parse_immediate(&s, &inst.dp_imm.operand.wide_move_operand.imm16);
+    if (!is_valid) return false;
+    parse_immediate_shift(&s, "lsl", &shift_amount);
+    if (!(shift_amount == 0 || shift_amount == 16 || shift_amount == 32 || shift_amount == 48)) return false;
+
+    // parse this type of shift #<imm>{, lsl #<imm>}
+    // then check its 0,16,32,48
+    // parse the shift -> 0, 1, 2, 3 etc. determines hw bit.
+
+    // set hw,imm16 value
+    switch (shift_amount) {
+        case 0: {
+            inst.dp_imm.operand.wide_move_operand.hw = 0;
+            break;
+        }
+        case 16: {
+            inst.dp_imm.operand.wide_move_operand.hw = 1;
+            break;
+        }
+        case 32: {
+            inst.dp_imm.operand.wide_move_operand.hw = 2;
+            break;
+        }
+        case 48: {
+            inst.dp_imm.operand.wide_move_operand.hw = 3;
+            break;
+        }
+        default: {
+            return false;
+        }
+    }
+
+    inst.dp_imm.operand.wide_move_operand.imm16 = imm16;
+
+    *src = s;
+    *instruction = inst;
+    return true;
+}
+
+
+bool parse_mul(char **src, bool three_reg, Instruction *instruction) {
+    // <Rd>, <Rn>, <Rm>, <Ra>
+
+    char *s = *src;
+    // write data we know from precondition
+    Instruction inst = { .command_format = DP_REG, .opc = 0, .dp_reg.opr = 8,
+                         .dp_reg.m = 1 };
+
+    // save data from mnemonic
+    char x;
+    if (match_string(&s, "madd") || match_string(&s, "mul")) {
+        x = 0;
+    } else if (match_string(&s, "msub") || match_string(&s, "mneg")) {
+        x = 1;
+    } else { return false; }
+
+    // check instruction string for data
+    regwidth rd_width;
+    regwidth rn_width;
+    regwidth rm_width;
+    regwidth ra_width;
+    bool is_valid = skip_whitespace(&s)
+                   && parse_reg(&s, &inst.rd, &rd_width)
+                   && skip_whitespace(&s)
+                   && parse_reg(&s, &inst.dp_reg.rn, &rn_width)
+                   && (rd_width == rn_width)
+                   && skip_whitespace(&s)
+                   && parse_reg(&s, &inst.dp_reg.rm, &rm_width)
+                   && (rn_width == rm_width); 
+
+    // write to ra, checking if its three reg or not
+    if (three_reg) {
+        inst.dp_reg.operand = ZERO_REG_INDEX;
+        ra_width = rm_width; // set it as the same as another width to not affect the check later
+    } else {
+        is_valid &= skip_whitespace(&s)
+                  && parse_reg(&s, &inst.dp_reg.operand, &ra_width);
+    }
+    inst.dp_reg.operand |= (x << 5);
+
+    // writing check
+    if (!is_valid) { return false; }
+    
+    // final width check + write sign flag
+    if (rm_width != ra_width) { return false; }
+    inst.sf = (ra_width == _32_BIT) ? 0 : 1;
+
+    *instruction = inst;
+    return true;
+}
+
+bool parse_offset_type(char **src, Instruction *inst) {
+    char *s_imm = *src;
+    char *s_pre = *src;
+    char *s_post = *src;
+    char *s_reg = *src;
+    char *s_lit = *src;
+
+    if (match_char(&s_reg, '[')
+        && parse_reg(&s, &inst.single_data_transfer.offset 
 }
