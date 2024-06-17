@@ -7,7 +7,6 @@
 #include <stdint.h>
 #include "parser.h"
 #include "emulate_files/registers.h"
-#include "emulate_files/instructions.h"
 
 /** Matches a single character, incrementing src and returning true if and only
  * if the first character in src matches that of token.
@@ -102,7 +101,7 @@ bool parse_immediate(char **src, uint32_t *dest) {
  * If the string is of the form "xzr" or "wzr", then this corresponds to the
  * zero register, and the same applies but with n as 31.
  */
-bool parse_reg(char **src, int *index, RegisterWidth *width) {
+bool parse_reg(char **src, uint8_t *index, RegisterWidth *width) {
     char *s = *src;
     RegisterWidth w;
     int ind;
