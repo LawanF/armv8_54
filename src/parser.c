@@ -88,10 +88,11 @@ bool parse_int(char **src, int32_t *dest, int base) {
 bool parse_immediate(char **src, uint32_t *dest) {
     char *s = *src;
     uint32_t val;
-    if (!(match_char(&s, '#')
-          && parse_uint(&s, &val, /* base = */ 10))) {
-        return false;
-    }
+    if (!match_char(&s, '#')) return false;
+    bool is_int =
+        (match_string(&s, "0x") && parse_uint(&s, &val, /* base= */ 16)) // hex
+        || parse_uint(&s, &val, /* base= */ 10);
+    if (!is_int) return false;
     *src = s;
     *dest = val;
     return true;
