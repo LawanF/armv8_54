@@ -404,29 +404,16 @@ bool parse_mov_dp_imm(char **src, Instruction *inst) {
     inst.dp_imm.operand_type = 1;
     // write data from mnemonic
 
-    switch (w_move_ops) {
-        case "movn": {
-            if (match_string(&s, "movn")) {
-                inst.opc = 0;
-            }
-            break;
-        }
-        case "movz": {
-            if (match_string(&s, "movz")) {
-                inst.opc = 1;
-            }
-            break;
-        }
-        case "movk": {
-            if (match_string(&s, "movk")) {
-                inst.opc = 3;
-            }
-            break;
-        }
-        default: {
-            return false;
-        }
+    if (match_string(&s, "movn")) {
+        inst.opc = 0;
+    } else if (match_string(&s, "movz")) {
+        inst.opc = 1;
+    } else if (match_string(&s, "movk")) {
+        inst.opc = 3;
+    } else {
+        return false;
     }
+    
 
     // set the registers not included in the string
 
