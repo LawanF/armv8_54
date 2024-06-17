@@ -21,7 +21,7 @@ const char *const neg_ops[]       = {"neg", "negs", NULL};
 const char *const w_move_ops[]    = {"movk", "movn", "movz", NULL};
 const char *const mul_arith_ops[] = {"madd", "msub", NULL};
 const char *const mul_neg_ops[]   = {"mneg", "mul", NULL};
-const char *const branch_conds[] = { "b.eq", "b.ne", "b.ge", "b.lt", "b.gt", "b.le", "b.al", NULL};
+const char *const branch_conds[] = { "eq", "ne", "ge", "lt", "gt", "le", "al", NULL};
 const int branch_encodings[] = { 0, 1, 10, 11, 12, 13, 14 };
 
 typedef enum { COND_BRANCH, UNCOND_BRANCH, LOAD } LiteralInstr;

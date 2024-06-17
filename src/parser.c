@@ -172,10 +172,9 @@ bool parse_literal(char **src, uint32_t cur_pos, Instruction *inst, LiteralInstr
     } else { // either the label is unknown or the line is invalid 
         // parse the next word
         char *label = strtok(s, " :");
-        is_valid = multi_symtable_add(unknown_table, label, cur_pos);
-        if (!is_valid) { return false; }
+        // check if addition failed
+        if (!multi_symtable_add(unknown_table, label, cur_pos)) return false;
     }
-
     return true;
 }
 
@@ -616,21 +615,20 @@ bool parse_b(char **src, Instruction *instruction, uint32_t cur_pos, SymbolTable
     // write data from mnemonic
     LiteralInstr lit_type;
     char *mnemonic_index;
-    if (match_string(&s, "b ")) {
-        inst.branch.operand_type = UNCOND_BRANCH;
-        lit_type = UNCOND_BRANCH;
-    } else if (parse_from(branch_conds, &s, &mnemonic_index)) {
-        inst.branch.operand_type = COND_BRANCH;
-        lit_type = COND_BRANCH;
-        inst.branch.operand.cond_branch.cond = branch_encodings[mnemonic_index];
-        skip_whitespace(&s);
-    } else {
-        return false;
-    }
+    if (match_string(&s, "b.") && parse_from(&s, branch_conds, &mnemonic_index)) {
+        inst.branch.operand_type = lit_type = COND_BRANCH;
+        inst.branch.operand.cond_branch.cond = mnemonic_index;
+    } else if (match_string(&s, "b")) {
+        inst.branch.operand_type = lit_type = UNCOND_BRANCH;
+    } else return false;
+    if (!skip_whitespace(&s)) return false;
+
     *instruction = inst;
 
+    bool literal_valid = parse_literal(&s, cur_pos, &inst, lit_type, known_table, unknown_table);
+    if (!literal_valid) return false;
     // write data from the rest of the instruction
-    return parse_literal(&s, cur_pos, instruction, lit_type, known_table, unknown_table);
+    return true;
 }
 
 bool parse_br(char **src, Instruction *instruction) {
