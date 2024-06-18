@@ -21,6 +21,8 @@ typedef enum regwidth { _32_BIT, _64_BIT } RegisterWidth;
 // enum for specifying the discrete shift, for the sh field in DPImmOperand
 typedef enum { ZERO_SHIFT, TWELVE_SHIFT } DiscreteShift;
 
+typedef enum { AND, BIC, ORR, ORN, EOR, EON, ANDS, BICS } LogicType;
+
 typedef enum { ARITH_OPERAND, WIDE_MOVE_OPERAND } DPImmOperandType;
 typedef union {
     /* arithmetic instruction:
