@@ -465,6 +465,7 @@ static bool parse_logical(char **src, Instruction *instruction) {
     inst.command_format = DP_REG;
     inst.dp_reg.m = 0;
     inst.dp_reg.opr = 0;
+    inst.dp_reg.operand = 0;
 
     if (parse_from(&s, rev_logic_types, &logic_type_int)) {
         // reverse logic_type: remove NULL termination when measuring count
@@ -481,7 +482,6 @@ static bool parse_logical(char **src, Instruction *instruction) {
         // "mov rd, rm" is an alias for "orr rd, rzr, rm"
         // since there is no op2, set zero register and zero shift
         inst.dp_reg.rn = ZERO_REG_INDEX;
-        inst.dp_reg.operand = 0;
         logic_type = ORR; 
         rd_bool = rm_bool = true;
     } else if (match_string(&s, "tst")) {
@@ -495,7 +495,6 @@ static bool parse_logical(char **src, Instruction *instruction) {
     uint8_t rn = inst.dp_reg.rn;
     // count the number of operands parsed so far
     int num_parsed = 0;
-    bool parsed_op2 = false;
     is_valid = skip_whitespace(&s)
             && (rd_bool ? parse_reg(&s, &inst.rd, &inst.sf)
                        && skip_comma(&s)
@@ -506,12 +505,12 @@ static bool parse_logical(char **src, Instruction *instruction) {
             && (rm_bool ? parse_reg(&s, &inst.dp_reg.rm, &cur_width)
                           && cur_width == inst.sf
                         : true)
-            && (op2_bool ? (parsed_op2 = parse_reg_op2(&s, rn, &inst))
+            && (op2_bool ? parse_reg_op2(&s, rn, &inst)
                          : true);
     if (!is_valid) return false;
-    inst.opc = logic_type_int >> 1;
+    inst.opc = logic_type >> 1;
     // set N bit (for whether the shifted register is bitwise negated)
-    inst.dp_reg.opr |= logic_type_int & 1;
+    inst.dp_reg.opr |= logic_type & 1;
     // parsing success
     *src = s;
     *instruction = inst;
@@ -541,11 +540,10 @@ static bool parse_mov_dp_imm(char **src, Instruction *instruction) {
     uint32_t immediate;
     bool is_valid = skip_whitespace(&s)
                  && parse_reg(&s, &inst.rd, &inst.sf)
-                 && skip_comma(&s);
-    if (!is_valid) return false;
-    is_valid = match_char(&s, '#')
-            && parse_immediate(&s, &immediate)
-            && immediate <= UINT16_MAX;
+                 && skip_comma(&s)
+                 && match_char(&s, '#')
+                 && parse_immediate(&s, &immediate)
+                 && immediate <= UINT16_MAX;
     if (!is_valid) return false;
     // set imm16
     inst.dp_imm.operand.wide_move_operand.imm16 = immediate;
