@@ -9,7 +9,8 @@
 #include "emulate_files/instruction_constants.h"
 
 const char *const branch_conds[] = { "eq", "ne", "ge", "lt", "gt", "le", "al", NULL};
-const char *const shift_types[]   = {"lsl", "lsr", "asr", "ror"};
+static const uint8_t cond_map[]  = { 0x0, 0x1, 0xa, 0xb, 0xc, 0xd, 0xe };
+const char *const shift_types[]  = {"lsl", "lsr", "asr", "ror"};
 
 /** Matches a single character, incrementing src and returning true if and only
  * if the first character in src matches that of token.
@@ -451,7 +452,6 @@ static bool parse_logical(char **src, Instruction *instruction) {
     bool is_valid;
     // Reverse the logic types so that no substrings are checked before the actual string.
     const char * const rev_logic_types[] = { "bics", "ands", "eon", "eor", "orn", "orr", "bic", "and", NULL };
-    const char * const logic_types[] = { "and", "bic", "orr", "orn", "eor", "eon", "ands", "bics", NULL };
 
     int logic_type_int;
     LogicType logic_type;
@@ -755,7 +755,6 @@ static bool parse_load_store(char **src, Instruction *instruction, uint32_t cur_
 
 static bool parse_b(char **src, Instruction *instruction, uint32_t cur_pos, SymbolTable known_table, SymbolTable unknown_table) {
     // <literal>
-
     char *s = *src;
     // write data we know from precondition
     Instruction inst = { .command_format = BRANCH };
@@ -765,11 +764,9 @@ static bool parse_b(char **src, Instruction *instruction, uint32_t cur_pos, Symb
     int mnemonic_index;
     if (match_string(&s, "b.") && parse_from(&s, branch_conds, &mnemonic_index)) {
         inst.branch.operand_type = COND_BRANCH;
-        lit_type = COND;
-        inst.branch.operand.cond_branch.cond = mnemonic_index;
+        inst.branch.operand.cond_branch.cond = cond_map[mnemonic_index];
     } else if (match_string(&s, "b")) {
         inst.branch.operand_type = UNCOND_BRANCH;
-        lit_type = UNCOND;
     } else return false;
     if (!skip_whitespace(&s)) return false;
 
