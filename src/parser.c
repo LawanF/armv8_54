@@ -704,9 +704,9 @@ bool parse_br(char **src, Instruction *instruction) {
     } else { return false; }
 
     // save register
-    regwidth width;
+    RegisterWidth width;
     bool is_valid = skip_whitespace(&s)
-                    && parse_reg(&s, &inst.branch.operand.register_branch, &width);
+                    && parse_reg(&s, &inst.branch.operand.register_branch.xn, &width);
     if (!is_valid) { return false; }
 
     *instruction = inst;
