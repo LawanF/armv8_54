@@ -111,7 +111,7 @@ int main(int argc, char **argv) {
             : (uint32_t) cur_line.data.directive;
         // write encoded file byte by byte
         for (int i = 0; i < sizeof(uint32_t); i++) {
-            char b = encoded & 0xFF;
+            char b = (char) (encoded & 0xFF);
             if (putc(b, output_file) == EOF) {
                 // error when writing to output file
                 fprintf(stderr, "Error: writing line %d to output file failed\n", i);
