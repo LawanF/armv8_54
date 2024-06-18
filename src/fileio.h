@@ -1,6 +1,6 @@
 #ifndef FILEIO_H
 #define FILEIO_H
-#include "registers.h"
+#include "emulate_files/registers.h"
 
 extern void store_file_to_mem(char *filename);
 
