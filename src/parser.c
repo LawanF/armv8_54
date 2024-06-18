@@ -86,15 +86,16 @@ static bool parse_int(char **src, int32_t *dest, int base) {
  * @returns true if and only if parsing succeeds
  */
 static bool parse_immediate(char **src, uint32_t *dest) {
-    char *s = *src;
+    char *s_hex = *src;
+    char *s_dec = *src;
     uint32_t hex_val;
     uint32_t decimal_val;
-    bool is_hex = match_string(&s, "0x") && parse_uint(&s, &hex_val, /* base= */ 16);
+    bool is_hex = match_string(&s_hex, "0x")
+                  && parse_uint(&s_hex, &hex_val, /* base= */ 16);
     // try parsing  as integer as well
-    s = *src;
-    bool is_decimal = parse_uint(&s, &decimal_val, /* base = */ 10);
+    bool is_decimal = parse_uint(&s_dec, &decimal_val, /* base = */ 10);
     if (!(is_hex || is_decimal)) return false;
-    *src = s;
+    *src = is_hex ? s_hex : s_dec;
     *dest = is_hex ? hex_val : decimal_val;
     return true;
 }
@@ -104,14 +105,17 @@ static bool parse_immediate(char **src, uint32_t *dest) {
  * @returns true if and only if parsing succeeds
  */
 static bool parse_signed_immediate(char **src, int32_t *dest) {
-    char *s = *src;
-    int32_t val;
-    bool is_int =
-        (match_string(&s, "0x") && parse_int(&s, &val, /* base= */ 16)) // hex
-        || parse_int(&s, &val, /* base= */ 10);
-    if (!is_int) return false;
-    *src = s;
-    *dest = val;
+    char *s_hex = *src;
+    char *s_dec = *src;
+    int32_t hex_val;
+    int32_t decimal_val;
+    bool is_hex = match_string(&s_hex, "0x")
+               && parse_int(&s_hex, &hex_val, /* base= */ 16);
+    // try parsing  as integer as well
+    bool is_decimal = parse_int(&s_dec, &decimal_val, /* base = */ 10);
+    if (!(is_hex || is_decimal)) return false;
+    *src = is_hex ? s_hex : s_dec;
+    *dest = is_hex ? hex_val : decimal_val;
     return true;
 }
 
