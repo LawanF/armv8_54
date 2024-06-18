@@ -552,7 +552,7 @@ bool parse_offset_type(char **src, Instruction *inst) {
             inst.single_data_transfer.offset.imm12 = uoffset;
             inst.single_data_transfer.offset_type = UNSIGNED_OFFSET;
             inst.single_data_transfer.u = 1;
-            // ldr w0 [xn #imm] - unsigned offset
+            // ldr w0 [xn, #imm] - unsigned offset
             return true;
     } else if (parse_immediate(&s_lit, uoffset)) {
             inst.load_literal.simm19 = uoffset;
@@ -634,6 +634,39 @@ bool parse_br(char **src, Instruction *instruction) {
 
     *instruction = inst;
     return true;
+}
+
+bool parse_label(char **src, SymbolTable table, uint32_t cur_pos) {
+    // takes in labels and adds them to the symbol table
+    char *s = *src;
+
+    // parse the label
+    char *label = strtok(s, ":");
+
+    // add to the symbol table -- check in the multimap?
+    bool is_valid = single_symtable_set(table, label, cur_pos);
+    if (!is_valid) { return false; }
+
+    // do we need anything else?
+    return true;
+}
+
+
+bool parse_directive(char **src, SymbolTable table, uint32_t cur_pos) {
+    // x
+
+    char *s = *src;
+    // check we're on the right mnemonic
+    if (match_string(&s, ".int")) {
+        skip_whitespace(&s);
+    } else { return false; }
+
+    /* int32_t n;
+    bool is_valid = parse_immediate(&s, &n);
+    if (!is_valid) { return false; } */
+
+    bool is_valid = single_symtable_set(table, s, cur_pos);
+    if (!is_valid) { return false; }
 }
 
 bool parse_instruction(char **src, Instruction *instruction, uint32_t cur_pos, SymbolTable known_table, SymbolTable unknown_table) {
