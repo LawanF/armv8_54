@@ -1,5 +1,4 @@
 #include <string.h>
-#include <stdio.h>
 #include <stdlib.h>
 #include <stdbool.h>
 #include <errno.h>
@@ -7,7 +6,6 @@
 #include <stdint.h>
 #include "parser.h"
 #include "emulate_files/registers.h"
-#include "emulate_files/instructions.h"
 #include "emulate_files/instruction_constants.h"
 
 /** Matches a single character, incrementing src and returning true if and only
