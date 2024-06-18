@@ -541,15 +541,21 @@ bool parse_offset_type(
     char *s_lit = *src;
     char *s_lit_label = *src;
 
-    int offset_xn;
+    uint8_t offset_xn;
     RegisterWidth xn_width;
-    int offset_xm;
+    uint8_t offset_xm;
     RegisterWidth xm_width;
 
-    int uoffset;
+    int32_t simm;
+    uint32_t imm;
 
+    Instruction inst = *instruction;
+    inst.command_format = SINGLE_DATA_TRANSFER;
+
+    // register offset: [<Xn>, <Xm>]
     if (match_char(&s_reg, '[')
         && parse_reg(&s_reg, &offset_xn, &xn_width) 
+        && match_char(&s_reg, ',')
         && skip_whitespace(&s_reg)
         && parse_reg(&s_reg, &offset_xm, &xm_width)
         && match_char(&s_reg, ']')
@@ -582,8 +588,9 @@ bool parse_offset_type(
     // pre-index offset: [<Xn>, #<simm>]!
     else if (match_char(&s_pre, '[')
         && parse_reg(&s_pre, &offset_xn, &xn_width)
+        && match_char(&s_pre, ',')
         && skip_whitespace(&s_pre)
-        && parse_immediate(&s_pre, uoffset)
+        && parse_signed_immediate(&s_pre, &simm)
         && match_char(&s_pre, ']')
         && match_char(&s_pre, '!')) {
             inst.single_data_transfer.xn = offset_xn;
@@ -592,7 +599,18 @@ bool parse_offset_type(
             // ldr w0 [xn, #imm]! - pre index
             return true;
     } else if (match_char(&s_reg, '[')
+        inst.single_data_transfer.xn = offset_xn;
+        inst.single_data_transfer.offset.simm9 = simm;
+        inst.single_data_transfer.offset_type = PRE_INDEX_OFFSET;
+        // ldr w0 [xn, #imm]! - pre index
+        *instruction = inst;
+        *src = s_pre;
+        return true;
+    }
+    // unsigned offset [<Xn>, #<imm>]
+    else if (match_char(&s_reg, '[')
         && parse_reg(&s_imm, &offset_xn, &xn_width)
+        && match_char(&s_imm, ',')
         && skip_whitespace(&s_imm)
         && match_char(&s_imm, '#')
         && parse_immediate(&s_imm, &imm)
@@ -607,13 +625,35 @@ bool parse_offset_type(
             inst.load_literal.simm19 = uoffset;
             inst.command_format = 5;
             // ldr w0 #imm - load literal
+        inst.single_data_transfer.xn = offset_xn;
+        inst.single_data_transfer.offset.imm12 = imm;
+        inst.single_data_transfer.offset_type = UNSIGNED_OFFSET;
+        inst.single_data_transfer.u = 1;
+        // ldr w0 [xn #imm] - unsigned offset
+        *instruction = inst;
+        *src = s_imm;
+        return true;
+    }
+    // unsigned offset [Xn]
+    else if (match_char(&s_reg, '[')
+        && parse_reg(&s_reg, &offset_xn, &xn_width)
+        && match_char(&s_reg, ']')) {
+        inst.single_data_transfer.xn = offset_xn;
+        inst.single_data_transfer.offset.imm12 = 0;
+        inst.single_data_transfer.offset_type = UNSIGNED_OFFSET;
+        inst.single_data_transfer.u = 1;
+        *instruction = inst;
+        *src = s_reg;
+        return true;
+    }
+    // load literal or immediate address
+    else {
+        inst.command_format = LOAD_LITERAL;
+        if (parse_literal(&s_lit, cur_pos, &inst, known_table, unknown_table)) {
+            *instruction = inst;
+            *src = s_lit;
             return true;
-    } else if (parse_label(&s_lit_label, uoffset)) {
-            inst.load_literal.simm19 = uoffset;
-            inst.command_format = 5;
-            // ldr w0 #imm - load literal
-            return true 
-    } else {
+        }
         return false;
     }
 }
