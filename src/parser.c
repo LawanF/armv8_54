@@ -527,7 +527,13 @@ bool parse_mul(char **src, bool three_reg, Instruction *instruction) {
     return true;
 }
 
-bool parse_offset_type(char **src, Instruction *inst) {
+bool parse_offset_type(
+    char **src,
+    Instruction *instruction,
+    uint32_t cur_pos,
+    SymbolTable known_table,
+    SymbolTable unknown_table
+) {
     char *s_imm = *src;
     char *s_pre = *src;
     char *s_post = *src;
