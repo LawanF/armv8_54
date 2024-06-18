@@ -494,21 +494,25 @@ bool parse_mul(char **src, bool three_reg, Instruction *instruction) {
     RegisterWidth rm_width;
     RegisterWidth ra_width;
     bool is_valid = skip_whitespace(&s)
-                   && parse_reg(&s, &inst.rd, &rd_width)
-                   && skip_whitespace(&s)
-                   && parse_reg(&s, &inst.dp_reg.rn, &rn_width)
-                   && (rd_width == rn_width)
-                   && skip_whitespace(&s)
-                   && parse_reg(&s, &inst.dp_reg.rm, &rm_width)
-                   && (rn_width == rm_width); 
+        && parse_reg(&s, &inst.rd, &rd_width)
+        && match_char(&s, ',')
+        && skip_whitespace(&s)
+        && parse_reg(&s, &inst.dp_reg.rn, &rn_width)
+        && match_char(&s, ',')
+        && (rd_width == rn_width)
+        && skip_whitespace(&s)
+        && parse_reg(&s, &inst.dp_reg.rm, &rm_width)
+        && match_char(&s, ',')
+        && (rn_width == rm_width);
 
     // write to ra, checking if its three reg or not
     if (three_reg) {
         inst.dp_reg.operand = ZERO_REG_INDEX;
         ra_width = rm_width; // set it as the same as another width to not affect the check later
     } else {
-        is_valid &= skip_whitespace(&s)
-                  && parse_reg(&s, &inst.dp_reg.operand, &ra_width);
+        is_valid = is_valid
+                && skip_whitespace(&s)
+                && parse_reg(&s, &inst.dp_reg.operand, &ra_width);
     }
     inst.dp_reg.operand |= (x << 5);
 
@@ -544,24 +548,33 @@ bool parse_offset_type(char **src, Instruction *inst) {
         && parse_reg(&s_reg, &offset_xm, &xm_width)
         && match_char(&s_reg, ']')
         && xn_width == xm_width) {
-            inst.single_data_transfer.xn = offset_xn;
-            inst.single_data_transfer.offset.xm = offset_xm;
-            inst.single_data_transfer.offset_type = REGISTER_OFFSET;
-            // ldr w0 [xn, xm] - REGISTER OFFSET
-            // what to do about ldr w0 [xn]; case
-            return true;
-    } else if (match_char(&s_post, '[')
-               && parse_reg(&s_post, &offset_xn, xn_width)
-               && match_char(&s_post, ']')
-               && skip_whitespace(&s_post)
-               && parse_immediate(&s_post, uoffset)) {
-            inst.single_data_transfer.xn = offset_xn;
-            inst.single_data_transfer.offset.simm9 = uoffset;
-            inst.single_data_transfer.offset_type = POST_INDEX_OFFSET;
-            // ldr w0 [xn], #imm - post index
-            return true;
-    } else if (match_char(&s_pre, '[')
+        inst.single_data_transfer.xn = offset_xn;
+        inst.single_data_transfer.offset.xm = offset_xm;
+        inst.single_data_transfer.offset_type = REGISTER_OFFSET;
+        // ldr w0 [xn, xm] - REGISTER OFFSET
+        // what to do about ldr w0 [xn]; case
+        *instruction = inst;
+        *src = s_reg;
+        return true;
+    }
+    // post-index offset: [<Xn>], #<simm>
+    else if (match_char(&s_post, '[')
+        && parse_reg(&s_post, &offset_xn, &xn_width)
+        && match_char(&s_post, ']')
+        && match_char(&s_post, ',')
+        && skip_whitespace(&s_post)
         && match_char(&s_post, '#')
+        && parse_signed_immediate(&s_post, &simm)) {
+        inst.single_data_transfer.xn = offset_xn;
+        inst.single_data_transfer.offset.simm9 = simm;
+        inst.single_data_transfer.offset_type = POST_INDEX_OFFSET;
+        // ldr w0 [xn], #imm - post index
+        *instruction = inst;
+        *src = s_post;
+        return true;
+    }
+    // pre-index offset: [<Xn>, #<simm>]!
+    else if (match_char(&s_pre, '[')
         && parse_reg(&s_pre, &offset_xn, &xn_width)
         && skip_whitespace(&s_pre)
         && parse_immediate(&s_pre, uoffset)
