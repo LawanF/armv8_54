@@ -75,6 +75,8 @@ int main(int argc, char **argv) {
         Instruction inst;
         int32_t directive;
         char *unconsumed = input_buffer;
+        // skip any indent
+        skip_whitespace(&unconsumed);
         ProgramLine *cur_line = &program[cur_pos];
         if (parse_instruction(&unconsumed, &inst, cur_pos, known_table, unknown_table)) {
             // Write instruction to buffer
