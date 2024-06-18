@@ -6,12 +6,12 @@
 
 // Returns 1 if the i'th bit of n is 1 and 0 otherwise
 // Uses an unsigned long to work with 32 bits
-#define GET_BIT(n, i) (((n) >> (i)) & 0x1UL)
+#define GET_BIT(n, i) (((n) >> (i)) & 0x1ULL)
 // Applies a bitmask and returns bits from i (inclusive) to j (inclusive) of n, where i<=j,
 // shifted so that bit i is bit 0 in the result
-#define BITMASK(n, i, j) (((n) >> (i)) & ((0x1UL << ((j) - (i) + 1)) - 1))
+#define BITMASK(n, i, j) (((n) >> (i)) & ((0x1ULL << ((j) - (i) + 1)) - 1))
 // Returns a 1 bit with i zeros to the right of it
-#define FILL_BIT(i) (0x1UL << (i))
+#define FILL_BIT(i) (0x1ULL << (i))
 // Negates a number 32-bit number n
 
 // enum for specifying type of instruction
