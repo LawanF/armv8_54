@@ -164,14 +164,14 @@ void set_offset(Instruction *inst, uint32_t cur_pos, uint32_t target_pos) {
 
     // set offset
     switch (type) {
-        case COND_BRANCH:
-            inst->branch.operand.cond_branch.simm19 = target; 
+        case COND:
+            inst->branch.operand.cond_branch.simm19 = offset;
             break;
-        case UNCOND_BRANCH:
-            inst->branch.operand.uncond_branch.simm26 = target;
+        case UNCOND:
+            inst->branch.operand.uncond_branch.simm26 = offset;
             break;
         case LOAD:
-            inst->load_literal.simm19 = target;
+            inst->load_literal.simm19 = offset;
             break;
     }
 }
