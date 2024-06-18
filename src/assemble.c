@@ -1,6 +1,6 @@
 #include <stdlib.h>
 #include <stdio.h>
-#include "symbol_table.c"
+#include "symbol_table.h"
 #include "parser.h"
 #include "emulate_files/encode.h"
 #include "emulate_files/instructions.h"
