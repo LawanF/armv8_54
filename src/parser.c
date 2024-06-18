@@ -421,6 +421,8 @@ bool parse_add_sub(char **src, Instruction *instruction) {
     return true;
 }
 
+typedef enum { AND, BIC, ORR, ORN, EOR, EON, ANDS, BICS } LogicType;
+
 /** Parses an instruction of one of the the forms:
  * [ands|and|bics|bic|eor|eon|orr|orn] Rd, Rn, < op2 >
  * [tst|mvn] Rn, < op2 >
