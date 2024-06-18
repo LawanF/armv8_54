@@ -451,18 +451,30 @@ bool parse_logical(char **src, Instruction *instruction) {
     // For aliases, some registers are zero, and so the register will not need to have a value parsed.
     bool rd_bool = false; bool rn_bool = false; bool op2_bool = false; bool rm_bool = false;    
 
+    // all logical instructions are DP (register)
+    inst.command_format = DP_REG;
+
     if (parse_from(&s, rev_logic_types, &logic_type_int)) {
         // reverse logic_type: remove NULL termination when measuring count
         logic_type = (LogicType) logic_type_int;
         logic_type = (ARRAY_LEN(rev_logic_types) - 1) - logic_type;
         rd_bool = rn_bool = op2_bool = true;
     } else if (match_string(&s, "mvn")) {
+        // "mvn rd, <op2>" is an alias for "orn rd, rzr, <op2>"
+        // set zero register
+        inst.dp_reg.rn = ZERO_REG_INDEX;
         logic_type = ORN; 
         rd_bool = op2_bool = true;
     } else if (match_string(&s, "mov")) {
+        // "mov rd, rm" is an alias for "orr rd, rzr, rm"
+        // since there is no op2, set zero register and zero shift
+        inst.dp_reg.rn = ZERO_REG_INDEX;
+        inst.dp_reg.operand = 0;
         logic_type = ORR; 
         rd_bool = rm_bool = true;
     } else if (match_string(&s, "tst")) {
+        // "tst rn, <op2>" is an alias for "ands rzr, rn, <op2>"
+        inst.rd = ZERO_REG_INDEX;
         logic_type = ANDS;
         rn_bool = op2_bool = true;
     }
@@ -483,7 +495,7 @@ bool parse_logical(char **src, Instruction *instruction) {
                         : true)
             && (op2_bool ? match_char(&s, ',')
                            && skip_whitespace(&s)
-                           && parse_op2(&s, rn, &inst) 
+                           && parse_reg_op2(&s, rn, &inst)
                         : true);
     if (!is_valid) return false;
 
@@ -491,14 +503,10 @@ bool parse_logical(char **src, Instruction *instruction) {
         case DP_REG: {
             inst.dp_reg.m = 0;
             bool dp_reg_n = logic_type % 2 == 0;
-            inst.dp_reg.opr = (int) dp_reg_n;
+            inst.dp_reg.opr |= (int) dp_reg_n;
             inst.opc = logic_type >> 1;
             break;
         }
-        case DP_IMM:
-            inst.dp_imm.operand_type = ARITH_OPERAND;
-            inst.opc = logic_type >> 1;
-            break;
         default:
             // the instruction type is invalid
             return false;
