@@ -57,7 +57,7 @@ bool skip_whitespace(char **src) {
 
 static bool parse_uint(char **src, uint32_t *dest, int base) {
     char *s = *src;
-    uint32_t res = strtoul(*src, &s, base);
+    uint32_t res = strtoul(s, &s, base);
     if (errno == ERANGE || errno == EINVAL) {
         // value is either out of the range of unsigned long
         // or the base is invalid
@@ -89,8 +89,8 @@ static bool parse_immediate(char **src, uint32_t *dest) {
     char *s = *src;
     uint32_t val;
     bool is_int =
-        (match_string(&s, "0x") && parse_uint(&s, &val, /* base= */ 16)) // hex
-        || parse_uint(&s, &val, /* base= */ 10);
+        parse_uint(&s, &val, /* base= */ 16) // hex
+        || parse_uint(&s, &val, /* base= */ 10); // decimal
     if (!is_int) return false;
     *src = s;
     *dest = val;
@@ -421,6 +421,7 @@ static bool parse_add_sub(char **src, Instruction *instruction) {
         case DP_REG: {
             // set opr to have MSB as 1
             inst.dp_reg.opr |= 1 << (DP_REG_OPR_END - DP_REG_OPR_START);
+            break;
         }
         default: return false;
     }
