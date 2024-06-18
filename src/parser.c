@@ -698,7 +698,8 @@ static bool parse_offset_type(
         && parse_immediate(&s, &imm)
         && match_char(&s, ']')) {
         inst.single_data_transfer.xn = offset_xn;
-        inst.single_data_transfer.offset.imm12 = imm;
+        uint16_t *imm12 = &inst.single_data_transfer.offset.imm12;
+        *imm12 = (xn_width == _64_BIT) ? imm / 8 : imm / 4;
         inst.single_data_transfer.offset_type = UNSIGNED_OFFSET;
         inst.single_data_transfer.u = 1;
         // ldr w0 [xn #imm] - unsigned offset
@@ -716,7 +717,7 @@ static bool parse_offset_type(
         inst.single_data_transfer.offset_type = UNSIGNED_OFFSET;
         inst.single_data_transfer.u = 1;
         *instruction = inst;
-        *src = s_reg;
+        *src = s;
         return true;
     }
     s = *src;
