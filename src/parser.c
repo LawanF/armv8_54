@@ -126,10 +126,10 @@ static bool parse_reg(char **src, uint8_t *index, RegisterWidth *width) {
     RegisterWidth w;
     int ind;
 
-    if (match_char(&s, 'x')) {
+    if (match_char(&s, 'w')) {
         // 32-bit width
         w = _32_BIT;
-    } else if (match_char(&s, 'w')){
+    } else if (match_char(&s, 'x')){
         // 64-bit width
         w = _64_BIT;
     } else {
