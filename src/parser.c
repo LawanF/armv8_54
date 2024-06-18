@@ -462,8 +462,8 @@ static bool parse_logical(char **src, Instruction *instruction) {
 
     if (parse_from(&s, rev_logic_types, &logic_type_int)) {
         // reverse logic_type: remove NULL termination when measuring count
+        logic_type_int = ARRAY_LEN(rev_logic_types) - 1 - logic_type_int;
         logic_type = (LogicType) logic_type_int;
-        logic_type = (ARRAY_LEN(rev_logic_types) - 1) - logic_type;
         rd_bool = rn_bool = op2_bool = true;
     } else if (match_string(&s, "mvn")) {
         // "mvn rd, <op2>" is an alias for "orn rd, rzr, <op2>"
@@ -483,40 +483,31 @@ static bool parse_logical(char **src, Instruction *instruction) {
         inst.rd = ZERO_REG_INDEX;
         logic_type = ANDS;
         rn_bool = op2_bool = true;
-    }
+    } else return false;
 
     RegisterWidth cur_width;
     uint8_t rn;
+    // count the number of operands parsed so far
+    int num_parsed = 0;
     is_valid = skip_whitespace(&s)
-            && parse_reg(&s, (rd_bool ? &inst.rd : &inst.dp_reg.rn), &inst.sf)
-            && match_char(&s, ',')
-            && skip_whitespace(&s)
-            && (rn_bool ? parse_reg(&s, &rn, &cur_width)
-                          && cur_width == inst.sf
+            && (rd_bool ? parse_reg(&s, &inst.rd, &inst.sf)
+                       && match_char(&s, ',')
+                       && skip_whitespace(&s)
+                        : true)
+            && (rn_bool ? parse_reg(&s, &rn, &inst.sf)
+                       && match_char(&s, ',')
+                       && skip_whitespace(&s)
                         : true) 
-            && (rm_bool ? match_char(&s, ',')
-                          && skip_whitespace(&s)
-                          && parse_reg(&s, &inst.dp_reg.rm, &cur_width)
+            && (rm_bool ? parse_reg(&s, &inst.dp_reg.rm, &cur_width)
                           && cur_width == inst.sf
                         : true)
-            && (op2_bool ? match_char(&s, ',')
-                           && skip_whitespace(&s)
-                           && parse_reg_op2(&s, rn, &inst)
-                        : true);
+            && (op2_bool ? parse_reg_op2(&s, rn, &inst)
+                         : true);
     if (!is_valid) return false;
-
-    switch (inst.command_format) {
-        case DP_REG: {
-            inst.dp_reg.m = 0;
-            bool dp_reg_n = logic_type % 2 == 0;
-            inst.dp_reg.opr |= (int) dp_reg_n;
-            inst.opc = logic_type >> 1;
-            break;
-        }
-        default:
-            // the instruction type is invalid
-            return false;
-    }
+    inst.dp_reg.m = 0;
+    bool dp_reg_n = (logic_type & 1) == 0;
+    inst.dp_reg.opr |= (int) dp_reg_n;
+    inst.opc = logic_type >> 1;
     // parsing success
     *src = s;
     *instruction = inst;
