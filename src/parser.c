@@ -437,7 +437,8 @@ bool parse_logical(char **src, Instruction *instruction) {
 
     LogicType logic_type;
 
-    // Booleans for each argument
+    // The boolean values determine whether the corresponding register will be read.
+    // For aliases, some registers are zero, and so the register will not need to have a value parsed.
     bool rd_bool = false; bool rn_bool = false; bool op2_bool = false; bool rm_bool = false;    
 
     if (parse_from(&s, rev_logic_types, &logic_type)) {
