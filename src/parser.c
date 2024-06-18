@@ -87,13 +87,15 @@ static bool parse_int(char **src, int32_t *dest, int base) {
  */
 static bool parse_immediate(char **src, uint32_t *dest) {
     char *s = *src;
-    uint32_t val;
-    bool is_int =
-        parse_uint(&s, &val, /* base= */ 16) // hex
-        || parse_uint(&s, &val, /* base= */ 10); // decimal
-    if (!is_int) return false;
+    uint32_t hex_val;
+    uint32_t decimal_val;
+    bool is_hex = match_string(&s, "0x") && parse_uint(&s, &hex_val, /* base= */ 16);
+    // try parsing  as integer as well
+    s = *src;
+    bool is_decimal = parse_uint(&s, &decimal_val, /* base = */ 10);
+    if (!(is_hex || is_decimal)) return false;
     *src = s;
-    *dest = val;
+    *dest = is_hex ? hex_val : decimal_val;
     return true;
 }
 
@@ -210,7 +212,7 @@ static bool parse_literal(char **src, uint32_t cur_pos, Instruction *inst, Symbo
   */
 static bool parse_discrete_shift(char **src, DiscreteShift *shift) {
     char *s = *src;
-    unsigned int shift_amount;
+    uint32_t shift_amount;
     bool success = match_char(&s, ',')
                 && skip_whitespace(&s)
                 && match_string(&s, "lsl")
