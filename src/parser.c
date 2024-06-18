@@ -463,7 +463,7 @@ static bool parse_logical(char **src, Instruction *instruction) {
     if (parse_from(&s, rev_logic_types, &logic_type_int)) {
         // reverse logic_type: remove NULL termination when measuring count
         logic_type = (LogicType) logic_type_int;
-        logic_type = (ARRAY_LEN(rev_logic_types) - 1) - logic_type;
+        logic_type = (ARRAY_LEN(rev_logic_types) - 2) - logic_type;
         rd_bool = rn_bool = op2_bool = true;
     } else if (match_string(&s, "mvn")) {
         // "mvn rd, <op2>" is an alias for "orn rd, rzr, <op2>"
