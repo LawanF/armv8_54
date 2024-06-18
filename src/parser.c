@@ -676,7 +676,6 @@ bool parse_b(char **src, Instruction *instruction, uint32_t cur_pos, SymbolTable
     LiteralInstr lit_type;
     int mnemonic_index;
     if (match_string(&s, "b.") && parse_from(&s, branch_conds, &mnemonic_index)) {
-        inst.branch.operand_type = lit_type = COND_BRANCH;
         inst.branch.operand_type = COND_BRANCH;
         lit_type = COND;
         inst.branch.operand.cond_branch.cond = mnemonic_index;
@@ -686,7 +685,7 @@ bool parse_b(char **src, Instruction *instruction, uint32_t cur_pos, SymbolTable
     } else return false;
     if (!skip_whitespace(&s)) return false;
 
-    bool literal_valid = parse_literal(&s, cur_pos, &inst, lit_type, known_table, unknown_table);
+    bool literal_valid = parse_literal(&s, cur_pos, &inst, known_table, unknown_table);
     if (!literal_valid) return false;
     // write data from the rest of the instruction
     *src = s;
