@@ -437,14 +437,16 @@ bool parse_logical(char **src, Instruction *instruction) {
     const char * const rev_logic_types[] = { "bics", "ands", "eon", "eor", "orn", "orr", "bic", "and", NULL };
     const char * const logic_types[] = { "and", "bic", "orr", "orn", "eor", "eon", "ands", "bics", NULL };
 
+    int logic_type_int;
     LogicType logic_type;
 
     // The boolean values determine whether the corresponding register will be read.
     // For aliases, some registers are zero, and so the register will not need to have a value parsed.
     bool rd_bool = false; bool rn_bool = false; bool op2_bool = false; bool rm_bool = false;    
 
-    if (parse_from(&s, rev_logic_types, &logic_type)) {
+    if (parse_from(&s, rev_logic_types, &logic_type_int)) {
         // reverse logic_type: remove NULL termination when measuring count
+        logic_type = (LogicType) logic_type_int;
         logic_type = (ARRAY_LEN(rev_logic_types) - 1) - logic_type;
         rd_bool = rn_bool = op2_bool = true;
     } else if (match_string(&s, "mvn")) {
