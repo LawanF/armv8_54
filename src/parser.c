@@ -674,12 +674,15 @@ bool parse_b(char **src, Instruction *instruction, uint32_t cur_pos, SymbolTable
 
     // write data from mnemonic
     LiteralInstr lit_type;
-    char *mnemonic_index;
+    int mnemonic_index;
     if (match_string(&s, "b.") && parse_from(&s, branch_conds, &mnemonic_index)) {
         inst.branch.operand_type = lit_type = COND_BRANCH;
+        inst.branch.operand_type = COND_BRANCH;
+        lit_type = COND;
         inst.branch.operand.cond_branch.cond = mnemonic_index;
     } else if (match_string(&s, "b")) {
-        inst.branch.operand_type = lit_type = UNCOND_BRANCH;
+        inst.branch.operand_type = UNCOND_BRANCH;
+        lit_type = UNCOND;
     } else return false;
     if (!skip_whitespace(&s)) return false;
 
