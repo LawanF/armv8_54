@@ -782,18 +782,13 @@ static bool parse_b(char **src, Instruction *instruction, uint32_t cur_pos, Symb
 
 static bool parse_br(char **src, Instruction *instruction) {
     char *s = *src;
-    Instruction inst = { .command_format = BRANCH };
+    Instruction inst = { .command_format = BRANCH, .branch.operand_type = REGISTER_BRANCH };
     // check we're on the right mnemonic
-    if (match_string(&s, "br")) {
-        inst.branch.operand_type = REGISTER_BRANCH;
-    } else { return false; }
-
-    // save register
-    RegisterWidth width;
-    skip_whitespace(&s);
-    bool reg_parsed = parse_reg(&s, &inst.branch.operand.register_branch.xn, &width);
-    if (!reg_parsed) { return false; }
-
+    bool is_br = match_string(&s, "br")
+              && skip_whitespace(&s)
+              && parse_reg(&s, &inst.branch.operand.register_branch.xn, &inst.sf);
+    if (!is_br) return false;
+    *src = s;
     *instruction = inst;
     return true;
 }
