@@ -428,7 +428,7 @@ bool parse_add_sub(char **src, Instruction *instruction) {
  * @returns true (and writes to `instruction`) if and only if parsing succeeds
  */
 bool parse_logical(char **src, Instruction *instruction) {
-    Instruction inst;
+    Instruction inst = *instruction;
     char *s = *src;
     bool is_valid;
     // We reverse the logic types so that no substrings are checked before the actual string.
@@ -491,7 +491,10 @@ bool parse_logical(char **src, Instruction *instruction) {
             // the instruction type is invalid
             return false;
     }
-    
+    // parsing success
+    *src = s;
+    *instruction = inst;
+    return true;
 }
 
 bool parse_mov_dp_imm(char **src, Instruction *instruction) {
