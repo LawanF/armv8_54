@@ -825,21 +825,19 @@ bool parse_label(char **src, SymbolTable table, uint32_t cur_pos) {
 }
 
 
-bool parse_directive(char **src, SymbolTable table, uint32_t cur_pos) {
+bool parse_directive(char **src, int32_t *dest) {
     // x
-
     char *s = *src;
+    int32_t value;
     // check we're on the right mnemonic
-    if (match_string(&s, ".int")) {
-        skip_whitespace(&s);
-    } else { return false; }
-
-    /* int32_t n;
-    bool is_valid = parse_immediate(&s, &n);
-    if (!is_valid) { return false; } */
-
-    bool is_valid = single_symtable_set(table, s, cur_pos);
-    if (!is_valid) { return false; }
+    bool success = match_string(&s, ".int")
+                && skip_whitespace(&s)
+                && parse_signed_immediate(&s, &value);
+    if (!success) return false;
+    // write to destination
+    *src = s;
+    *dest = value;
+    return true;
 }
 
 bool parse_instruction(char **src, Instruction *instruction, uint32_t cur_pos, SymbolTable known_table, SymbolTable unknown_table) {
