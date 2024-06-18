@@ -115,6 +115,7 @@ int main(int argc, char **argv) {
             char b = encoded & 0xFF;
             if (putc(b, output_file) == EOF) {
                 // error when writing to output file
+                fprintf(stderr, "Error: writing line %d to output file failed\n", i);
                 FREE_TABLES();
                 FAIL_RUNNING_PROGRAM();
             }
