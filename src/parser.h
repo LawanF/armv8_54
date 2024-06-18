@@ -44,10 +44,11 @@ bool parse_discrete_shift(char **src, DiscreteShift *shift);
 bool parse_immediate_shift(char **src, ShiftType *shift_type, uint8_t *shift_amount);
 bool parse_add_sub(char **src, Instruction *instruction);
 bool parse_mov_dp_imm(char **src, Instruction *instruction);
-bool parse_mul(char **src, bool three_reg, Instruction *instruction);
+bool parse_mul(char **src, Instruction *instruction);
 bool parse_load_store(char **src, Instruction *inst, uint32_t cur_pos, SymbolTable known_table, SymbolTable unknown_table);
 bool parse_b(char **src, Instruction *instruction, uint32_t cur_pos, SymbolTable known_table, SymbolTable unknown_table);
 bool parse_br(char **src, Instruction *instruction);
+bool parse_instruction(char **src, Instruction *instruction, uint32_t cur_pos, SymbolTable known_table, SymbolTable unknown_table);
 
 
 #endif

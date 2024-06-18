@@ -1,4 +1,3 @@
-#include <cstdint>
 #include <string.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -472,7 +471,7 @@ bool parse_mov_dp_imm(char **src, Instruction *instruction) {
 }
 
 
-bool parse_mul(char **src, bool three_reg, Instruction *instruction) {
+bool parse_mul(char **src, Instruction *instruction) {
     // <Rd>, <Rn>, <Rm>, <Ra>
 
     char *s = *src;
@@ -506,7 +505,9 @@ bool parse_mul(char **src, bool three_reg, Instruction *instruction) {
         && (rn_width == rm_width);
 
     // write to ra, checking if its three reg or not
-    if (three_reg) {
+    char *check = s;
+    skip_whitespace(&check);
+    if (match_char(&check, '\0')) {
         inst.dp_reg.operand = ZERO_REG_INDEX;
         ra_width = rm_width; // set it as the same as another width to not affect the check later
     } else {
@@ -712,3 +713,50 @@ bool parse_br(char **src, Instruction *instruction) {
     *instruction = inst;
     return true;
 }
+
+bool parse_label(char **src, SymbolTable table, uint32_t cur_pos) {
+    // takes in labels and adds them to the symbol table
+    char *s = *src;
+
+    // parse the label
+    char *label = strtok(s, ":");
+
+    // add to the symbol table -- check in the multimap?
+    bool is_valid = single_symtable_set(table, label, cur_pos);
+    if (!is_valid) { return false; }
+
+    // do we need anything else?
+    return true;
+}
+
+
+bool parse_directive(char **src, SymbolTable table, uint32_t cur_pos) {
+    // x
+
+    char *s = *src;
+    // check we're on the right mnemonic
+    if (match_string(&s, ".int")) {
+        skip_whitespace(&s);
+    } else { return false; }
+
+    /* int32_t n;
+    bool is_valid = parse_immediate(&s, &n);
+    if (!is_valid) { return false; } */
+
+    bool is_valid = single_symtable_set(table, s, cur_pos);
+    if (!is_valid) { return false; }
+}
+
+bool parse_instruction(char **src, Instruction *instruction, uint32_t cur_pos, SymbolTable known_table, SymbolTable unknown_table) {
+    char *s = *src;
+    Instruction inst;
+    bool is_valid = parse_add_sub(&s, &inst)
+                    || parse_mov_dp_imm(&s, &inst)
+                    || parse_mul(&s, &inst)
+                    || parse_load_store(&s, &inst, cur_pos, known_table, unknown_table)
+                    || parse_b(&s, &inst, cur_pos, known_table, unknown_table)
+                    || parse_br(&s, &inst);
+    *instruction = inst;
+    return is_valid;
+}
+
