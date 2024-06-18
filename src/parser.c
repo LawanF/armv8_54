@@ -214,6 +214,7 @@ bool parse_discrete_shift(char **src, DiscreteShift *shift) {
                 && skip_whitespace(&s)
                 && match_string(&s, "lsl")
                 && skip_whitespace(&s)
+                && match_char(&s, '#')
                 && parse_immediate(&s, &shift_amount)
                 && (shift_amount == 0 || shift_amount == 12);
     if (!success) return false;
@@ -249,8 +250,9 @@ bool parse_immediate_shift(char **src, ShiftType *shift_type, uint8_t *shift_amo
                 && skip_whitespace(&s)
                 && parse_shift_type(&s, &type)
                 && skip_whitespace(&s)
+                && match_char(&s, '#')
                 && parse_immediate(&s, &amount)
-                && (0 <= amount && amount < 64);
+                && (amount < 64);
     if (!success) return false;
 
     *src = s;
@@ -281,7 +283,8 @@ static bool parse_arith_imm_op2(
     char *s = *src;
     uint32_t immediate;
     DiscreteShift shift = ZERO_SHIFT;
-    bool success = parse_immediate(&s, &immediate)
+    bool success = match_char(&s, '#')
+                && parse_immediate(&s, &immediate)
                 && immediate <= IMM12_MAX;
     if (!success) return false;
     // parse optional shift
@@ -445,6 +448,7 @@ bool parse_mov_dp_imm(char **src, Instruction *instruction) {
     bool is_valid = skip_whitespace(&s)
                  && parse_reg(&s, &inst.rd, &inst.sf)
                  && skip_whitespace(&s)
+                 && match_char(&s, '#')
                  && parse_immediate(&s, &immediate)
                  && immediate < INT16_MAX;
     if (!is_valid) return false;
@@ -557,6 +561,7 @@ bool parse_offset_type(char **src, Instruction *inst) {
             // ldr w0 [xn], #imm - post index
             return true;
     } else if (match_char(&s_pre, '[')
+        && match_char(&s_post, '#')
         && parse_reg(&s_pre, &offset_xn, &xn_width)
         && skip_whitespace(&s_pre)
         && parse_immediate(&s_pre, uoffset)
@@ -570,7 +575,8 @@ bool parse_offset_type(char **src, Instruction *inst) {
     } else if (match_char(&s_reg, '[')
         && parse_reg(&s_imm, &offset_xn, &xn_width)
         && skip_whitespace(&s_imm)
-        && parse_immediate(&s_imm, uoffset)
+        && match_char(&s_imm, '#')
+        && parse_immediate(&s_imm, &imm)
         && match_char(&s_reg, ']')) {
             inst.single_data_transfer.xn = offset_xn;
             inst.single_data_transfer.offset.imm12 = uoffset;
