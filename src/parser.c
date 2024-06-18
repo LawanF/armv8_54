@@ -433,7 +433,7 @@ bool parse_logical(char **src, Instruction *instruction) {
     Instruction inst = *instruction;
     char *s = *src;
     bool is_valid;
-    // We reverse the logic types so that no substrings are checked before the actual string.
+    // Reverse the logic types so that no substrings are checked before the actual string.
     const char * const rev_logic_types[] = { "bics", "ands", "eon", "eor", "orn", "orr", "bic", "and", NULL };
     const char * const logic_types[] = { "and", "bic", "orr", "orn", "eor", "eon", "ands", "bics", NULL };
 
