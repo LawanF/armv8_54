@@ -592,17 +592,18 @@ static bool parse_mul(char **src, Instruction *instruction) {
         && skip_comma(&s)
         && (rd_width == rn_width)
         && parse_reg(&s, &inst.dp_reg.rm, &rm_width)
-        && skip_comma(&s)
+        //&& skip_comma(&s)
         && (rn_width == rm_width);
 
     // write to ra, checking if its three reg or not
     char *check = s;
     skip_whitespace(&check);
-    if (match_char(&check, '\0')) {
+    if (*check == '\0') {
         inst.dp_reg.operand = ZERO_REG_INDEX;
         ra_width = rm_width; // set it as the same as another width to not affect the check later
     } else {
         is_valid = is_valid
+                && skip_comma(&s)
                 && parse_reg(&s, &inst.dp_reg.operand, &ra_width);
     }
     inst.dp_reg.operand |= (x << 5);
