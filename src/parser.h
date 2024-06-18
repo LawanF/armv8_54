@@ -14,7 +14,7 @@
 // the representation of the zero register
 #define ZERO_REG_INDEX 31
 
-#define ARRAY_LEN(arr) (sizeof(arr) / sizeof(void *))
+#define ARRAY_LEN(arr) (sizeof(arr) / sizeof(arr[0]))
 
 extern const char *const branch_conds[];
 extern const char *const shift_types[];
