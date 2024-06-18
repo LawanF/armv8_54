@@ -62,7 +62,6 @@ static uint32_t encode_dp_imm(const Instruction *inst) {
     return DP_IMM_MASK
            | ((uint32_t) inst->sf  << DP_SF_BIT)
            | ((uint32_t) inst->opc << DP_OPC_START)
-           | ((uint32_t) opi       << DP_IMM_OPI_START)
            | encode_dp_imm_operand(inst)
            | ((uint32_t) inst->rd  << RD_RT_START);
 }
