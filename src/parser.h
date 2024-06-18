@@ -3,6 +3,8 @@
 
 #include <stdint.h>
 #include <stdlib.h>
+#include "symbol_table.h"
+#include "emulate_files/instructions.h"
 
 #define NUM_DP_IMM_INSTS 22
 #define NUM_DP_REG_INSTS 4
@@ -43,7 +45,7 @@ bool parse_immediate_shift(char **src, ShiftType *shift_type, uint8_t *shift_amo
 bool parse_add_sub(char **src, Instruction *instruction);
 bool parse_mov_dp_imm(char **src, Instruction *instruction);
 bool parse_mul(char **src, bool three_reg, Instruction *instruction);
-bool parse_load_store(char **src, Instruction *inst);
+bool parse_load_store(char **src, Instruction *inst, uint32_t cur_pos, SymbolTable known_table, SymbolTable unknown_table);
 bool parse_b(char **src, Instruction *instruction, uint32_t cur_pos, SymbolTable known_table, SymbolTable unknown_table);
 bool parse_br(char **src, Instruction *instruction);
 

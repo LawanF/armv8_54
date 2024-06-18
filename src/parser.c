@@ -642,7 +642,7 @@ bool parse_offset_type(
     }
 }
 
-bool parse_load_store(char **src, Instruction *inst) {
+bool parse_load_store(char **src, Instruction *instruction, uint32_t cur_pos, SymbolTable known_table, SymbolTable unknown_table) {
     char *s = *src;
     Instruction inst = { .command_format = SINGLE_DATA_TRANSFER };
     inst.single_data_transfer.u = 0;
@@ -658,7 +658,7 @@ bool parse_load_store(char **src, Instruction *inst) {
     bool is_valid = skip_whitespace(&s)
                     && parse_reg(&s, &inst.rt, &inst.sf)
                     && skip_whitespace(&s)
-                    && parse_offset_type(&s, *inst);
+                    && parse_offset_type(&s, &inst, cur_pos, known_table, unknown_table);
 
     if (!is_valid) return false;
 }
