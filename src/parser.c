@@ -661,6 +661,8 @@ bool parse_load_store(char **src, Instruction *instruction, uint32_t cur_pos, Sy
                     && parse_offset_type(&s, &inst, cur_pos, known_table, unknown_table);
 
     if (!is_valid) return false;
+
+    *instruction = inst;
 }
 
 bool parse_b(char **src, Instruction *instruction, uint32_t cur_pos, SymbolTable known_table, SymbolTable unknown_table) {
