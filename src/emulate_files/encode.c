@@ -15,13 +15,11 @@ static uint32_t encode_dp_imm_operand(const Instruction *inst) {
     DPImmOperand operand = inst->dp_imm.operand;
     switch (operand_type) {
         case ARITH_OPERAND:
-            return ((uint32_t) ARITH_OPI << DP_IMM_OPI_START)
-                   | ((uint32_t) operand.arith_operand.sh    << ARITH_OP_SH_BIT)
+            return ((uint32_t) operand.arith_operand.sh    << ARITH_OP_SH_BIT)
                    | ((uint32_t) operand.arith_operand.imm12 << ARITH_OP_IMM12_START)
                    | ((uint32_t) operand.arith_operand.rn    << ARITH_OP_RN_START);
         case WIDE_MOVE_OPERAND:
-            return ((uint32_t) WIDE_MOVE_OPI << DP_IMM_OPI_START)
-                   | ((uint32_t) operand.wide_move_operand.hw    << WIDE_MOVE_HW_START)
+            return ((uint32_t) operand.wide_move_operand.hw    << WIDE_MOVE_HW_START)
                    | ((uint32_t) operand.wide_move_operand.imm16 << WIDE_MOVE_IMM16_START);
         default: FAIL_ENCODE();
     }
@@ -53,7 +51,7 @@ static uint32_t encode_sdt_offset(const Instruction *inst) {
 
 // Encodes a DP (immediate) instruction, given a reference to an Instruction.
 static uint32_t encode_dp_imm(const Instruction *inst) {
-    unsigned char opi = 0;
+    uint8_t opi = 0;
     switch (inst->dp_imm.operand_type) {
         case ARITH_OPERAND:     opi = ARITH_OPI;     break;
         case WIDE_MOVE_OPERAND: opi = WIDE_MOVE_OPI; break;
@@ -62,6 +60,7 @@ static uint32_t encode_dp_imm(const Instruction *inst) {
     return DP_IMM_MASK
            | ((uint32_t) inst->sf  << DP_SF_BIT)
            | ((uint32_t) inst->opc << DP_OPC_START)
+           | ((uint32_t) opi       << DP_IMM_OPI_START)
            | encode_dp_imm_operand(inst)
            | ((uint32_t) inst->rd  << RD_RT_START);
 }
