@@ -465,7 +465,7 @@ static bool parse_logical(char **src, Instruction *instruction) {
 
     if (parse_from(&s, rev_logic_types, &logic_type_int)) {
         // reverse logic_type: remove NULL termination when measuring count
-        logic_type_int = ARRAY_LEN(rev_logic_types) - 1 - logic_type_int;
+        logic_type_int = ARRAY_LEN(rev_logic_types) - 2 - logic_type_int;
         logic_type = (LogicType) logic_type_int;
         rd_bool = rn_bool = op2_bool = true;
     } else if (match_string(&s, "mvn")) {
@@ -506,9 +506,9 @@ static bool parse_logical(char **src, Instruction *instruction) {
                          : true);
     if (!is_valid) return false;
     inst.dp_reg.m = 0;
-    bool dp_reg_n = (logic_type & 1) == 0;
-    inst.dp_reg.opr |= (int) dp_reg_n;
-    inst.opc = logic_type >> 1;
+    int dp_reg_n = logic_type_int & 1;
+    inst.dp_reg.opr |= dp_reg_n;
+    inst.opc = logic_type_int >> 1;
     // parsing success
     *src = s;
     *instruction = inst;
@@ -526,7 +526,7 @@ static bool parse_mov_dp_imm(char **src, Instruction *instruction) {
 
     bool valid_mnemonic = true;
     inst.opc = match_string(&s, "movn") ? 0
-             : match_string(&s, "movz") ? 1
+             : match_string(&s, "movz") ? 2
              : match_string(&s, "movk") ? 3
              : (valid_mnemonic = false);
     if (!valid_mnemonic) return false;
