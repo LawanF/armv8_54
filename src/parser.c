@@ -51,7 +51,7 @@ static bool parse_from(char **src, const char * const tokens[], int *index) {
  */
 bool skip_whitespace(char **src) {
     bool skipped = false;
-    for (; !isspace(**src); (*src)++) skipped = true;
+    for (; **src != '\0' && isspace(**src); (*src)++) skipped = true;
     return skipped;
 }
 
