@@ -828,9 +828,9 @@ bool parse_instruction(char **src, Instruction *instruction, uint32_t cur_pos, S
     char *s = *src;
     Instruction inst;
     bool is_instr = parse_add_sub(&s, &inst)
+                    || parse_logical(&s, &inst)
                     || parse_mov_dp_imm(&s, &inst)
                     || parse_mul(&s, &inst)
-                    || parse_logical(&s, &inst)
                     || parse_load_store(&s, &inst, cur_pos, known_table, unknown_table)
                     || parse_b(&s, &inst, cur_pos, known_table, unknown_table)
                     || parse_br(&s, &inst);
