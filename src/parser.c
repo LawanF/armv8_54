@@ -812,16 +812,11 @@ bool parse_br(char **src, Instruction *instruction) {
 bool parse_label(char **src, SymbolTable table, uint32_t cur_pos) {
     // takes in labels and adds them to the symbol table
     char *s = *src;
-
     // parse the label
     char *label = strtok(s, ":");
-
     // add to the symbol table -- check in the multimap?
-    bool is_valid = single_symtable_set(table, label, cur_pos);
-    if (!is_valid) { return false; }
-
-    // do we need anything else?
-    return true;
+    bool add_success = single_symtable_set(table, label, cur_pos);
+    return add_success;
 }
 
 
