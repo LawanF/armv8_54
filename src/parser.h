@@ -27,9 +27,8 @@ const char *const branch_conds[] = { "eq", "ne", "ge", "lt", "gt", "le", "al", N
 const int branch_encodings[] = { 0, 1, 10, 11, 12, 13, 14 };
 
 typedef enum { COND, UNCOND, LOAD } LiteralInstr;
-typedef enum regwidth { _32_BIT, _64_BIT } RegisterWidth;
 typedef enum { LSL, LSR, ASR, ROR } ShiftType;
-typedef enum { ZERO_SHIFT, TWELVE_SHIFT } DiscreteShift;
+
 const char *const shift_types[]   = {"lsl", "lsr", "asr", "ror"};
 
 bool match_char(char **src, const char token);

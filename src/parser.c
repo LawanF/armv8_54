@@ -757,8 +757,9 @@ bool parse_load_store(char **src, Instruction *instruction, uint32_t cur_pos, Sy
                     && parse_offset_type(&s, &inst, cur_pos, known_table, unknown_table);
 
     if (!is_valid) return false;
-
+    *src = s;
     *instruction = inst;
+    return true;
 }
 
 bool parse_b(char **src, Instruction *instruction, uint32_t cur_pos, SymbolTable known_table, SymbolTable unknown_table) {
@@ -790,8 +791,6 @@ bool parse_b(char **src, Instruction *instruction, uint32_t cur_pos, SymbolTable
 }
 
 bool parse_br(char **src, Instruction *instruction) {
-    // xn
-
     char *s = *src;
     Instruction inst = { .command_format = BRANCH };
     // check we're on the right mnemonic
@@ -812,7 +811,8 @@ bool parse_br(char **src, Instruction *instruction) {
 bool parse_label(char **src, SymbolTable table, uint32_t cur_pos) {
     // takes in labels and adds them to the symbol table
     char *s = *src;
-    // parse the label
+    // parse the label: fail if there is no colon
+    if (strchr(s, ':') == NULL) return false;
     char *label = strtok(s, ":");
     // add to the symbol table -- check in the multimap?
     bool add_success = single_symtable_set(table, label, cur_pos);

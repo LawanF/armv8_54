@@ -16,6 +16,10 @@
 
 // enum for specifying type of instruction
 typedef enum { UNKNOWN, HALT, DP_IMM, DP_REG, SINGLE_DATA_TRANSFER, LOAD_LITERAL, BRANCH } CommandFormat;
+// enum for specifying width of registers, for the sf field in Instruction
+typedef enum regwidth { _32_BIT, _64_BIT } RegisterWidth;
+// enum for specifying the discrete shift, for the sh field in DPImmOperand
+typedef enum { ZERO_SHIFT, TWELVE_SHIFT } DiscreteShift;
 
 typedef enum { ARITH_OPERAND, WIDE_MOVE_OPERAND } DPImmOperandType;
 typedef union {
@@ -23,11 +27,11 @@ typedef union {
        - sh determines whether to left shift the immediate value by 12 bits
        - imm12 is an unsigned immediate value of 12 bits
        - rn is a register which is added or subtracted to for setting into rd */
-    struct { unsigned char sh:1; unsigned char rn:5; uint16_t imm12; } arith_operand;
+    struct { DiscreteShift sh; uint8_t rn; uint16_t imm12; } arith_operand;
     /* wide move instruction: 
-       - hw determines a left shift by multiple of 16
+       - hw determines a left shift by multiple of 16 (from 0 to 48 inclusive)
        - imm16 is an unsigned immediate value of 16 bits */
-    struct { unsigned char hw:2; uint16_t imm16; } wide_move_operand;
+    struct { uint8_t hw; uint16_t imm16; } wide_move_operand;
 } DPImmOperand;
 
 typedef enum { REGISTER_OFFSET, PRE_INDEX_OFFSET, POST_INDEX_OFFSET, UNSIGNED_OFFSET } SDTOffsetType;
@@ -48,7 +52,7 @@ typedef union {
 typedef struct {
     CommandFormat command_format;
     // sign flag (for all types except branch)
-    bool sf;
+    RegisterWidth sf;
     // opcode (for DP instructions)
     uint8_t opc;
     // destination (DP) or target (SDT or load literal) register index
