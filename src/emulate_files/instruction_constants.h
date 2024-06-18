@@ -108,7 +108,6 @@
 // For decoding the operand:
 
 // SDT operand uses bits 10-21
-// operand has format 0[ simm9:9  ]X1
 #define SDT_OPERAND_START 10
 #define SDT_OPERAND_END   21
 // for pre- and post-index offsets,
@@ -119,7 +118,7 @@
 #define SDT_INDEX_SIMM9_END   20
 // for register offsets,
 // operand has format 1[ xm:5 ]011010
-#define SDT_REGISTER_MASK     ((uint32_t) 0x81A << SDT_OPERAND_START) // 1000 0001 1010
+#define SDT_REGISTER_MASK     (0x81AUL << SDT_OPERAND_START) // 1000 0001 1010
 #define SDT_REGISTER_XM_START 16
 #define SDT_REGISTER_XM_END   20
 // for unsigned offsets,
