@@ -40,19 +40,19 @@ typedef union {
 typedef enum { UNCOND_BRANCH, REGISTER_BRANCH, COND_BRANCH, } BranchOperandType;
 typedef union {
     struct { int32_t simm26; } uncond_branch;
-    struct { unsigned char xn:5; } register_branch;
-    struct { unsigned char cond:4; int32_t simm19; } cond_branch;
+    struct { uint8_t xn; } register_branch;
+    struct { uint8_t cond; int32_t simm19; } cond_branch;
 } BranchOperand;
 
 // generic instruction struct - unions for specific instruction data
 typedef struct {
     CommandFormat command_format;
     // sign flag (for all types except branch)
-    unsigned char sf:1;
+    bool sf;
     // opcode (for DP instructions)
-    unsigned char opc:2;
+    uint8_t opc;
     // destination (DP) or target (SDT or load literal) register index
-    union { unsigned char rd:5; unsigned char rt:5; };
+    union { uint8_t rd; uint8_t rt; };
     union {
         // DP (immediate)
         struct { DPImmOperandType operand_type; DPImmOperand operand; } dp_imm;
@@ -62,14 +62,14 @@ typedef struct {
            - rn is the multiplicand (for multiply instructions) or the left hand side of bitwise operations
            - operand contains data such as an immediate value or shift */
         struct {
-            unsigned char m:1; unsigned char opr:4; unsigned char rm:5;
-            unsigned char operand:6; unsigned char rn:5;
+            bool m; uint8_t opr; uint8_t rm;
+            uint8_t operand; uint8_t rn;
         } dp_reg;
         /* single data transfer:
            - u is the unsigned offset flag
            - l determines a load rather than a store
            - xn is the base register */
-        struct { unsigned char u:1; unsigned char l:1; unsigned char xn:5;
+        struct { bool u; bool l; uint8_t xn;
             SDTOffsetType offset_type; SDTOffset offset;
         } single_data_transfer;
         // load literal: simm19 is a signed immediate value
