@@ -444,7 +444,7 @@ bool parse_mov_dp_imm(char **src, Instruction *instruction) {
 }
 
 
-bool parse_mul(char **src, bool three_reg, Instruction *instruction) {
+bool parse_mul(char **src, Instruction *instruction) {
     // <Rd>, <Rn>, <Rm>, <Ra>
 
     char *s = *src;
@@ -475,7 +475,9 @@ bool parse_mul(char **src, bool three_reg, Instruction *instruction) {
                    && (rn_width == rm_width); 
 
     // write to ra, checking if its three reg or not
-    if (three_reg) {
+    char *check = s;
+    skip_whitespace(&check);
+    if (match_char(&check, '\0')) {
         inst.dp_reg.operand = ZERO_REG_INDEX;
         ra_width = rm_width; // set it as the same as another width to not affect the check later
     } else {
