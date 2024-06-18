@@ -13,7 +13,7 @@
 /** Matches a single character, incrementing src and returning true if and only
  * if the first character in src matches that of token.
  */
-bool match_char(char **src, const char token) {
+static bool match_char(char **src, const char token) {
     if (src == NULL || *src == NULL) return false;
     if (**src != '\0' && **src == token) {
         (*src)++;
@@ -25,14 +25,14 @@ bool match_char(char **src, const char token) {
 /** Matches a string of nul-terminated characters, incrementing src and
  * returning true if and only if the beginning of src matches all of token.
  */
-bool match_string(char **src, const char *token) {
+static bool match_string(char **src, const char *token) {
     int len = strlen(token);
     if (strncmp(*src, token, len) != 0) return false;
     *src += len;
     return true;
 }
 
-bool parse_from(char **src, const char * const tokens[], int *index) {
+static bool parse_from(char **src, const char * const tokens[], int *index) {
     bool result = true;
     for (int i = 0; tokens[i] != NULL; i++) {
         if (match_string(src, tokens[i])) {
@@ -54,7 +54,7 @@ bool skip_whitespace(char **src) {
     return skipped;
 }
 
-bool parse_uint(char **src, uint32_t *dest, int base) {
+static bool parse_uint(char **src, uint32_t *dest, int base) {
     char *s = *src;
     uint32_t res = strtoul(*src, &s, base);
     if (errno == ERANGE || errno == EINVAL) {
@@ -67,7 +67,7 @@ bool parse_uint(char **src, uint32_t *dest, int base) {
     return true;
 }
 
-bool parse_int(char **src, int32_t *dest, int base) {
+static bool parse_int(char **src, int32_t *dest, int base) {
     char *s = *src;
     int32_t res = strtol(*src, &s, base);
     if (errno == ERANGE || errno == EINVAL) {
@@ -84,7 +84,7 @@ bool parse_int(char **src, int32_t *dest, int base) {
  * setting `dest` to be this value if parsing succeeds.
  * @returns true if and only if parsing succeeds
  */
-bool parse_immediate(char **src, uint32_t *dest) {
+static bool parse_immediate(char **src, uint32_t *dest) {
     char *s = *src;
     uint32_t val;
     bool is_int =
@@ -100,7 +100,7 @@ bool parse_immediate(char **src, uint32_t *dest) {
  * setting `dest` to be this value if parsing succeeds.
  * @returns true if and only if parsing succeeds
  */
-bool parse_signed_immediate(char **src, int32_t *dest) {
+static bool parse_signed_immediate(char **src, int32_t *dest) {
     char *s = *src;
     int32_t val;
     bool is_int =
@@ -118,7 +118,7 @@ bool parse_signed_immediate(char **src, int32_t *dest) {
  * If the string is of the form "xzr" or "wzr", then this corresponds to the
  * zero register, and the same applies but with n as 31.
  */
-bool parse_reg(char **src, uint8_t *index, RegisterWidth *width) {
+static bool parse_reg(char **src, uint8_t *index, RegisterWidth *width) {
     char *s = *src;
     RegisterWidth w;
     int ind;
@@ -176,7 +176,7 @@ void set_offset(Instruction *inst, uint32_t cur_pos, uint32_t target_pos) {
     }
 }
 
-bool parse_literal(char **src, uint32_t cur_pos, Instruction *inst, SymbolTable known_table, SymbolTable unknown_table) {
+static bool parse_literal(char **src, uint32_t cur_pos, Instruction *inst, SymbolTable known_table, SymbolTable unknown_table) {
     // takes in a literal and based on the instruction, saves the data to the instruction
     // whitespace is skipped before entering this function
 
@@ -207,7 +207,7 @@ bool parse_literal(char **src, uint32_t cur_pos, Instruction *inst, SymbolTable 
   * @returns `true` (and writes to `discrete_shift`) if parsing succeeds,
   * and `false` otherwise
   */
-bool parse_discrete_shift(char **src, DiscreteShift *shift) {
+static bool parse_discrete_shift(char **src, DiscreteShift *shift) {
     char *s = *src;
     unsigned int shift_amount;
     bool success = match_char(&s, ',')
@@ -242,7 +242,7 @@ static bool parse_shift_type(char **src, ShiftType *shift_type) {
  * @returns `true` (and writes fields) if parsing succeeds,
  * and `false` otherwise
  */
-bool parse_immediate_shift(char **src, ShiftType *shift_type, uint8_t *shift_amount) {
+static bool parse_immediate_shift(char **src, ShiftType *shift_type, uint8_t *shift_amount) {
     char *s = *src;
     ShiftType type;
     uint32_t amount;
@@ -344,7 +344,7 @@ static bool parse_reg_op2(
  * @returns true and modifies src to point towards the beginning of the
  * unconsumed input, if and only if parsing succeeds
  */
-bool parse_add_sub(char **src, Instruction *instruction) {
+static bool parse_add_sub(char **src, Instruction *instruction) {
     Instruction inst;
     char *s = *src;
     ArithOpc opc;
@@ -428,15 +428,13 @@ bool parse_add_sub(char **src, Instruction *instruction) {
     return true;
 }
 
-typedef enum { AND, BIC, ORR, ORN, EOR, EON, ANDS, BICS } LogicType;
-
 /** Parses an instruction of one of the the forms:
  * [ands|and|bics|bic|eor|eon|orr|orn] Rd, Rn, < op2 >
  * [tst|mvn] Rn, < op2 >
  * [mov] Rd, Rm
  * @returns true (and writes to `instruction`) if and only if parsing succeeds
  */
-bool parse_logical(char **src, Instruction *instruction) {
+static bool parse_logical(char **src, Instruction *instruction) {
     Instruction inst = *instruction;
     char *s = *src;
     bool is_valid;
@@ -517,7 +515,7 @@ bool parse_logical(char **src, Instruction *instruction) {
     return true;
 }
 
-bool parse_mov_dp_imm(char **src, Instruction *instruction) {
+static bool parse_mov_dp_imm(char **src, Instruction *instruction) {
     // movk, movn, movz
     // <Rd>, #<imm>{, lsl #<imm>}
 
@@ -566,7 +564,7 @@ bool parse_mov_dp_imm(char **src, Instruction *instruction) {
 }
 
 
-bool parse_mul(char **src, Instruction *instruction) {
+static bool parse_mul(char **src, Instruction *instruction) {
     // <Rd>, <Rn>, <Rm>, <Ra>
 
     char *s = *src;
@@ -623,7 +621,7 @@ bool parse_mul(char **src, Instruction *instruction) {
     return true;
 }
 
-bool parse_offset_type(
+static bool parse_offset_type(
     char **src,
     Instruction *instruction,
     uint32_t cur_pos,
@@ -738,7 +736,7 @@ bool parse_offset_type(
     }
 }
 
-bool parse_load_store(char **src, Instruction *instruction, uint32_t cur_pos, SymbolTable known_table, SymbolTable unknown_table) {
+static bool parse_load_store(char **src, Instruction *instruction, uint32_t cur_pos, SymbolTable known_table, SymbolTable unknown_table) {
     char *s = *src;
     Instruction inst = { .command_format = SINGLE_DATA_TRANSFER };
     inst.single_data_transfer.u = 0;
@@ -762,7 +760,7 @@ bool parse_load_store(char **src, Instruction *instruction, uint32_t cur_pos, Sy
     return true;
 }
 
-bool parse_b(char **src, Instruction *instruction, uint32_t cur_pos, SymbolTable known_table, SymbolTable unknown_table) {
+static bool parse_b(char **src, Instruction *instruction, uint32_t cur_pos, SymbolTable known_table, SymbolTable unknown_table) {
     // <literal>
 
     char *s = *src;
@@ -790,7 +788,7 @@ bool parse_b(char **src, Instruction *instruction, uint32_t cur_pos, SymbolTable
     return true;
 }
 
-bool parse_br(char **src, Instruction *instruction) {
+static bool parse_br(char **src, Instruction *instruction) {
     char *s = *src;
     Instruction inst = { .command_format = BRANCH };
     // check we're on the right mnemonic
@@ -808,14 +806,14 @@ bool parse_br(char **src, Instruction *instruction) {
     return true;
 }
 
-bool parse_label(char **src, SymbolTable table, uint32_t cur_pos) {
+bool parse_label(char **src, uint32_t inst_pos, SymbolTable table) {
     // takes in labels and adds them to the symbol table
     char *s = *src;
     // parse the label: fail if there is no colon
     if (strchr(s, ':') == NULL) return false;
     char *label = strtok(s, ":");
     // add to the symbol table -- check in the multimap?
-    bool add_success = single_symtable_set(table, label, cur_pos);
+    bool add_success = single_symtable_set(table, label, inst_pos);
     return add_success;
 }
 

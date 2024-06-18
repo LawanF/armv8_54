@@ -31,23 +31,10 @@ typedef enum { LSL, LSR, ASR, ROR } ShiftType;
 
 const char *const shift_types[]   = {"lsl", "lsr", "asr", "ror"};
 
-bool match_char(char **src, const char token);
-bool match_string(char **src, const char *token);
-bool parse_from(char **src, const char * const tokens[], int *index);
+void set_offset(Instruction *inst, uint32_t cur_pos, uint32_t target_pos);
 bool skip_whitespace(char **src);
-bool parse_uint(char **src, uint32_t *dest, int base);
-bool parse_int(char **src, int32_t *dest, int base);
-bool parse_immediate(char **src, uint32_t *dest);
-bool parse_reg(char **src, uint8_t *index, RegisterWidth *width);
-bool parse_discrete_shift(char **src, DiscreteShift *shift);
-bool parse_immediate_shift(char **src, ShiftType *shift_type, uint8_t *shift_amount);
-bool parse_add_sub(char **src, Instruction *instruction);
-bool parse_mov_dp_imm(char **src, Instruction *instruction);
-bool parse_mul(char **src, Instruction *instruction);
-bool parse_load_store(char **src, Instruction *inst, uint32_t cur_pos, SymbolTable known_table, SymbolTable unknown_table);
-bool parse_b(char **src, Instruction *instruction, uint32_t cur_pos, SymbolTable known_table, SymbolTable unknown_table);
-bool parse_br(char **src, Instruction *instruction);
+bool parse_label(char **src, uint32_t inst_pos, SymbolTable table);
+bool parse_directive(char **src, int32_t *dest);
 bool parse_instruction(char **src, Instruction *instruction, uint32_t cur_pos, SymbolTable known_table, SymbolTable unknown_table);
-
 
 #endif
