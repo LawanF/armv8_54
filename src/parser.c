@@ -455,26 +455,25 @@ bool parse_logical(char **src, Instruction *instruction) {
         rn_bool = op2_bool = true;
     }
 
-    RegisterWidth r1_width;
-    RegisterWidth r2_width;
+    RegisterWidth cur_width;
     uint8_t rn;
     is_valid = skip_whitespace(&s)
-            && parse_reg(&s, (rd_bool ? &inst.rd : &inst.dp_reg.rn), &r1_width)  
+            && parse_reg(&s, (rd_bool ? &inst.rd : &inst.dp_reg.rn), &inst.sf)
             && match_char(&s, ',')
             && skip_whitespace(&s)
-            && (rn_bool ? parse_reg(&s, &rn, &r2_width) 
-                          && r2_width == r1_width 
+            && (rn_bool ? parse_reg(&s, &rn, &cur_width)
+                          && cur_width == inst.sf
                         : true) 
             && (rm_bool ? match_char(&s, ',')
                           && skip_whitespace(&s)
-                          && parse_reg(&s, &inst.dp_reg.rm, &r2_width)
-                          && r2_width == r1_width
+                          && parse_reg(&s, &inst.dp_reg.rm, &cur_width)
+                          && cur_width == inst.sf
                         : true)
             && (op2_bool ? match_char(&s, ',')
                            && skip_whitespace(&s)
                            && parse_op2(&s, rn, &inst) 
                         : true);
-    if (!is_valid) { return false; }
+    if (!is_valid) return false;
 
     switch (inst.command_format) {
         case DP_REG: {
@@ -488,8 +487,10 @@ bool parse_logical(char **src, Instruction *instruction) {
             inst.dp_imm.operand_type = ARITH_OPERAND;
             inst.opc = logic_type >> 1;
             break;
+        default:
+            // the instruction type is invalid
+            return false;
     }
-
     
 }
 
