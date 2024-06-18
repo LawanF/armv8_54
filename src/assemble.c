@@ -39,7 +39,7 @@ int main(int argc, char **argv) {
         fprintf(stderr, "Error: could not open input file for reading: %s\n", input_filename);
         return EXIT_FAILURE;
     }
-    output_file = fopen(output_filename, "wb");
+    output_file = fopen(output_filename, "w");
     if (output_file == NULL) {
         fprintf(stderr, "Error: could not open output file for writing binary: %s\n", output_filename);
         fclose(input_file);
