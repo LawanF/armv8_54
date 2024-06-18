@@ -104,6 +104,13 @@ int main(int argc, char **argv) {
         }
     }
 
+    if (!symtable_empty(unknown_table)) {
+        // some forward references still unknown
+        fprintf(stderr, "Error: unknown forward references in input file.\n");
+        FREE_TABLES();
+        FAIL_RUNNING_PROGRAM();
+    }
+
     for (int pos = 0; pos < cur_pos; pos++) {
         ProgramLine cur_line = program[pos];
         uint32_t encoded = cur_line.is_instruction
