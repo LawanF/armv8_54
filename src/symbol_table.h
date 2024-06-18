@@ -1,3 +1,6 @@
+#ifndef SYMBOL_TABLE_H
+#define SYMBOL_TABLE_H
+
 /** A module for creating symbol tables (hash maps from labels (of type char *) to addresses (of type uint32_t)).
  * The hash map is dynamically allocated.
  */
@@ -26,3 +29,5 @@ bool multi_symtable_add(SymbolTable symtable, const char *key, const uint32_t ad
 bool multi_symtable_remove_last(SymbolTable symtable, const char *key, uint32_t *dest);
 
 bool multi_symtable_remove_all(SymbolTable symtable, const char *key, uint32_t *dest);
+
+#endif
