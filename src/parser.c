@@ -176,21 +176,21 @@ void set_offset(Instruction *inst, uint32_t cur_pos, uint32_t target_pos) {
     }
 }
 
-bool parse_literal(char **src, uint32_t cur_pos, Instruction *inst, LiteralInstr type, SymbolTable known_table, SymbolTable unknown_table) {
+bool parse_literal(char **src, uint32_t cur_pos, Instruction *inst, SymbolTable known_table, SymbolTable unknown_table) {
     // takes in a literal and based on the instruction, saves the data to the instruction
     // whitespace is skipped before entering this function
 
     char *s = *src;
     bool is_valid;
     
-    int32_t target;
+    uint32_t target;
     // check if the literal is an immediate value
-    if (parse_immediate(&s, &target)) { 
+    if (parse_immediate(&s, &target)) {
         // continue to set offset
         set_offset(inst, cur_pos, target);
-    } else if (symtable_contains(known_table, &s)) { // check if the literal is a label that exists in the symbol table
+    } else if (symtable_contains(known_table, s)) { // check if the literal is a label that exists in the symbol table
         // label exists in the symbol table
-        symtable_get(known_table, &s, &target);
+        symtable_get(known_table, s, &target);
         // continue to set offset
         set_offset(inst, cur_pos, target);
     } else { // either the label is unknown or the line is invalid 
