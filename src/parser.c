@@ -744,7 +744,7 @@ static bool parse_load_store(char **src, Instruction *instruction, uint32_t cur_
 
     bool is_valid = skip_whitespace(&s)
                     && parse_reg(&s, &inst.rt, &inst.sf)
-                    && skip_whitespace(&s)
+                    && skip_comma(&s)
                     && parse_offset_type(&s, &inst, cur_pos, known_table, unknown_table);
 
     if (!is_valid) return false;
