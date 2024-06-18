@@ -58,7 +58,7 @@ bool skip_whitespace(char **src) {
 static bool parse_uint(char **src, uint32_t *dest, int base) {
     char *s = *src;
     uint32_t res = strtoul(s, &s, base);
-    if (errno == ERANGE || errno == EINVAL) {
+    if (errno == ERANGE || errno == EINVAL || *src == s) {
         // value is either out of the range of unsigned long
         // or the base is invalid
         return false;

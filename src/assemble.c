@@ -92,7 +92,7 @@ int main(int argc, char **argv) {
             uint32_t back_line;
             char *label = unconsumed;
             while (multi_symtable_remove_last(unknown_table, label, &back_line)) {
-                set_offset(&cur_line->data.inst, /* inst_pos = */ back_line, /* target_pos = */ cur_pos);
+                set_offset(&program[back_line].data.inst, /* inst_pos = */ back_line, /* target_pos = */ cur_pos);
             }
             multi_symtable_remove_all(unknown_table, label, NULL);
         } else if (!(skip_whitespace(&unconsumed) || *unconsumed == '\0')){
