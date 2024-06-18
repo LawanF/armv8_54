@@ -443,16 +443,16 @@ bool parse_logical(char **src, Instruction *instruction) {
     if (parse_from(&s, rev_logic_types, &logic_type)) {
         // reverse logic_type: remove NULL termination when measuring count
         logic_type = (ARRAY_LEN(rev_logic_types) - 1) - logic_type;
-        rd_bool = true; rn_bool = true; op2_bool = true;
+        rd_bool = rn_bool = op2_bool = true;
     } else if (match_string(&s, "mvn")) {
         logic_type = ORN; 
-        rd_bool = true; op2_bool = true;
+        rd_bool = op2_bool = true;
     } else if (match_string(&s, "mov")) {
         logic_type = ORR; 
-        rd_bool = true; rm_bool = true;
+        rd_bool = rm_bool = true;
     } else if (match_string(&s, "tst")) {
         logic_type = ANDS;
-        rn_bool = true; op2_bool = true;
+        rn_bool = op2_bool = true;
     }
 
     RegisterWidth r1_width;
