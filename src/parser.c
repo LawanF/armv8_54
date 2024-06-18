@@ -8,6 +8,7 @@
 #include "parser.h"
 #include "emulate_files/registers.h"
 #include "emulate_files/instructions.h"
+#include "emulate_files/instruction_constants.h"
 
 /** Matches a single character, incrementing src and returning true if and only
  * if the first character in src matches that of token.
@@ -269,8 +270,7 @@ typedef enum { ADD, ADDS, SUB, SUBS } ArithOpc;
 /** Parses the immediate form of an arithmetic < op2 > operand, a string of
  * the form "#imm{, lsl #(0|12)}", and fills in the corresponding fields in the
  * `Instruction`, setting the instruction type to DP (immediate).
- * Note that the opcode and register (rn) for this instruction will need to be
- * set separately.
+ * Note that the opcode for this instruction will need to be set separately.
  * @returns true if and only if the operand matches, and parsing succeeds
  */
 static bool parse_arith_imm_op2(
@@ -301,13 +301,12 @@ static bool parse_arith_imm_op2(
     return true;
 }
 
-/** Parses the register form of an arithmetic < op2 > operand, a
+/** Parses the register form of an < op2 > operand, a
  * string of the form "Rn{, [shift] #[imm]}", and fills in the corresponding
- * Note that the opcode and register (rn) for this instruction will need to be
- * set separately.
+ * Note that the opcode for this instruction will need to be set separately.
  * @returns true if and only if the operand matches, and parsing succeeds.
  */
-static bool parse_arith_reg_op2(
+static bool parse_reg_op2(
     char **src,
     uint8_t rn,
     Instruction *instruction
@@ -325,9 +324,10 @@ static bool parse_arith_reg_op2(
     parse_immediate_shift(&s, &shift_type, &shift_amount);
     inst.command_format = DP_REG;
     // For an arithmetic instruction, (M, opr) if of the form (0, 1xx0)
-    // where the xx bits form opr.
+    // where the xx bits form the shift type.
+    // For a logical instruction, it is the same but with the MSB of opr as 0.
     inst.dp_reg.m = 0;
-    inst.dp_reg.opr = 4 | (shift_type << 1); // (m, opr) = (0, 1xx0)
+    inst.dp_reg.opr = shift_type << 1;
     inst.dp_reg.rn = rn;
     inst.dp_reg.rm = rm;
     inst.dp_reg.operand = shift_amount;
@@ -410,12 +410,19 @@ bool parse_add_sub(char **src, Instruction *instruction) {
     // now parse < op2 >
     // first attempt to interpret it as a DP (immediate) instruction
     success = parse_arith_imm_op2(&s, rn, &inst)
-           || parse_arith_reg_op2(&s, rn, &inst);
+           || parse_reg_op2(&s, rn, &inst);
     if (!success) return false;
     // set rd and opc
     inst.rd = rd;
     inst.opc = opc;
-
+    switch (inst.command_format) {
+        case DP_IMM: break; // handled already
+        case DP_REG: {
+            // set opr to have MSB as 1
+            inst.dp_reg.opr |= 1 << (DP_REG_OPR_END - DP_REG_OPR_START);
+        }
+        default: return false;
+    }
     *src = s;
     *instruction = inst;
     return true;
