@@ -533,16 +533,16 @@ static bool parse_mov_dp_imm(char **src, Instruction *instruction) {
 
     // set the registers not included in the string
 
-    char *opcode;
     ShiftType shift_type = 0;
     uint8_t shift_amount = 0;
     uint32_t immediate;
     bool is_valid = skip_whitespace(&s)
                  && parse_reg(&s, &inst.rd, &inst.sf)
-                 && skip_whitespace(&s)
-                 && match_char(&s, '#')
-                 && parse_immediate(&s, &immediate)
-                 && immediate < INT16_MAX;
+                 && skip_comma(&s);
+    if (!is_valid) return false;
+    is_valid = match_char(&s, '#')
+            && parse_immediate(&s, &immediate)
+            && immediate <= UINT16_MAX;
     if (!is_valid) return false;
     // set imm16
     inst.dp_imm.operand.wide_move_operand.imm16 = immediate;
