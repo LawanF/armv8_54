@@ -1,5 +1,6 @@
 #include <stdlib.h>
 #include <stdio.h>
+#include <string.h>
 #include "symbol_table.h"
 #include "parser.h"
 #include "emulate_files/encode.h"
