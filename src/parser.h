@@ -16,20 +16,11 @@
 
 #define ARRAY_LEN(arr) (sizeof(arr) / sizeof(void *))
 
-const char *const arith_ops[]     = {"add", "adds", "sub", "subs", NULL};
-const char *const logic_ops[]     = {"and", "ands", "bic", "bics", "eon", "eor", "orn", "orr", NULL};
-const char *const comp_ops[]      = {"cmn", "cmp", NULL};
-const char *const neg_ops[]       = {"neg", "negs", NULL};
-const char *const w_move_ops[]    = {"movk", "movn", "movz", NULL};
-const char *const mul_arith_ops[] = {"madd", "msub", NULL};
-const char *const mul_neg_ops[]   = {"mneg", "mul", NULL};
-const char *const branch_conds[] = { "eq", "ne", "ge", "lt", "gt", "le", "al", NULL};
-const int branch_encodings[] = { 0, 1, 10, 11, 12, 13, 14 };
+extern const char *const branch_conds[];
+extern const char *const shift_types[];
 
 typedef enum { COND, UNCOND, LOAD } LiteralInstr;
 typedef enum { LSL, LSR, ASR, ROR } ShiftType;
-
-const char *const shift_types[]   = {"lsl", "lsr", "asr", "ror"};
 
 void set_offset(Instruction *inst, uint32_t cur_pos, uint32_t target_pos);
 bool skip_whitespace(char **src);

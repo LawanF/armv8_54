@@ -8,6 +8,9 @@
 #include "emulate_files/registers.h"
 #include "emulate_files/instruction_constants.h"
 
+const char *const branch_conds[] = { "eq", "ne", "ge", "lt", "gt", "le", "al", NULL};
+const char *const shift_types[]   = {"lsl", "lsr", "asr", "ror"};
+
 /** Matches a single character, incrementing src and returning true if and only
  * if the first character in src matches that of token.
  */
