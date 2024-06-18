@@ -26,7 +26,7 @@ int main(int argc, char **argv) {
     // Ensure both input and output filenames are provided
     if (argc != 3) {
         fprintf(stderr, "usage: ./assemble [input_file] [output_file]");
-        exit(1);
+        return EXIT_FAILURE;
     }
     char *input_filename = argv[1];
     char *output_filename = argv[2];

@@ -150,9 +150,9 @@ static bool parse_reg(char **src, uint8_t *index, RegisterWidth *width) {
     return true;
 }
 
-void set_offset(Instruction *inst, uint32_t cur_pos, uint32_t target_pos) {
+void set_offset(Instruction *inst, uint32_t inst_pos, uint32_t target_pos) {
     // calculate offset
-    int32_t offset = target_pos - cur_pos;
+    int32_t offset = (int32_t) (target_pos - inst_pos);
     bool type_valid = true;
     LiteralInstr type =
         (inst->command_format == LOAD_LITERAL) ? LOAD :

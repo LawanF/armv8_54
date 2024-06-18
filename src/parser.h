@@ -22,7 +22,7 @@ extern const char *const shift_types[];
 typedef enum { COND, UNCOND, LOAD } LiteralInstr;
 typedef enum { LSL, LSR, ASR, ROR } ShiftType;
 
-void set_offset(Instruction *inst, uint32_t cur_pos, uint32_t target_pos);
+void set_offset(Instruction *inst, uint32_t inst_pos, uint32_t target_pos);
 bool skip_whitespace(char **src);
 bool parse_label(char **src, uint32_t inst_pos, SymbolTable table);
 bool parse_directive(char **src, int32_t *dest);
