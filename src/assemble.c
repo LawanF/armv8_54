@@ -33,7 +33,7 @@ int main(int argc, char **argv) {
     static FILE *input_file = NULL;
     static FILE *output_file = NULL;
 
-    // open files
+    // Open input and output files
     input_file = fopen(input_filename, "r");
     if (input_file == NULL) {
         fprintf(stderr, "Error: could not open input file for reading: %s\n", input_filename);
@@ -49,7 +49,6 @@ int main(int argc, char **argv) {
         FAIL_RUNNING_PROGRAM();
     }
 
-    // initialise if there is anything?
     // Loop through each line until EOF, parsing and encoding as needed and writing to output file
     char input_buffer[MAX_LINE_LEN];
     uint32_t cur_pos = 0;
