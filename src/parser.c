@@ -627,30 +627,25 @@ static bool parse_offset_type(
     SymbolTable known_table,
     SymbolTable unknown_table
 ) {
-    char *s_imm = *src;
-    char *s_pre = *src;
-    char *s_post = *src;
-    char *s_reg = *src;
-    char *s_lit = *src;
-    char *s_lit_label = *src;
+    char *s = *src;
 
     uint8_t offset_xn;
     RegisterWidth xn_width;
     uint8_t offset_xm;
     RegisterWidth xm_width;
 
-    int32_t simm;
-    uint32_t imm;
+    int32_t simm = 0;
+    uint32_t imm = 0;
 
     Instruction inst = *instruction;
     inst.command_format = SINGLE_DATA_TRANSFER;
 
     // register offset: [<Xn>, <Xm>]
-    if (match_char(&s_reg, '[')
-        && parse_reg(&s_reg, &offset_xn, &xn_width) 
-        && skip_comma(&s_reg)
-        && parse_reg(&s_reg, &offset_xm, &xm_width)
-        && match_char(&s_reg, ']')
+    if (match_char(&s, '[')
+        && parse_reg(&s, &offset_xn, &xn_width)
+        && skip_comma(&s)
+        && parse_reg(&s, &offset_xm, &xm_width)
+        && match_char(&s, ']')
         && xn_width == xm_width) {
         inst.single_data_transfer.xn = offset_xn;
         inst.single_data_transfer.offset.xm = offset_xm;
@@ -658,59 +653,64 @@ static bool parse_offset_type(
         // ldr w0 [xn, xm] - REGISTER OFFSET
         // what to do about ldr w0 [xn]; case
         *instruction = inst;
-        *src = s_reg;
+        *src = s;
         return true;
     }
+    // reset unconsumed input
+    s = *src;
     // post-index offset: [<Xn>], #<simm>
-    else if (match_char(&s_post, '[')
-        && parse_reg(&s_post, &offset_xn, &xn_width)
-        && match_char(&s_post, ']')
-        && skip_comma(&s_post)
-        && match_char(&s_post, '#')
-        && parse_signed_immediate(&s_post, &simm)) {
+    if (match_char(&s, '[')
+        && parse_reg(&s, &offset_xn, &xn_width)
+        && match_char(&s, ']')
+        && skip_comma(&s)
+        && match_char(&s, '#')
+        && parse_signed_immediate(&s, &simm)) {
         inst.single_data_transfer.xn = offset_xn;
         inst.single_data_transfer.offset.simm9 = simm;
         inst.single_data_transfer.offset_type = POST_INDEX_OFFSET;
         // ldr w0 [xn], #imm - post index
         *instruction = inst;
-        *src = s_post;
+        *src = s;
         return true;
     }
+    s = *src;
     // pre-index offset: [<Xn>, #<simm>]!
-    else if (match_char(&s_pre, '[')
-        && parse_reg(&s_pre, &offset_xn, &xn_width)
-        && skip_comma(&s_pre)
-        && parse_signed_immediate(&s_pre, &simm)
-        && match_char(&s_pre, ']')
-        && match_char(&s_pre, '!')) {
+    if (match_char(&s, '[')
+        && parse_reg(&s, &offset_xn, &xn_width)
+        && skip_comma(&s)
+        && parse_signed_immediate(&s, &simm)
+        && match_char(&s, ']')
+        && match_char(&s, '!')) {
         inst.single_data_transfer.xn = offset_xn;
         inst.single_data_transfer.offset.simm9 = simm;
         inst.single_data_transfer.offset_type = PRE_INDEX_OFFSET;
         // ldr w0 [xn, #imm]! - pre index
         *instruction = inst;
-        *src = s_pre;
+        *src = s;
         return true;
     }
+    s = *src;
     // unsigned offset [<Xn>, #<imm>]
-    else if (match_char(&s_reg, '[')
-        && parse_reg(&s_imm, &offset_xn, &xn_width)
-        && skip_comma(&s_imm)
-        && match_char(&s_imm, '#')
-        && parse_immediate(&s_imm, &imm)
-        && match_char(&s_reg, ']')) {
+    if (match_char(&s, '[')
+        && parse_reg(&s, &offset_xn, &xn_width)
+        && skip_comma(&s)
+        && match_char(&s, '#')
+        && parse_immediate(&s, &imm)
+        && match_char(&s, ']')) {
         inst.single_data_transfer.xn = offset_xn;
         inst.single_data_transfer.offset.imm12 = imm;
         inst.single_data_transfer.offset_type = UNSIGNED_OFFSET;
         inst.single_data_transfer.u = 1;
         // ldr w0 [xn #imm] - unsigned offset
         *instruction = inst;
-        *src = s_imm;
+        *src = s;
         return true;
     }
+    s = *src;
     // unsigned offset [Xn]
-    else if (match_char(&s_reg, '[')
-        && parse_reg(&s_reg, &offset_xn, &xn_width)
-        && match_char(&s_reg, ']')) {
+    if (match_char(&s, '[')
+        && parse_reg(&s, &offset_xn, &xn_width)
+        && match_char(&s, ']')) {
         inst.single_data_transfer.xn = offset_xn;
         inst.single_data_transfer.offset.imm12 = 0;
         inst.single_data_transfer.offset_type = UNSIGNED_OFFSET;
@@ -719,16 +719,15 @@ static bool parse_offset_type(
         *src = s_reg;
         return true;
     }
+    s = *src;
     // load literal or immediate address
-    else {
-        inst.command_format = LOAD_LITERAL;
-        if (parse_literal(&s_lit, cur_pos, &inst, known_table, unknown_table)) {
-            *instruction = inst;
-            *src = s_lit;
-            return true;
-        }
-        return false;
+    inst.command_format = LOAD_LITERAL;
+    if (parse_literal(&s, cur_pos, &inst, known_table, unknown_table)) {
+        *instruction = inst;
+        *src = s;
+        return true;
     }
+    return false;
 }
 
 static bool parse_load_store(char **src, Instruction *instruction, uint32_t cur_pos, SymbolTable known_table, SymbolTable unknown_table) {
