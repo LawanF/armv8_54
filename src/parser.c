@@ -421,6 +421,77 @@ bool parse_add_sub(char **src, Instruction *instruction) {
     return true;
 }
 
+/** Parses an instruction of one of the the forms:
+ * [ands|and|bics|bic|eor|eon|orr|orn] Rd, Rn, < op2 >
+ * [tst|mvn] Rn, < op2 >
+ * [mov] Rd, Rm
+ * @returns true (and writes to `instruction`) if and only if parsing succeeds
+ */
+bool parse_logical(char **src, Instruction *instruction) {
+    Instruction inst;
+    char *s = *src;
+    bool is_valid;
+    // We reverse the logic types so that no substrings are checked before the actual string.
+    const char * const rev_logic_types[] = { "bics", "ands", "eon", "eor", "orn", "orr", "bic", "and", NULL };
+    const char * const logic_types[] = { "and", "bic", "orr", "orn", "eor", "eon", "ands", "bics", NULL };
+
+    LogicType logic_type;
+
+    // Booleans for each argument
+    bool rd_bool = false; bool rn_bool = false; bool op2_bool = false; bool rm_bool = false;    
+
+    if (parse_from(&s, rev_logic_types, &logic_type)) {
+        // reverse logic_type: remove NULL termination when measuring count
+        logic_type = (ARRAY_LEN(rev_logic_types) - 1) - logic_type;
+        rd_bool = true; rn_bool = true; op2_bool = true;
+    } else if (match_string(&s, "mvn")) {
+        logic_type = ORN; 
+        rd_bool = true; op2_bool = true;
+    } else if (match_string(&s, "mov")) {
+        logic_type = ORR; 
+        rd_bool = true; rm_bool = true;
+    } else if (match_string(&s, "tst")) {
+        logic_type = ANDS;
+        rn_bool = true; op2_bool = true;
+    }
+
+    RegisterWidth r1_width;
+    RegisterWidth r2_width;
+    uint8_t rn;
+    is_valid = skip_whitespace(&s)
+            && parse_reg(&s, (rd_bool ? &inst.rd : &inst.dp_reg.rn), &r1_width)  
+            && match_char(&s, ',')
+            && skip_whitespace(&s)
+            && (rn_bool ? parse_reg(&s, &rn, &r2_width) 
+                          && r2_width == r1_width 
+                        : true) 
+            && (rm_bool ? match_char(&s, ',')
+                          && skip_whitespace(&s)
+                          && parse_reg(&s, &inst.dp_reg.rm, &r2_width)
+                          && r2_width == r1_width
+                        : true)
+            && (op2_bool ? match_char(&s, ',')
+                           && skip_whitespace(&s)
+                           && parse_op2(&s, rn, &inst) 
+                        : true);
+    if (!is_valid) { return false; }
+
+    switch (inst.command_format) {
+        case DP_REG: {
+            inst.dp_reg.m = 0;
+            bool dp_reg_n = logic_type % 2 == 0;
+            inst.dp_reg.opr = (int) dp_reg_n;
+            inst.opc = logic_type >> 1;
+            break;
+        }
+        case DP_IMM:
+            inst.dp_imm.operand_type = ARITH_OPERAND;
+            inst.opc = logic_type >> 1;
+            break;
+    }
+
+    
+}
 
 bool parse_mov_dp_imm(char **src, Instruction *instruction) {
     // movk, movn, movz
