@@ -15,12 +15,12 @@ static uint32_t encode_dp_imm_operand(const Instruction *inst) {
     DPImmOperand operand = inst->dp_imm.operand;
     switch (operand_type) {
         case ARITH_OPERAND:
-            return ARITH_OPI
+            return (ARITH_OPI << DP_IMM_OPI_START)
                    | ((uint32_t) operand.arith_operand.sh << ARITH_OP_SH_BIT)
                    | ((uint32_t) operand.arith_operand.imm12 << ARITH_OP_IMM12_START)
                    | ((uint32_t) operand.arith_operand.rn    << ARITH_OP_RN_START);
         case WIDE_MOVE_OPERAND:
-            return WIDE_MOVE_OPI
+            return (ARITH_OPI << DP_IMM_OPI_START)
                    | ((uint32_t) operand.wide_move_operand.hw    << WIDE_MOVE_HW_START)
                    | ((uint32_t) operand.wide_move_operand.imm16 << WIDE_MOVE_IMM16_START);
         default: FAIL_ENCODE();
