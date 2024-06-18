@@ -80,14 +80,12 @@ static uint32_t encode_dp_reg(const Instruction *inst) {
 
 // Encodes a single data transfer instruction, given a reference to an Instruction.
 static uint32_t encode_single_data_transfer(const Instruction *inst) {
-    uint32_t encoded_offset = encode_sdt_offset(inst);
-    if (!encoded_offset) FAIL_ENCODE();
     return FILL_BIT(SDT_REGISTER_MASK_UPPER_BIT)
            | ((uint32_t) SDT_MASK_MIDDLE << SDT_MASK_MIDDLE_START)
            // no need to add the mask lower bit as it is zero
            | ((uint32_t) inst->rt << RD_RT_START)
            | ((uint32_t) inst->single_data_transfer.xn << SDT_XN_START)
-           | encoded_offset
+           | encode_sdt_offset(inst)
            | ((uint32_t) inst->single_data_transfer.l << SDT_L_BIT)
            | ((uint32_t) inst->single_data_transfer.u << SDT_XN_START)
            | ((uint32_t) inst->sf << SDT_SF_BIT);
