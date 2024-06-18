@@ -810,6 +810,7 @@ bool parse_directive(char **src, int32_t *dest) {
     char *s = *src;
     int32_t value;
     // check we're on the right mnemonic
+    skip_whitespace(&s);
     bool success = match_string(&s, ".int")
                 && skip_whitespace(&s)
                 && parse_signed_immediate(&s, &value);
