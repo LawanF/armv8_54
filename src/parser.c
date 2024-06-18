@@ -315,6 +315,7 @@ static bool parse_arith_imm_op2(
 
 /** Parses the register form of an < op2 > operand, a
  * string of the form "Rn{, [shift] #[imm]}", and fills in the corresponding
+ * fields.
  * Note that the opcode for this instruction will need to be set separately.
  * @returns true if and only if the operand matches, and parsing succeeds.
  */
@@ -462,6 +463,8 @@ static bool parse_logical(char **src, Instruction *instruction) {
 
     // all logical instructions are DP (register)
     inst.command_format = DP_REG;
+    inst.dp_reg.m = 0;
+    inst.dp_reg.opr = 0;
 
     if (parse_from(&s, rev_logic_types, &logic_type_int)) {
         // reverse logic_type: remove NULL termination when measuring count
@@ -489,9 +492,10 @@ static bool parse_logical(char **src, Instruction *instruction) {
     } else return false;
 
     RegisterWidth cur_width;
-    uint8_t rn;
+    uint8_t rn = inst.dp_reg.rn;
     // count the number of operands parsed so far
     int num_parsed = 0;
+    bool parsed_op2 = false;
     is_valid = skip_whitespace(&s)
             && (rd_bool ? parse_reg(&s, &inst.rd, &inst.sf)
                        && skip_comma(&s)
@@ -502,13 +506,12 @@ static bool parse_logical(char **src, Instruction *instruction) {
             && (rm_bool ? parse_reg(&s, &inst.dp_reg.rm, &cur_width)
                           && cur_width == inst.sf
                         : true)
-            && (op2_bool ? parse_reg_op2(&s, rn, &inst)
+            && (op2_bool ? (parsed_op2 = parse_reg_op2(&s, rn, &inst))
                          : true);
     if (!is_valid) return false;
-    inst.dp_reg.m = 0;
-    int dp_reg_n = logic_type_int & 1;
-    inst.dp_reg.opr |= dp_reg_n;
     inst.opc = logic_type_int >> 1;
+    // set N bit (for whether the shifted register is bitwise negated)
+    inst.dp_reg.opr |= logic_type_int & 1;
     // parsing success
     *src = s;
     *instruction = inst;
