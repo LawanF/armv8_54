@@ -152,6 +152,15 @@ bool parse_reg(char **src, uint8_t *index, RegisterWidth *width) {
 void set_offset(Instruction *inst, uint32_t cur_pos, uint32_t target_pos) {
     // calculate offset
     int32_t offset = target_pos - cur_pos;
+    bool type_valid = true;
+    LiteralInstr type =
+        (inst->command_format == LOAD_LITERAL) ? LOAD :
+        (inst->command_format == BRANCH) ? (
+            (inst->branch.operand_type == COND_BRANCH) ? COND :
+            (inst->branch.operand_type == UNCOND_BRANCH) ? UNCOND
+            : (type_valid = false)
+        ) : (type_valid = false);
+    if (!type_valid) return;
 
     // set offset
     switch (type) {
