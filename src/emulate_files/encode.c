@@ -87,7 +87,7 @@ static uint32_t encode_single_data_transfer(const Instruction *inst) {
            | ((uint32_t) inst->single_data_transfer.xn << SDT_XN_START)
            | encode_sdt_offset(inst)
            | ((uint32_t) inst->single_data_transfer.l << SDT_L_BIT)
-           | ((uint32_t) inst->single_data_transfer.u << SDT_XN_START)
+           | ((uint32_t) inst->single_data_transfer.u << SDT_U_BIT)
            | ((uint32_t) inst->sf << SDT_SF_BIT);
 }
 
