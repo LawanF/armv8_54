@@ -55,6 +55,12 @@ bool skip_whitespace(char **src) {
     return skipped;
 }
 
+static bool skip_comma(char **src) {
+    bool skipped = match_char(src, ',');
+    skip_whitespace(src);
+    return skipped;
+}
+
 static bool parse_uint(char **src, uint32_t *dest, int base) {
     char *s = *src;
     uint32_t res = strtoul(s, &s, base);
@@ -217,8 +223,7 @@ static bool parse_literal(char **src, uint32_t cur_pos, Instruction *inst, Symbo
 static bool parse_discrete_shift(char **src, DiscreteShift *shift) {
     char *s = *src;
     uint32_t shift_amount;
-    bool success = match_char(&s, ',')
-                && skip_whitespace(&s)
+    bool success = skip_comma(&s)
                 && match_string(&s, "lsl")
                 && skip_whitespace(&s)
                 && match_char(&s, '#')
@@ -253,8 +258,7 @@ static bool parse_immediate_shift(char **src, ShiftType *shift_type, uint8_t *sh
     char *s = *src;
     ShiftType type;
     uint32_t amount;
-    bool success = match_char(&s, ',')
-                && skip_whitespace(&s)
+    bool success = skip_comma(&s)
                 && parse_shift_type(&s, &type)
                 && skip_whitespace(&s)
                 && match_char(&s, '#')
@@ -405,8 +409,7 @@ static bool parse_add_sub(char **src, Instruction *instruction) {
     // check all registers are of the same width
     for (int i = 0; i < num_registers; i++) {
         success = parse_reg(&s, register_indices[i], &cur_width)
-               && match_char(&s, ',')
-               && skip_whitespace(&s);
+               && skip_comma(&s);
         if (!success) return false;
         if (i == 0) {
             next_width = cur_width;
@@ -491,12 +494,10 @@ static bool parse_logical(char **src, Instruction *instruction) {
     int num_parsed = 0;
     is_valid = skip_whitespace(&s)
             && (rd_bool ? parse_reg(&s, &inst.rd, &inst.sf)
-                       && match_char(&s, ',')
-                       && skip_whitespace(&s)
+                       && skip_comma(&s)
                         : true)
             && (rn_bool ? parse_reg(&s, &rn, &inst.sf)
-                       && match_char(&s, ',')
-                       && skip_whitespace(&s)
+                       && skip_comma(&s)
                         : true) 
             && (rm_bool ? parse_reg(&s, &inst.dp_reg.rm, &cur_width)
                           && cur_width == inst.sf
@@ -586,14 +587,12 @@ static bool parse_mul(char **src, Instruction *instruction) {
     RegisterWidth ra_width;
     bool is_valid = skip_whitespace(&s)
         && parse_reg(&s, &inst.rd, &rd_width)
-        && match_char(&s, ',')
-        && skip_whitespace(&s)
+        && skip_comma(&s)
         && parse_reg(&s, &inst.dp_reg.rn, &rn_width)
-        && match_char(&s, ',')
+        && skip_comma(&s)
         && (rd_width == rn_width)
-        && skip_whitespace(&s)
         && parse_reg(&s, &inst.dp_reg.rm, &rm_width)
-        && match_char(&s, ',')
+        && skip_comma(&s)
         && (rn_width == rm_width);
 
     // write to ra, checking if its three reg or not
@@ -604,7 +603,6 @@ static bool parse_mul(char **src, Instruction *instruction) {
         ra_width = rm_width; // set it as the same as another width to not affect the check later
     } else {
         is_valid = is_valid
-                && skip_whitespace(&s)
                 && parse_reg(&s, &inst.dp_reg.operand, &ra_width);
     }
     inst.dp_reg.operand |= (x << 5);
@@ -648,8 +646,7 @@ static bool parse_offset_type(
     // register offset: [<Xn>, <Xm>]
     if (match_char(&s_reg, '[')
         && parse_reg(&s_reg, &offset_xn, &xn_width) 
-        && match_char(&s_reg, ',')
-        && skip_whitespace(&s_reg)
+        && skip_comma(&s_reg)
         && parse_reg(&s_reg, &offset_xm, &xm_width)
         && match_char(&s_reg, ']')
         && xn_width == xm_width) {
@@ -666,8 +663,7 @@ static bool parse_offset_type(
     else if (match_char(&s_post, '[')
         && parse_reg(&s_post, &offset_xn, &xn_width)
         && match_char(&s_post, ']')
-        && match_char(&s_post, ',')
-        && skip_whitespace(&s_post)
+        && skip_comma(&s_post)
         && match_char(&s_post, '#')
         && parse_signed_immediate(&s_post, &simm)) {
         inst.single_data_transfer.xn = offset_xn;
@@ -681,8 +677,7 @@ static bool parse_offset_type(
     // pre-index offset: [<Xn>, #<simm>]!
     else if (match_char(&s_pre, '[')
         && parse_reg(&s_pre, &offset_xn, &xn_width)
-        && match_char(&s_pre, ',')
-        && skip_whitespace(&s_pre)
+        && skip_comma(&s_pre)
         && parse_signed_immediate(&s_pre, &simm)
         && match_char(&s_pre, ']')
         && match_char(&s_pre, '!')) {
@@ -697,8 +692,7 @@ static bool parse_offset_type(
     // unsigned offset [<Xn>, #<imm>]
     else if (match_char(&s_reg, '[')
         && parse_reg(&s_imm, &offset_xn, &xn_width)
-        && match_char(&s_imm, ',')
-        && skip_whitespace(&s_imm)
+        && skip_comma(&s_imm)
         && match_char(&s_imm, '#')
         && parse_immediate(&s_imm, &imm)
         && match_char(&s_reg, ']')) {
@@ -797,9 +791,9 @@ static bool parse_br(char **src, Instruction *instruction) {
 
     // save register
     RegisterWidth width;
-    bool is_valid = skip_whitespace(&s)
-                    && parse_reg(&s, &inst.branch.operand.register_branch.xn, &width);
-    if (!is_valid) { return false; }
+    skip_whitespace(&s);
+    bool reg_parsed = parse_reg(&s, &inst.branch.operand.register_branch.xn, &width);
+    if (!reg_parsed) { return false; }
 
     *instruction = inst;
     return true;
