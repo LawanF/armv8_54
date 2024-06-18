@@ -96,6 +96,22 @@ bool parse_immediate(char **src, uint32_t *dest) {
     return true;
 }
 
+/** Parses a signed immediate value: a string with a signed integer imm,
+ * setting `dest` to be this value if parsing succeeds.
+ * @returns true if and only if parsing succeeds
+ */
+bool parse_signed_immediate(char **src, int32_t *dest) {
+    char *s = *src;
+    int32_t val;
+    bool is_int =
+        (match_string(&s, "0x") && parse_int(&s, &val, /* base= */ 16)) // hex
+        || parse_int(&s, &val, /* base= */ 10);
+    if (!is_int) return false;
+    *src = s;
+    *dest = val;
+    return true;
+}
+
 /** Parses the string corresponding to a register.
  * If the string begins with "wn" or "rn", with 0 <= n < NUM_GENERAL_REGISTERS,
  * then `index` is written with n and the corresponding width written to `width`.
