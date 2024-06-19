@@ -192,10 +192,7 @@ void set_offset(Instruction *inst, uint32_t inst_pos, uint32_t target_pos) {
 static bool parse_literal(char **src, uint32_t cur_pos, Instruction *inst, SymbolTable known_table, SymbolTable unknown_table) {
     // takes in a literal and based on the instruction, saves the data to the instruction
     // whitespace is skipped before entering this function
-
     char *s = *src;
-    bool is_valid;
-    
     uint32_t target;
     // check if the literal is an immediate value
     if (parse_immediate(&s, &target)) {
@@ -493,7 +490,6 @@ static bool parse_logical(char **src, Instruction *instruction) {
     RegisterWidth cur_width;
     uint8_t rn = inst.dp_reg.rn;
     // count the number of operands parsed so far
-    int num_parsed = 0;
     is_valid = skip_whitespace(&s)
             && (rd_bool ? parse_reg(&s, &inst.rd, &inst.sf)
                        && skip_comma(&s)
@@ -760,11 +756,10 @@ static bool parse_b(char **src, Instruction *instruction, uint32_t cur_pos, Symb
     // write data we know from precondition
     Instruction inst = { .command_format = BRANCH };
 
-    // write data from mnemonic
-    LiteralInstr lit_type;
     int mnemonic_index;
     if (match_string(&s, "b.") && parse_from(&s, branch_conds, &mnemonic_index)) {
         inst.branch.operand_type = COND_BRANCH;
+        // map the mnemonic to the integer representation in the Instruction
         inst.branch.operand.cond_branch.cond = cond_map[mnemonic_index];
     } else if (match_string(&s, "b")) {
         inst.branch.operand_type = UNCOND_BRANCH;
