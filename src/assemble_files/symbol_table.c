@@ -1,7 +1,7 @@
 /* Implementation for a symbol table.
  * This is a (hash)map from labels (strings, aka char[]) to memory addresses (unsigned integers). */
 
-#include "symbol_table.h"
+#include "../headers/symbol_table.h"
 #include <assert.h>
 #include <stdlib.h>
 #include <stdint.h>

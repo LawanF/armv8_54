@@ -4,9 +4,9 @@
 #include <errno.h>
 #include <ctype.h>
 #include <stdint.h>
-#include "parser.h"
-#include "emulate_files/registers.h"
-#include "emulate_files/instruction_constants.h"
+#include "../headers/parser.h"
+#include "../headers/registers.h"
+#include "../headers/instruction_constants.h"
 
 const char *const branch_conds[] = { "eq", "ne", "ge", "lt", "gt", "le", "al", NULL};
 static const uint8_t cond_map[]  = { 0x0, 0x1, 0xa, 0xb, 0xc, 0xd, 0xe };

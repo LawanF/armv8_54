@@ -3,7 +3,7 @@
 
 #include <stdint.h>
 #include "memory.h"
-#include "emulate_files/registers.h"
+#include "registers.h"
 
 extern uint32_t fetch(MachineState *machine_state);
 

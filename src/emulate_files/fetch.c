@@ -1,6 +1,6 @@
 #include <stdlib.h>
 #include <assert.h>
-#include "fetch.h"
+#include "../headers/fetch.h"
 
 /*
     A function that takes the address held in the Program Counter

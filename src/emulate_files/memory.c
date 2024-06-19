@@ -1,7 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include "memory.h"
+#include "../headers/memory.h"
 
 #define BYTE_BITS 8
 #define WORD_BITS 32

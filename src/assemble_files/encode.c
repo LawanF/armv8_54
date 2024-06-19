@@ -1,7 +1,7 @@
 #include <stdbool.h>
 #include <assert.h>
-#include "encode.h"
-#include "instruction_constants.h"
+#include "../headers/encode.h"
+#include "../headers/instruction_constants.h"
 
 #define FAIL_ENCODE() assert(-1); return 0
 

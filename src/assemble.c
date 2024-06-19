@@ -1,10 +1,10 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
-#include "symbol_table.h"
-#include "parser.h"
-#include "emulate_files/encode.h"
-#include "emulate_files/instructions.h"
+#include "headers/symbol_table.h"
+#include "headers/parser.h"
+#include "headers/encode.h"
+#include "headers/instructions.h"
 
 #define FREE_TABLES() symtable_free(known_table); symtable_free(unknown_table);
 #define FAIL_RUNNING_PROGRAM() fclose(input_file); \

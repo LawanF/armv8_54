@@ -4,7 +4,7 @@
 #include <stdint.h>
 #include <stdlib.h>
 #include "symbol_table.h"
-#include "emulate_files/instructions.h"
+#include "instructions.h"
 
 #define NUM_DP_IMM_INSTS 22
 #define NUM_DP_REG_INSTS 4
