@@ -2,12 +2,14 @@
 #include <math.h>
 #include <stdbool.h>
 
+// Macros for the window.
 #define WINDOW_WIDTH 640
 #define WINDOW_HEIGHT 480
 
-#define SAMPLE_RATE 44100
+// Macros for the format.
+#define SAMPLE_RATE 48000
 #define CHANNELS 1
-#define BUFFER_SIZE 256
+#define BUFFER_SIZE 512
 #define DYNAMIC_RANGE 127
 
 // Wave function.
@@ -17,9 +19,18 @@ typedef float (*wave_function)(float);
 typedef enum {SINE, TRIANGLE, SQUARE, SAWTOOTH} OscillatorType;
 
 OscillatorType current_oscillator = SINE;
-float waveFreq = 440.0;
+float base_freq = 220;
+float wave_freq = 0; // Remove this later.
 
-void oscillatorCallback(void *userdata, Uint8 *stream, int len);
+float volume = 1.0; // Volume.
+
+// Array for keyboard layout.
+SDL_Keycode keyboard[] = {SDLK_a, SDLK_w, SDLK_s, SDLK_d, SDLK_r, SDLK_f, 
+    SDLK_t, SDLK_g, SDLK_h, SDLK_u, SDLK_j, SDLK_i, SDLK_k, SDLK_o, SDLK_l, SDLK_SEMICOLON};
+int keyboard_length = sizeof(keyboard) / sizeof(keyboard[0]);
+
+void oscillatorCallback(void *userdata, Uint8 *stream, int len); // Prototype for AudioSpec.
+int keyboard_find(SDL_Keycode sym); // Prototype for linear search over keyboard.
 
 int main() {
     // Initialise video and audio
@@ -64,7 +75,13 @@ int main() {
             if (event.type == SDL_QUIT) {
                 isRunning = false;
             } else if (event.type == SDL_KEYDOWN) {
-                switch (event.key.keysym.sym) {
+                SDL_Keycode sym = event.key.keysym.sym;
+                printf("Key press: %s!\n", SDL_GetKeyName(sym));
+                int index = keyboard_find(sym);
+                if (index != -1) {
+                    wave_freq = base_freq * pow(2.0, (float) index / 12.0);
+                }
+                switch (sym) {
                     case SDLK_1:
                         current_oscillator = SINE;
                         break;
@@ -77,9 +94,17 @@ int main() {
                     case SDLK_4:
                         current_oscillator = SAWTOOTH;
                         break;
+                    case SDLK_UP:
+                        volume += 0.01;
+                        break;
+                    case SDLK_DOWN:
+                        volume -= 0.01;
+                        break;
                     default:
                         break;
                 }
+            } else if (event.type == SDL_KEYUP) {
+                wave_freq = 0;
             }
         }
     }
@@ -101,19 +126,19 @@ void sineWave(void *userdata, Uint8 *stream, int len) {
 }
 
 float fsin(float phase) {
-    return sin(2 * M_PI * waveFreq * (phase / SAMPLE_RATE));
+    return sin(2 * M_PI * wave_freq * (phase / SAMPLE_RATE));
 }
 
 float square(float phase) {
-    return sin(2 * M_PI * waveFreq * (phase / SAMPLE_RATE)) > 0 ? 1 : -1;
+    return sin(2 * M_PI * wave_freq * (phase / SAMPLE_RATE)) > 0 ? 1 : -1;
 }
 
 float triangle(float phase) {
-    return asin(sin(2 * M_PI * waveFreq * (phase / SAMPLE_RATE))) * 2 / M_PI;
+    return asin(sin(2 * M_PI * wave_freq * (phase / SAMPLE_RATE))) * 2 / M_PI;
 }
 
 float sawtooth(float phase) {
-    return fmod(((phase / SAMPLE_RATE)-((1/waveFreq)/2)), (1/waveFreq))*waveFreq*2 - 1;
+    return fmod(((phase / SAMPLE_RATE)-((1/wave_freq)/2)), (1/wave_freq))*wave_freq*2 - 1;
 }
 
 void oscillatorCallback(void *userdata, Uint8 *stream, int len) {
@@ -135,7 +160,17 @@ void oscillatorCallback(void *userdata, Uint8 *stream, int len) {
             break;
     }
     for (int i = 0; i < len; i++) {
-        stream[i] = DYNAMIC_RANGE * (*func)(phase);
+        stream[i] = volume * DYNAMIC_RANGE * (*func)(phase);
         phase++;
     }
+}
+
+// Utilities
+int keyboard_find(SDL_Keycode sym) {
+    for (int i = 0; i < keyboard_length; i++) {
+        if (keyboard[i] == sym) {
+            return i;
+        }
+    }
+    return -1;
 }
