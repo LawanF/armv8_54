@@ -29,14 +29,15 @@ static uint32_t encode_dp_imm_operand(const Instruction *inst) {
 static uint32_t encode_sdt_offset(const Instruction *inst) {
     SDTOffsetType offset_type = inst->single_data_transfer.offset_type;
     SDTOffset offset = inst->single_data_transfer.offset;
-    char i = 0; // if i = 1, then pre-indexed, otherwise post_indexed
+    uint8_t i = 0; // if i = 1, then pre-indexed, otherwise post_indexed
     switch (offset_type) {
-        case PRE_INDEX_OFFSET: i = 1;
+        case PRE_INDEX_OFFSET:
+            i = 1;
         case POST_INDEX_OFFSET:
             return SDT_INDEX_MASK
                    | ((uint32_t) i << SDT_INDEX_I_BIT)
                    // since the value is signed, we need to apply a mask to remove negated bits
-                   | BITMASK((uint32_t) offset.simm9 << SDT_INDEX_SIMM9_START, 0, SDT_INDEX_SIMM9_END);
+                   | (uint32_t) BITMASK(offset.simm9, 0, 8) << SDT_INDEX_SIMM9_START;
         case REGISTER_OFFSET:
             return SDT_REGISTER_MASK
                    | ((uint32_t) offset.xm << SDT_REGISTER_XM_START);
