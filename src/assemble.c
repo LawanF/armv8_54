@@ -25,7 +25,7 @@ typedef struct {
 int main(int argc, char **argv) {
     // Ensure both input and output filenames are provided
     if (argc != 3) {
-        fprintf(stderr, "usage: ./assemble [input_file] [output_file]");
+        fprintf(stderr, "usage: ./assemble [input_file] [output_file]\n");
         return EXIT_FAILURE;
     }
     char *input_filename = argv[1];
