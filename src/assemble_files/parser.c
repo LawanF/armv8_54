@@ -35,7 +35,6 @@ static bool match_string(char **src, const char *token) {
 }
 
 static bool parse_from(char **src, const char * const tokens[], int *index) {
-    bool result = true;
     for (int i = 0; tokens[i] != NULL; i++) {
         if (match_string(src, tokens[i])) {
             // write the token index chosen
