@@ -639,6 +639,7 @@ static bool parse_offset_type(
 
     Instruction inst = *instruction;
     inst.command_format = SINGLE_DATA_TRANSFER;
+    inst.single_data_transfer.u = 0;
 
     // register offset: [<Xn>, <Xm>]
     if (match_char(&s, '[')
@@ -650,8 +651,6 @@ static bool parse_offset_type(
         inst.single_data_transfer.xn = offset_xn;
         inst.single_data_transfer.offset.xm = offset_xm;
         inst.single_data_transfer.offset_type = REGISTER_OFFSET;
-        // ldr w0 [xn, xm] - REGISTER OFFSET
-        // what to do about ldr w0 [xn]; case
         *instruction = inst;
         *src = s;
         return true;
@@ -666,7 +665,9 @@ static bool parse_offset_type(
         && match_char(&s, '#')
         && parse_signed_immediate(&s, &simm)) {
         inst.single_data_transfer.xn = offset_xn;
-        inst.single_data_transfer.offset.simm9 = simm;
+        if (INT16_MIN <= simm && simm <= INT16_MAX) {
+            inst.single_data_transfer.offset.simm9 = (int16_t) simm;
+        } else return false;
         inst.single_data_transfer.offset_type = POST_INDEX_OFFSET;
         // ldr w0 [xn], #imm - post index
         *instruction = inst;
