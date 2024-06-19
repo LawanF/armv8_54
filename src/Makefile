@@ -6,7 +6,7 @@ BUILD	= assemble emulate
 all:	$(BUILD)
 
 clean:
-	/bin/rm -rf $(BUILD) **/*.o core a.out
+	/bin/rm -rf $(BUILD) *.o **/*.o core a.out
 
 assemble:	assemble.o assemble_files/encode.o assemble_files/parser.o assemble_files/symbol_table.o emulate_files/registers.o
 assemble.o:	assemble.c headers/encode.h headers/instructions.h headers/parser.h headers/symbol_table.h
