@@ -679,6 +679,7 @@ static bool parse_offset_type(
     if (match_char(&s, '[')
         && parse_reg(&s, &offset_xn, &xn_width)
         && skip_comma(&s)
+        && match_char(&s, '#')
         && parse_signed_immediate(&s, &simm)
         && match_char(&s, ']')
         && match_char(&s, '!')) {
@@ -741,9 +742,7 @@ static bool parse_load_store(char **src, Instruction *instruction, uint32_t cur_
         inst.single_data_transfer.l = 1;
     } else if (match_string(&s, "str")) {
         inst.single_data_transfer.l = 0;
-    } else {
-        return false;
-    }
+    } else return false;
 
     bool is_valid = skip_whitespace(&s)
                     && parse_reg(&s, &inst.rt, &inst.sf)
