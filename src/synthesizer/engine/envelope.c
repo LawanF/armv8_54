@@ -39,22 +39,6 @@ void sustain_adjust(float step) {
 }
 
 // phase may loop around D:
-float get_ADS_amplitude(float phase, int index) {    
-    float trigger_on_time = get_trigger_on_time(index);
-    float lifetime = (phase - trigger_on_time) / SAMPLE_RATE;
-    float res_amplitude;
-    if (lifetime < _adsr.attack_time) {
-        // ATTACK
-        res_amplitude = _adsr.start_amplitude * (lifetime / _adsr.attack_time);
-    } else if (lifetime < _adsr.attack_time + _adsr.decay_time) {
-        // DECAY    
-        res_amplitude = _adsr.sustain_amplitude - (_adsr.start_amplitude - _adsr.sustain_amplitude) * ((lifetime - _adsr.attack_time) / _adsr.decay_time);
-    } else {
-        res_amplitude = _adsr.sustain_amplitude;
-    }
-    return res_amplitude;
-}
-
 float get_amplitude(float phase, int index) {
     bool note_on = get_note_on(index);
     float trigger_on_time = get_trigger_on_time(index);
@@ -64,12 +48,21 @@ float get_amplitude(float phase, int index) {
     float res_amplitude;
     if (note_on) {
         // ADS
-        res_amplitude = get_ADS_amplitude(phase, index);
+
+        if (lifetime < _adsr.attack_time) {
+            // ATTACK
+            res_amplitude = _adsr.start_amplitude * (lifetime / _adsr.attack_time);
+        } else if (lifetime < _adsr.attack_time + _adsr.decay_time) {
+            // DECAY    
+            res_amplitude = _adsr.sustain_amplitude - (_adsr.start_amplitude - _adsr.sustain_amplitude) * ((lifetime - _adsr.attack_time) / _adsr.decay_time);
+        } else {
+            res_amplitude = _adsr.sustain_amplitude;
+        }
     } else {
         // RELEASE
         trigger_off_time = get_trigger_off_time(index);
         deathtime = phase - trigger_off_time;
-        res_amplitude = (deathtime / _adsr.release_time) * (- get_ADS_amplitude(phase,index)) + get_ADS_amplitude(phase, index);
+        res_amplitude = (deathtime / _adsr.release_time) * (- _adsr.sustain_amplitude) + _adsr.sustain_amplitude;
     }
 
     if (res_amplitude < MINIMUM_AMPLITUDE) {
