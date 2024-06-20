@@ -38,7 +38,7 @@ void sustain_adjust(float step) {
 }
 
 // phase may loop around D:
-float get_ADS_amplitude(float phase, int index) {    
+float get_ADS_amplitude(int index, float phase) {    
     float trigger_on_time = get_trigger_on_time(index);
     float lifetime = (phase - trigger_on_time) / SAMPLE_RATE;
     float res_amplitude;
@@ -63,12 +63,12 @@ float get_amplitude(int index, float phase) {
     float res_amplitude;
     if (note_on) {
         // ADS
-        res_amplitude = get_ADS_amplitude(phase, index);
+        res_amplitude = get_ADS_amplitude(index, phase);
     } else {
         // RELEASE
         trigger_off_time = get_trigger_off_time(index);
         deathtime = phase - trigger_off_time;
-        res_amplitude = (deathtime / _adsr.release_time) * (- get_ADS_amplitude(phase,index)) + get_ADS_amplitude(phase, index);
+        res_amplitude = (deathtime / _adsr.release_time) * (- get_ADS_amplitude(index, phase)) + get_ADS_amplitude(index, phase);
     }
 
     if (res_amplitude < MINIMUM_AMPLITUDE) {
