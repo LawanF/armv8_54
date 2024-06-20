@@ -11,6 +11,8 @@ bool pressed[KEYBOARD_LENGTH] = {false};
 
 const int keyboard_length = KEYBOARD_LENGTH;
 
+note notes[keyboard_length];
+
 int keyboard_find(SDL_Keycode sym) {
     for (int i = 0; i < KEYBOARD_LENGTH; i++) {
         if (keyboard[i] == sym) {

@@ -4,6 +4,12 @@
 #include <stdbool.h>
 #include <SDL2/SDL.h>
 
+typedef struct {
+    float trigger_on_time;
+    float trigger_off_time;
+    bool note_on;
+} note;
+
 const int keyboard_length;
 
 int keyboard_find(SDL_Keycode sym);
