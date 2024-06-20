@@ -29,3 +29,19 @@ void set_note_on(int index, bool value) {
         notes[index].note_on = value;
     }
 }
+
+void set_trigger_on_time(int index, float phase) {
+    notes[index].trigger_on_time = phase;
+}
+
+float get_trigger_on_time(int index) {
+    return notes[index].trigger_on_time;
+}
+
+void set_trigger_off_time(int index, float phase) {
+    notes[index].trigger_off_time = phase;
+}
+
+float get_trigger_off_time(int index) {
+    return notes[index].trigger_off_time;
+}

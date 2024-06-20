@@ -18,4 +18,12 @@ bool get_note_on(int index);
 
 void set_note_on(int index, bool value);
 
+float get_trigger_on_time(int index);
+
+void set_trigger_on_time(int index, float phase);
+
+float get_trigger_off_time(int index);
+
+void set_trigger_off_time(int index, float phase);
+
 #endif
