@@ -1,4 +1,6 @@
 env = Environment(CC = "gcc",
-	CCFLAGS=["-Wall", "-g", "-lm", "-lncurses", "-lSDL2"],
+	CCFLAGS=["-Wall", "-g"],
 	LIBS=["m", "ncurses", "SDL2"])
-env.Program("visualize", ["visualizer.o", "visualizer/window.o", "visualizer/init_audio.o", "input/keyboard.o", "engine/waveforms.o"])
+env.Program("visualize", ["visualizer.c", "visualizer/window.c",
+    "visualizer/init_audio.c", "input/keyboard.c",
+    "visualizer/event.c"])
