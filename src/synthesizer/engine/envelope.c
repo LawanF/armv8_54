@@ -14,7 +14,8 @@ struct adsr {
     float sustain_amplitude; 
 };
 
-struct adsr  _adsr = {2.0, 2.0, 5.0, 1.0, 0.6}; 
+struct adsr  _adsr = {2.0, 1.0, 5.0, 1.0, 0.8}; 
+ADSR adsr = &_adsr;
 
 
 void attack_adjust(float step) {
@@ -54,7 +55,7 @@ float get_ADS_amplitude(float phase, int index) {
     return res_amplitude;
 }
 
-float get_amplitude(int index, float phase) {
+float get_amplitude(float phase, int index) {
     bool note_on = get_note_on(index);
     float trigger_on_time = get_trigger_on_time(index);
     float trigger_off_time; // Might not be defined just yet.
