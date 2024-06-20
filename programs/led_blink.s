@@ -1,29 +1,48 @@
-movz w0, #0x0 @ Zero.
-movz w1, #0x3f20, lsl #16 @ GPFSEL memory location.
-movz w2, #0x8000, lsl #12 @ To set pin 9 as output.
-add w3, w1, #0x1c @ GPSET0 memory location.
-add w4, w1, #0x28 @ GPCLR0 memory location.
-movz w5, #0x100 @ To set GPSET and GPCLR for pin 9.
+movz w0, #0x0
+ldr w1, gpfselmem
+ldr w2, gpfsel4
+ldr w3, gpset0mem
+ldr w4, gpclr0mem
+ldr w5, gpsetclr
 
-str w2, [w0, w1] @ Set pin 9 as output.
+str w2, [w1]
 
 wait1:
-movz w6, #0x0 @ Set timer to 0.
-movz w7, #0x3b9a, lsl #16 @ Timer target.
-wait1_loop:
+movz w6, #0x0
+ldr w7, waittime
+wait1loop:
 add w6, w6, #0x1
 cmp w6, w7
-br.ne wait1_loop
+b.ne wait1loop
 
-str w5, [w0, w3] @ Set GPSET for pin 9.
+gpset:
+str w5, [w3]
 
 wait2:
-movz w6, #0x0 @ Set timer to 0.
-movz w7, #0x3b9a, lsl #16 @ Timer target.
-wait2_loop:
+movz w6, #0x0
+wait2loop:
 add w6, w6, #0x1
 cmp w6, w7
-br.ne wait2_loop
+b.ne wait2loop
 
-str w5, [w0, w4] @ Set GPCLR for pin 9.
-br wait1 @ Repeat loop.
+str w5, [w4]
+
+b wait1
+
+gpfselmem:
+    .int 0x3f200000
+gpfsel4:
+    .int 0x1000
+
+gpset0mem:
+    .int 0x3f20001c
+
+gpclr0mem:
+    .int 0x3f200028
+
+gpsetclr:
+    .int 0x10
+
+waittime:
+    .int 0x500000
+
