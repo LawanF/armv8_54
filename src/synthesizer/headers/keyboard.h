@@ -14,8 +14,8 @@ const int keyboard_length;
 
 int keyboard_find(SDL_Keycode sym);
 
-bool get_pressed(int index);
+bool get_note_on(int index);
 
-void set_pressed(int index, bool value);
+void set_note_on(int index, bool value);
 
 #endif

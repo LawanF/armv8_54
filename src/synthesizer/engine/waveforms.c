@@ -1,4 +1,5 @@
 #include <math.h>
+#include <stdlib.h>
 #include "../headers/format.h"
 #include "../headers/keyboard.h"
 #include "../headers/waveforms.h"
@@ -23,6 +24,11 @@ float sawtooth(float phase, float freq) {
     return (M_PI * freq * fmod(phase / SAMPLE_RATE, 1.0 / freq) - M_PI / 2) * 2 / M_PI;
 }
 
+// Implement this later.
+float randomNoise(float phase, float freq) {
+    return 0;
+}
+
 void oscillatorCallback(void *userdata, Uint8 *stream, int len) {
     static int phase = 0; // Static so that the wave is continuous over buffer calls.
     wave_function func;
@@ -44,7 +50,7 @@ void oscillatorCallback(void *userdata, Uint8 *stream, int len) {
     for (int i = 0; i < len; i++) {
         stream[i] = 0;
         for (int j = 0; j < keyboard_length; j++) {
-            if (get_pressed(j)) {
+            if (get_note_on(j)) {
                 stream[i] += volume * DYNAMIC_RANGE * (*func)(phase, BASE_FREQ * pow(2, (float) j / 12.0));
                 printf("stream: %d\n", stream[i]);
             }
@@ -53,6 +59,6 @@ void oscillatorCallback(void *userdata, Uint8 *stream, int len) {
     }
 }
 
-void volume_add(float step) {
+void volume_adjust(float step) {
     volume += step;
 }

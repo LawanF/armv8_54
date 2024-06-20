@@ -9,9 +9,7 @@
 #define WINDOW_WIDTH 640
 #define WINDOW_HEIGHT 480
 
-void oscillatorCallback(void *userdata, Uint8 *stream, int len); // Prototype for AudioSpec.
-
-int main() {
+int main(void) {
     // Initialise video and audio
     if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO) < 0) {
         fprintf(stderr, "SDL_Init error: %s\n", SDL_GetError());
@@ -42,14 +40,13 @@ int main() {
 
     // Surface the window and unpause the device.
     SDL_UpdateWindowSurface(window);
-    SDL_PauseAudioDevice(device_id, 0);
+    SDL_PauseAudioDevice(device_id, 0); // Turn on the device.
 
     // Main loop for polling events.
     bool isRunning = true;
     SDL_Event event;
     
     SDL_Keycode sym; // Symbol of key pressed.
-    int index; // Index of the key pressed.
     while (isRunning) {
         // Fetch the next event in the queue.
         while (SDL_PollEvent(&event) != 0) {
@@ -61,7 +58,7 @@ int main() {
                 printf("Key press: %s!\n", SDL_GetKeyName(sym));
 
                 // Adjust pressed flag if it's a keyboard key.
-                set_pressed(keyboard_find(sym), true);
+                set_note_on(keyboard_find(sym), true);
 
                 // Switch case for settings.
                 switch (sym) {
@@ -78,10 +75,10 @@ int main() {
                         current_oscillator = SAWTOOTH;
                         break;
                     case SDLK_UP:
-                        volume_add(VOLUME_STEP);
+                        volume_adjust(VOLUME_STEP);
                         break;
                     case SDLK_DOWN:
-                        volume_add(-VOLUME_STEP);
+                        volume_adjust(-VOLUME_STEP);
                         break;
                     default:
                         break;
@@ -89,8 +86,8 @@ int main() {
             } else if (event.type == SDL_KEYUP) {
                 sym = event.key.keysym.sym; // Fetch key symbol.
 
-                // Adjust keyboard flag.
-                set_pressed(keyboard_find(sym), false);
+                // Adjust keyboard pressed flag.
+                set_note_on(keyboard_find(sym), false);
             }
         }
     }

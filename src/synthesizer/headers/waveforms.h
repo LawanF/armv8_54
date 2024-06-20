@@ -19,6 +19,6 @@ float sawtooth(float phase, float freq);
 
 void oscillatorCallback(void *userdata, Uint8 *stream, int len);
 
-void volume_add(float step);
+void volume_adjust(float step);
 
 #endif

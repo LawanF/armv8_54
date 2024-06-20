@@ -6,12 +6,10 @@
 const SDL_Keycode keyboard[] = {SDLK_a, SDLK_w, SDLK_s, SDLK_d, SDLK_r, SDLK_f, 
     SDLK_t, SDLK_g, SDLK_h, SDLK_u, SDLK_j, SDLK_i, SDLK_k, SDLK_o, SDLK_l, SDLK_SEMICOLON};
 
-// Flags for which keys are pressed right now.
-bool pressed[KEYBOARD_LENGTH] = {false};
+// Storing key trigger on and off times.
+note notes[KEYBOARD_LENGTH];
 
 const int keyboard_length = KEYBOARD_LENGTH;
-
-note notes[keyboard_length];
 
 int keyboard_find(SDL_Keycode sym) {
     for (int i = 0; i < KEYBOARD_LENGTH; i++) {
@@ -22,12 +20,12 @@ int keyboard_find(SDL_Keycode sym) {
     return -1;
 }
 
-bool get_pressed(int index) {
-    return pressed[index];
+bool get_note_on(int index) {
+    return notes[index].note_on;
 }
 
-void set_pressed(int index, bool value) {
+void set_note_on(int index, bool value) {
     if (index != -1) {
-        pressed[index] = value;
+        notes[index].note_on = value;
     }
 }
