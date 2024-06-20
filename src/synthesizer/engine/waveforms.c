@@ -1,10 +1,17 @@
 #include <math.h>
 #include <stdlib.h>
+#include "../headers/envelope.h"
 #include "../headers/format.h"
 #include "../headers/keyboard.h"
 #include "../headers/waveforms.h"
 
 static float volume = 0.2;
+
+static int phase = 0; // Global because it needs to be acccessed by other files.
+
+int get_phase() {
+    return phase;
+}
 
 OscillatorType current_oscillator = SINE;
 
@@ -30,7 +37,6 @@ float randomNoise(float phase, float freq) {
 }
 
 void oscillatorCallback(void *userdata, Uint8 *stream, int len) {
-    static int phase = 0; // Static so that the wave is continuous over buffer calls.
     wave_function func;
 
     switch (current_oscillator) {
@@ -51,8 +57,7 @@ void oscillatorCallback(void *userdata, Uint8 *stream, int len) {
         stream[i] = 0;
         for (int j = 0; j < keyboard_length; j++) {
             if (get_note_on(j)) {
-                stream[i] += volume * DYNAMIC_RANGE * (*func)(phase, BASE_FREQ * pow(2, (float) j / 12.0));
-                printf("stream: %d\n", stream[i]);
+                stream[i] += get_amplitude(j, phase) * volume * DYNAMIC_RANGE * (*func)(phase, BASE_FREQ * pow(2, (float) j / 12.0));
             }
         }
         phase++;

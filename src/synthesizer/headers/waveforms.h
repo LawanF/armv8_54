@@ -7,6 +7,8 @@ typedef enum {SINE, TRIANGLE, SQUARE, SAWTOOTH} OscillatorType;
 
 OscillatorType current_oscillator;
 
+int get_phase();
+
 typedef float (*wave_function)(float, float);
 
 float fsin(float phase, float freq);
