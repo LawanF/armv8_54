@@ -3,12 +3,25 @@
  */
 
 #include <SDL2/SDL.h>
+#include <stdbool.h>
 #include "visualizer/init_audio.h"
 #include "visualizer/window.h"
+#include "visualizer/event.h"
 
 int main(void) {
-    init_window();
     init_audio();
+    init_window();
+    bool keep_running = true;
+    SDL_Event event;
+    while (keep_running) {
+        SDL_RaiseWindow(get_audio_window());
+        while (SDL_PollEvent(&event)) {
+            if (!handle_event(event)) {
+                keep_running = false;
+                break;
+            }
+        }
+    }
     end_window();
     return EXIT_SUCCESS;
 }
