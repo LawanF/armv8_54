@@ -9,6 +9,8 @@ OscillatorType current_oscillator;
 
 typedef float (*wave_function)(float, float);
 
+int get_phase(void);
+
 float fsin(float phase, float freq);
 
 float square(float phase, float freq);

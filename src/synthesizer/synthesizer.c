@@ -47,6 +47,7 @@ int main(void) {
     SDL_Event event;
     
     SDL_Keycode sym; // Symbol of key pressed.
+    int index; // Index of key pressed.
     while (isRunning) {
         // Fetch the next event in the queue.
         while (SDL_PollEvent(&event) != 0) {
@@ -58,7 +59,11 @@ int main(void) {
                 printf("Key press: %s!\n", SDL_GetKeyName(sym));
 
                 // Adjust pressed flag if it's a keyboard key.
-                set_note_on(keyboard_find(sym), true);
+                index = keyboard_find(sym);
+                if (index != -1) {
+                    set_trigger_on_time(index, get_phase());
+                    set_note_on(index, ON);
+                }
 
                 // Switch case for settings.
                 switch (sym) {
@@ -87,7 +92,11 @@ int main(void) {
                 sym = event.key.keysym.sym; // Fetch key symbol.
 
                 // Adjust keyboard pressed flag.
-                set_note_on(keyboard_find(sym), false);
+                index = keyboard_find(sym);
+                if (index != -1) {
+                    set_trigger_off_time(index, get_phase());
+                    set_note_on(index, OFF);
+                }
             }
         }
     }

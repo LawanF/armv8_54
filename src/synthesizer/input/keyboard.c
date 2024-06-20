@@ -20,18 +20,19 @@ int keyboard_find(SDL_Keycode sym) {
     return -1;
 }
 
-bool get_note_on(int index) {
+NoteState get_note_on(int index) {
     return notes[index].note_on;
 }
 
-void set_note_on(int index, bool value) {
-    if (index != -1) {
-        notes[index].note_on = value;
-    }
+void set_note_on(int index, NoteState value) {
+    notes[index].note_on = value;
 }
 
 void set_trigger_on_time(int index, float phase) {
-    notes[index].trigger_on_time = phase;
+    // If key hasn't been pressed before, set it's trigger time.
+    if (get_note_on(index) != ON) {
+        notes[index].trigger_on_time = phase;
+    }
 }
 
 float get_trigger_on_time(int index) {

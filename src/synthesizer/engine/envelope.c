@@ -3,6 +3,12 @@
 #include "../headers/format.h"
 #include "../headers/keyboard.h"
 
+#define DEFAULT_ATTACK 0.1f
+#define DEFAULT_DECAY 0.6f
+#define DEFAULT_RELEASE 2.0f
+#define DEFAULT_START_AMPLITUDE 1.0f
+#define DEFAULT_SUSTAIN_AMPLITUDE 0.8f
+
 #define MINIMUM_AMPLITUDE 0.001f
 
 struct adsr {   
@@ -14,8 +20,7 @@ struct adsr {
     float sustain_amplitude; 
 };
 
-struct adsr  _adsr = {2.0, 1.0, 5.0, 1.0, 0.8}; 
-ADSR adsr = &_adsr;
+struct adsr  _adsr = {DEFAULT_ATTACK, DEFAULT_DECAY, DEFAULT_RELEASE, DEFAULT_START_AMPLITUDE, DEFAULT_SUSTAIN_AMPLITUDE}; 
 
 
 void attack_adjust(float step) {
@@ -40,13 +45,13 @@ void sustain_adjust(float step) {
 
 // phase may loop around D:
 float get_amplitude(float phase, int index) {
-    bool note_on = get_note_on(index);
+    NoteState note_on = get_note_on(index);
     float trigger_on_time = get_trigger_on_time(index);
     float trigger_off_time; // Might not be defined just yet.
     float lifetime = (phase - trigger_on_time) / SAMPLE_RATE;
     float deathtime;
     float res_amplitude;
-    if (note_on) {
+    if (note_on == ON) {
         // ADS
 
         if (lifetime < _adsr.attack_time) {
@@ -54,15 +59,18 @@ float get_amplitude(float phase, int index) {
             res_amplitude = _adsr.start_amplitude * (lifetime / _adsr.attack_time);
         } else if (lifetime < _adsr.attack_time + _adsr.decay_time) {
             // DECAY    
-            res_amplitude = _adsr.sustain_amplitude - (_adsr.start_amplitude - _adsr.sustain_amplitude) * ((lifetime - _adsr.attack_time) / _adsr.decay_time);
+            res_amplitude = _adsr.start_amplitude - (_adsr.start_amplitude - _adsr.sustain_amplitude) * ((lifetime - _adsr.attack_time) / _adsr.decay_time);
         } else {
             res_amplitude = _adsr.sustain_amplitude;
         }
-    } else {
+    } else if (note_on == OFF) {
         // RELEASE
         trigger_off_time = get_trigger_off_time(index);
-        deathtime = phase - trigger_off_time;
+        deathtime = (phase - trigger_off_time) / SAMPLE_RATE;
         res_amplitude = (deathtime / _adsr.release_time) * (- _adsr.sustain_amplitude) + _adsr.sustain_amplitude;
+    } else {
+        // Note not initialised. 
+        res_amplitude = 0.0f;
     }
 
     if (res_amplitude < MINIMUM_AMPLITUDE) {

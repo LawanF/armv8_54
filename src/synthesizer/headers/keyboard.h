@@ -4,19 +4,21 @@
 #include <stdbool.h>
 #include <SDL2/SDL.h>
 
+typedef enum {NOT_INITIALISED, OFF, ON} NoteState;
+
 typedef struct {
     float trigger_on_time;
     float trigger_off_time;
-    bool note_on;
+    NoteState note_on;
 } note;
 
 const int keyboard_length;
 
 int keyboard_find(SDL_Keycode sym);
 
-bool get_note_on(int index);
+NoteState get_note_on(int index);
 
-void set_note_on(int index, bool value);
+void set_note_on(int index, NoteState value);
 
 float get_trigger_on_time(int index);
 
