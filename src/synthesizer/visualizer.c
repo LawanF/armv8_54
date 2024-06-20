@@ -3,8 +3,8 @@
  */
 
 #include <SDL2/SDL.h>
-#include "init_audio.h"
-#include "window.h"
+#include "visualizer/init_audio.h"
+#include "visualizer/window.h"
 
 int main(void) {
     init_window();
