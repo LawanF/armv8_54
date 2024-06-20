@@ -16,7 +16,7 @@
 #define KEYBOARD_LENGTH sizeof(keyboard) / sizeof(keyboard[0])
 
 // Wave function.
-typedef float (*wave_function)(float);
+typedef float (*wave_function)(float, float);
 
 // Oscillator type.
 typedef enum {SINE, TRIANGLE, SQUARE, SAWTOOTH} OscillatorType;
@@ -138,20 +138,22 @@ void sineWave(void *userdata, Uint8 *stream, int len) {
     }
 }
 
-float fsin(float phase) {
-    return sin(2 * M_PI * (phase / SAMPLE_RATE));
+float fsin(float phase, float freq) {
+    return sin(2 * M_PI * (phase * freq / SAMPLE_RATE));
 }
 
-float square(float phase) {
-    return sin(2 * M_PI * (phase / SAMPLE_RATE)) > 0 ? 1 : -1;
+float square(float phase, float freq) {
+    return sin(2 * M_PI * (phase * freq / SAMPLE_RATE)) > 0 ? 1 : -1;
 }
 
-float triangle(float phase) {
-    return asin(sin(2 * M_PI * (phase / SAMPLE_RATE))) * 2 / M_PI;
+float triangle(float phase, float freq) {
+    return asin(sin(2 * M_PI * (phase * freq / SAMPLE_RATE))) * 2 / M_PI;
 }
 
-float sawtooth(float phase) {
-    return fmod(((phase / SAMPLE_RATE)-((1/wave_freq)/2)), (1/wave_freq))*wave_freq*2 - 1;
+float sawtooth(float phase, float freq) {
+    printf("phase: %f\n", phase);
+    printf("sawtooth: %f\n", fmod(phase, 1.0));
+    return (M_PI * freq * fmod(phase / SAMPLE_RATE, 1.0 / freq) - M_PI / 2) * 2 / M_PI;
 }
 
 void oscillatorCallback(void *userdata, Uint8 *stream, int len) {
@@ -176,7 +178,7 @@ void oscillatorCallback(void *userdata, Uint8 *stream, int len) {
         stream[i] = 0;
         for (int j = 0; j < keyboard_length; j++) {
             if (pressed[j]) {
-                stream[i] += volume * DYNAMIC_RANGE * (*func)(phase * base_freq * pow(2, (float) j / 12.0));
+                stream[i] += volume * DYNAMIC_RANGE * (*func)(phase, base_freq * pow(2, (float) j / 12.0));
                 printf("stream: %d\n", stream[i]);
             }
         }
