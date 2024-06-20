@@ -3,8 +3,10 @@
 
 #include <SDL2/SDL.h>
 
-extern SDL_Window *audio_window;
+SDL_Window *get_audio_window(void);
 
 void init_audio(void);
 
-#endif //INIT_AUDIO_H
+void set_volume(float value);
+
+#endif
