@@ -1,6 +1,8 @@
 #ifndef FORMAT_H
 #define FORMAT_H
 
+#include <SDL2/SDL.h>
+
 #define BASE_FREQ 220
 #define VOLUME_STEP 0.01f
 

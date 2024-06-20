@@ -43,8 +43,8 @@ void oscillatorCallback(void *userdata, Uint8 *stream, int len) {
     }
     for (int i = 0; i < len; i++) {
         stream[i] = 0;
-        for (int j = 0; j < KEYBOARD_LENGTH; j++) {
-            if (pressed[j]) {
+        for (int j = 0; j < keyboard_length; j++) {
+            if (get_pressed(j)) {
                 stream[i] += volume * DYNAMIC_RANGE * (*func)(phase, BASE_FREQ * pow(2, (float) j / 12.0));
                 printf("stream: %d\n", stream[i]);
             }
