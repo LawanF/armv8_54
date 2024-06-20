@@ -1,6 +1,6 @@
-#include "decode.h"
-#include "instruction_constants.h"
-#include "instructions.h"
+#include "../headers/decode.h"
+#include "../headers/instruction_constants.h"
+#include "../headers/instructions.h"
 
 /* Functions for decoding operands
  * These functions assume that the instruction is in the correct group,

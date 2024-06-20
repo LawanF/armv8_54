@@ -2,12 +2,12 @@
 #include <stdio.h>
 #include <stdint.h>
 #include <stdlib.h>
-#include "../emulate.h"
-#include "execute.h"
-#include "fileio.h"
-#include "instructions.h"
-#include "memory.h"
-#include "registers.h"
+#include "../headers/emulate.h"
+#include "../headers/execute.h"
+#include "../headers/fileio.h"
+#include "../headers/instructions.h"
+#include "../headers/memory.h"
+#include "../headers/registers.h"
 
 static void offset_program_counter(MachineState machine_state, int32_t enc_address) {
 	int64_t offset = enc_address*4;
@@ -415,9 +415,7 @@ static void sdt(MachineState machine_state, Instruction *inst) {
     unsigned char sdt_l = (inst->single_data_transfer).l;
     unsigned char sdt_xn = (inst->single_data_transfer).xn;
     unsigned char sdt_sf = (inst->sf);
-    unsigned char sdt_opc = (inst->opc); // Unused...
     unsigned char sdt_rt = (inst->rt);
-    uint64_t sdt_rt_data = (machine_state.general_registers)[sdt_rt].data; // Unused...
     uint64_t sdt_xn_data = (machine_state.general_registers)[sdt_xn].data;
     SDTOffsetType sdt_type = (inst->single_data_transfer).offset_type;
 

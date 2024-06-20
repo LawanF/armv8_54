@@ -2,8 +2,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdarg.h>
-#include "memory.h"
-#include "fileio.h"
+#include "../headers/fileio.h"
+#include "../headers/memory.h"
 #define WORD_SIZE 4
 
 /*

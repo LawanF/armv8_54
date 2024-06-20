@@ -1,12 +1,12 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include "emulate_files/execute.h"
-#include "emulate_files/decode.h"
-#include "emulate_files/fetch.h"
-#include "emulate_files/fileio.h"
-#include "emulate_files/memory.h"
-#include "emulate_files/registers.h"
+#include "headers/execute.h"
+#include "headers/decode.h"
+#include "headers/fetch.h"
+#include "headers/fileio.h"
+#include "headers/memory.h"
+#include "headers/registers.h"
 
 // Pointer to output file name if it is given.
 static char *output_file = NULL;

@@ -1,6 +1,7 @@
+#include <stdbool.h>
+#include <assert.h>
 #include "../headers/encode.h"
 #include "../headers/instruction_constants.h"
-#include <assert.h>
 
 #define FAIL_ENCODE() assert(-1); return 0
 
@@ -14,13 +15,11 @@ static uint32_t encode_dp_imm_operand(const Instruction *inst) {
     DPImmOperand operand = inst->dp_imm.operand;
     switch (operand_type) {
         case ARITH_OPERAND:
-            return ARITH_OPI
-                   | ((uint32_t) operand.arith_operand.sh << ARITH_OP_SH_BIT)
+            return ((uint32_t) operand.arith_operand.sh    << ARITH_OP_SH_BIT)
                    | ((uint32_t) operand.arith_operand.imm12 << ARITH_OP_IMM12_START)
                    | ((uint32_t) operand.arith_operand.rn    << ARITH_OP_RN_START);
         case WIDE_MOVE_OPERAND:
-            return WIDE_MOVE_OPI
-                   | ((uint32_t) operand.wide_move_operand.hw    << WIDE_MOVE_HW_START)
+            return ((uint32_t) operand.wide_move_operand.hw    << WIDE_MOVE_HW_START)
                    | ((uint32_t) operand.wide_move_operand.imm16 << WIDE_MOVE_IMM16_START);
         default: FAIL_ENCODE();
     }
@@ -30,14 +29,15 @@ static uint32_t encode_dp_imm_operand(const Instruction *inst) {
 static uint32_t encode_sdt_offset(const Instruction *inst) {
     SDTOffsetType offset_type = inst->single_data_transfer.offset_type;
     SDTOffset offset = inst->single_data_transfer.offset;
-    char i = 0; // if i = 1, then pre-indexed, otherwise post_indexed
+    uint8_t i = 0; // if i = 1, then pre-indexed, otherwise post_indexed
     switch (offset_type) {
-        case PRE_INDEX_OFFSET: i = 1;
+        case PRE_INDEX_OFFSET:
+            i = 1;
         case POST_INDEX_OFFSET:
             return SDT_INDEX_MASK
                    | ((uint32_t) i << SDT_INDEX_I_BIT)
                    // since the value is signed, we need to apply a mask to remove negated bits
-                   | BITMASK((uint32_t) offset.simm9 << SDT_INDEX_SIMM9_START, 0, SDT_INDEX_SIMM9_END);
+                   | (uint32_t) BITMASK(offset.simm9, 0, 8) << SDT_INDEX_SIMM9_START;
         case REGISTER_OFFSET:
             return SDT_REGISTER_MASK
                    | ((uint32_t) offset.xm << SDT_REGISTER_XM_START);
@@ -52,7 +52,7 @@ static uint32_t encode_sdt_offset(const Instruction *inst) {
 
 // Encodes a DP (immediate) instruction, given a reference to an Instruction.
 static uint32_t encode_dp_imm(const Instruction *inst) {
-    unsigned char opi = 0;
+    uint8_t opi = 0;
     switch (inst->dp_imm.operand_type) {
         case ARITH_OPERAND:     opi = ARITH_OPI;     break;
         case WIDE_MOVE_OPERAND: opi = WIDE_MOVE_OPI; break;
@@ -81,16 +81,14 @@ static uint32_t encode_dp_reg(const Instruction *inst) {
 
 // Encodes a single data transfer instruction, given a reference to an Instruction.
 static uint32_t encode_single_data_transfer(const Instruction *inst) {
-    uint32_t encoded_offset = encode_sdt_offset(inst);
-    if (!encoded_offset) FAIL_ENCODE();
-    return FILL_BIT(SDT_REGISTER_MASK_UPPER_BIT)
+    return FILL_BIT(SDT_MASK_UPPER_BIT)
            | ((uint32_t) SDT_MASK_MIDDLE << SDT_MASK_MIDDLE_START)
            // no need to add the mask lower bit as it is zero
            | ((uint32_t) inst->rt << RD_RT_START)
            | ((uint32_t) inst->single_data_transfer.xn << SDT_XN_START)
-           | encoded_offset
+           | encode_sdt_offset(inst)
            | ((uint32_t) inst->single_data_transfer.l << SDT_L_BIT)
-           | ((uint32_t) inst->single_data_transfer.u << SDT_XN_START)
+           | ((uint32_t) inst->single_data_transfer.u << SDT_U_BIT)
            | ((uint32_t) inst->sf << SDT_SF_BIT);
 }
 

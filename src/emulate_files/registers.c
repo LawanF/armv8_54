@@ -1,5 +1,4 @@
-#include "registers.h"
-#include "memory.h"
+#include "../headers/registers.h"
 #include <assert.h>
 
 static MachineState machine_state;
