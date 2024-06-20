@@ -1,43 +1,15 @@
 #include <SDL2/SDL.h>
 #include <math.h>
 #include <stdbool.h>
+#include "headers/format.h"
+#include "headers/keyboard.h"
+#include "headers/waveforms.h"
 
 // Macros for the window.
 #define WINDOW_WIDTH 640
 #define WINDOW_HEIGHT 480
 
-// Macros for the format.
-#define SAMPLE_RATE 48000
-#define CHANNELS 1
-#define BUFFER_SIZE 512
-#define DYNAMIC_RANGE 127
-
-// Macros for the keyboard.
-#define KEYBOARD_LENGTH sizeof(keyboard) / sizeof(keyboard[0])
-
-// Wave function.
-typedef float (*wave_function)(float, float);
-
-// Oscillator type.
-typedef enum {SINE, TRIANGLE, SQUARE, SAWTOOTH} OscillatorType;
-
-OscillatorType current_oscillator = SINE;
-float base_freq = 220;
-float wave_freq = 0; // Remove this later.
-
-float volume = 0.2; // Volume.
-
-// Array for keyboard layout.
-const SDL_Keycode keyboard[] = {SDLK_a, SDLK_w, SDLK_s, SDLK_d, SDLK_r, SDLK_f, 
-    SDLK_t, SDLK_g, SDLK_h, SDLK_u, SDLK_j, SDLK_i, SDLK_k, SDLK_o, SDLK_l, SDLK_SEMICOLON};
-const int keyboard_length = sizeof(keyboard) / sizeof(keyboard[0]);
-
-// Flags for which keys are pressed right now.
-bool pressed[KEYBOARD_LENGTH] = {false};
-
 void oscillatorCallback(void *userdata, Uint8 *stream, int len); // Prototype for AudioSpec.
-int keyboard_find(SDL_Keycode sym); // Prototype for linear search over keyboard.
-void set_pressed(int index, bool value);
 
 int main() {
     // Initialise video and audio
@@ -57,7 +29,7 @@ int main() {
     SDL_AudioSpec want, have;
     SDL_memset(&want, 0, sizeof(want));
     want.freq = SAMPLE_RATE;
-    want.format = AUDIO_S8;
+    want.format = AUDIO_FORMAT;
     want.channels = CHANNELS;
     want.samples = BUFFER_SIZE;
     want.callback = oscillatorCallback;
@@ -106,9 +78,10 @@ int main() {
                         current_oscillator = SAWTOOTH;
                         break;
                     case SDLK_UP:
-                        volume += 0.01;
+                        volume_add(VOLUME_STEP);
+                        break;
                     case SDLK_DOWN:
-                        volume -= 0.01;
+                        volume_add(-VOLUME_STEP);
                         break;
                     default:
                         break;
@@ -128,76 +101,4 @@ int main() {
     SDL_Quit();
 
     return 0;
-}
-
-void sineWave(void *userdata, Uint8 *stream, int len) {
-    static int phase = 0;
-    for (int i = 0; i < len; i++) {
-        phase++;
-        stream[i] = 128 * sin(2 * M_PI * 440 * phase / 44100);
-    }
-}
-
-float fsin(float phase, float freq) {
-    return sin(2 * M_PI * (phase * freq / SAMPLE_RATE));
-}
-
-float square(float phase, float freq) {
-    return sin(2 * M_PI * (phase * freq / SAMPLE_RATE)) > 0 ? 1 : -1;
-}
-
-float triangle(float phase, float freq) {
-    return asin(sin(2 * M_PI * (phase * freq / SAMPLE_RATE))) * 2 / M_PI;
-}
-
-float sawtooth(float phase, float freq) {
-    printf("phase: %f\n", phase);
-    printf("sawtooth: %f\n", fmod(phase, 1.0));
-    return (M_PI * freq * fmod(phase / SAMPLE_RATE, 1.0 / freq) - M_PI / 2) * 2 / M_PI;
-}
-
-void oscillatorCallback(void *userdata, Uint8 *stream, int len) {
-    static int phase = 0; // Static so that the wave is continuous over buffer calls.
-    wave_function func;
-
-    switch (current_oscillator) {
-        case SINE:
-            func = &fsin;
-            break;
-        case TRIANGLE:
-            func = &triangle;
-            break;
-        case SQUARE:
-            func = &square;
-            break;
-        case SAWTOOTH:
-            func = &sawtooth;
-            break;
-    }
-    for (int i = 0; i < len; i++) {
-        stream[i] = 0;
-        for (int j = 0; j < keyboard_length; j++) {
-            if (pressed[j]) {
-                stream[i] += volume * DYNAMIC_RANGE * (*func)(phase, base_freq * pow(2, (float) j / 12.0));
-                printf("stream: %d\n", stream[i]);
-            }
-        }
-        phase++;
-    }
-}
-
-// Utilities
-int keyboard_find(SDL_Keycode sym) {
-    for (int i = 0; i < keyboard_length; i++) {
-        if (keyboard[i] == sym) {
-            return i;
-        }
-    }
-    return -1;
-}
-
-void set_pressed(int index, bool value) {
-    if (index != -1) {
-        pressed[index] = value;
-    }
 }
