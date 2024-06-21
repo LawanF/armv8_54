@@ -57,7 +57,6 @@ int main(void) {
                 isRunning = false;
             } else if (event.type == SDL_KEYDOWN) {
                 sym = event.key.keysym.sym; // Fetch key symbol.
-                printf("Key press: %s!\n", SDL_GetKeyName(sym));
 
                 // Adjust pressed flag if it's a keyboard key.
                 index = keyboard_find(sym);

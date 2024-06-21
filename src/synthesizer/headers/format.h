@@ -4,7 +4,6 @@
 #include <SDL2/SDL.h>
 
 #define BASE_FREQ 220.0f
-#define VOLUME_STEP 0.01f
 
 // Macros for the format.
 #define SAMPLE_RATE 44100

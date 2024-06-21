@@ -34,9 +34,9 @@ void octave_adjust(bool up) {
     } else if (!up && !isMin) {
         octave--;
     }
-    if (isMax) {
+    if (up && isMax) {
         printf("Octave is MAX!\n");
-    } else if (isMin) {
+    } else if (!up && isMin) {
         printf("Octave is MIN!\n");
     }
 
@@ -54,7 +54,7 @@ void oscillator_adjust(bool up) {
         current_oscillator--;
     }
 
-    if (isMax || isMin) {
+    if (up && isMax || !up && isMin) {
         printf("No more oscillators!\n");
     }
 
@@ -116,7 +116,7 @@ void filter_adjust(bool up) {
         current_filter--;
     }
 
-    if (isMax || isMin) {
+    if (up && isMax || !up && isMin) {
         printf("No more filters!\n");
     }
 

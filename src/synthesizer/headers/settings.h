@@ -7,11 +7,11 @@
 #define SUSTAIN_MAX 1.0f
 #define RELEASE_MAX 20.0f
 
-#define VOLUME_STEP 0.01f
-#define ATTACK_STEP 0.01f
-#define DECAY_STEP 0.01f
-#define SUSTAIN_STEP 0.01f
-#define RELEASE_STEP 0.01f
+#define VOLUME_STEP 0.02f
+#define ATTACK_STEP 0.05f
+#define DECAY_STEP 0.05f
+#define SUSTAIN_STEP 0.05f
+#define RELEASE_STEP 0.05f
 
 void setting_right(void);
 
