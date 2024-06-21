@@ -8,7 +8,6 @@ void init_window(void) {
     terminal = initscr();
     if (terminal == NULL) exit(EXIT_FAILURE);
     nodelay(terminal, TRUE);
-    printw("Hello world!");
     wgetch(terminal);
 }
 

@@ -13,27 +13,7 @@
 
 int main(void) {
     // Initialise video and audio
-    init_window();
     init_audio();
-    // Specify audio format.
-    SDL_AudioSpec want, have;
-    SDL_memset(&want, 0, sizeof(want));
-    want.freq = SAMPLE_RATE;
-    want.format = AUDIO_FORMAT;
-    want.channels = CHANNELS;
-    want.samples = BUFFER_SIZE;
-    want.callback = oscillatorCallback;
-
-    // Open the device.
-    SDL_AudioDeviceID device_id = SDL_OpenAudioDevice(NULL, 0, &want, &have, 0);
-    if (!device_id) {
-        fprintf(stderr, "SDL_OpenAudioDevice error: %s\n", SDL_GetError());
-    }
-
-    // Surface the window and unpause the device.
-    SDL_UpdateWindowSurface(get_audio_window());
-    SDL_PauseAudioDevice(device_id, 0); // Turn on the device.
-
     // Main loop for polling events.
     bool isRunning = true;
     SDL_Event event;
@@ -48,6 +28,11 @@ int main(void) {
                 isRunning = false;
             } else if (event.type == SDL_KEYDOWN) {
                 sym = event.key.keysym.sym; // Fetch key symbol.
+
+                if (sym == SDLK_ESCAPE || sym == SDLK_SPACE) {
+                    isRunning = false;
+                    break;
+                }
 
                 // Adjust pressed flag if it's a keyboard key.
                 index = keyboard_find(sym);
@@ -87,10 +72,6 @@ int main(void) {
         }
     }
 
-    // Free everything properly.
-    SDL_DestroyWindow(get_audio_window());
-    SDL_CloseAudioDevice(device_id);
-    SDL_Quit();
-
+    end_window();
     return 0;
 }

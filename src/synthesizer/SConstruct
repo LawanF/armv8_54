@@ -2,7 +2,7 @@ env = Environment(CC = "gcc",
 	CCFLAGS=["-Wall", "-g"],
 	LIBS=["m", "ncurses", "SDL2"])
 env.Program("synthesize", ["synthesizer.c", "engine/envelope.c", "input/keyboard.c",
-	"input/settings.c", "engine/waveforms.c"])
-env.Program("visualize", ["visualizer.c", "visualizer/window.c",
+	"input/settings.c", "engine/waveforms.c", "visualizer/audio_window.c", "visualizer/window.c"])
+env.Program("visualize", ["visualizer/visualizer.c", "visualizer/window.c",
     "visualizer/audio_window.c", "input/keyboard.c",
     "visualizer/event.c"])

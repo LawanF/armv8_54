@@ -12,19 +12,6 @@ SDL_Window *get_audio_window(void) {
 
 static float volume = 1;
 
-float fsin(float phase, float freq) {
-    return sin(2 * M_PI * (phase * freq / SAMPLE_RATE));
-}
-
-void default_callback(void *userdata, Uint8 *stream, int len) {
-    static double phase = 0;
-
-    for (int i = 0; i < len; i++) {
-        stream[i] = volume * DYNAMIC_RANGE * (fsin)(phase, BASE_FREQ * pow(2, (float) 1 / 12.0));
-        phase++;
-    }
-}
-
 void init_audio(void) {
     if (SDL_Init(SDL_INIT_AUDIO | SDL_INIT_VIDEO | SDL_INIT_EVENTS) < 0) {
         PRINT_SDL_ERR("Initialise SDL");
@@ -34,9 +21,9 @@ void init_audio(void) {
             /* title = */ "Visualizer",
             /* x = */ SDL_WINDOWPOS_CENTERED,
             /* y = */ SDL_WINDOWPOS_CENTERED,
-            /* w = */ 0,
-            /* h = */ 0,
-            /* flags = */ SDL_WINDOW_FULLSCREEN_DESKTOP);
+            /* w = */ WINDOW_WIDTH,
+            /* h = */ WINDOW_HEIGHT,
+            /* flags = */ SDL_WINDOW_SHOWN);
     if (audio_window == NULL) {
         PRINT_SDL_ERR("Create SDL audio engine");
         exit(EXIT_FAILURE);
@@ -51,7 +38,7 @@ void init_audio(void) {
     want.format = AUDIO_FORMAT;
     want.channels = 1;
     want.samples = BUFFER_SIZE;
-    want.callback = &default_callback;
+    want.callback = &oscillatorCallback;
 
     // Open the device.
     SDL_AudioDeviceID device_id = SDL_OpenAudioDevice(NULL, 0, &want, &have, 0);
