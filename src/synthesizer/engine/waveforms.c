@@ -15,6 +15,8 @@
 
 static float volume = 0.2;
 static int octave = 0;
+static float high_threshold = 240;
+static float low_threshold = 200;
 
 void volume_set(float value) {
     volume = value;
@@ -103,8 +105,59 @@ float randomNoise(float phase, float freq) {
     return 0;
 }
 
+FilterType current_filter = NONE;
+
+void filter_adjust(bool up) {
+    bool isMax = current_filter == BAND_PASS;
+    bool isMin = current_filter == NONE;
+    if (up && !isMax) {
+        current_filter++;
+    } else if (!up && !isMin) {
+        current_filter--;
+    }
+
+    if (isMax || isMin) {
+        printf("No more filters!\n");
+    }
+
+    char *filter_string;
+    switch (current_filter) {
+        case SINE:
+            filter_string = "none";
+            break;
+        case TRIANGLE:
+            filter_string = "low pass";
+            break;
+        case SQUARE:
+            filter_string = "high pass";
+            break;
+        case SAWTOOTH:
+            filter_string = "band pass";
+            break;
+    }
+    printf("Filter: %s\n", filter_string);
+}
+
+bool none(float freq) {
+    return true;
+}
+
+bool low_pass(float freq) {
+    return (freq < low_threshold);
+}
+
+bool high_pass(float freq) {
+    return (freq > high_threshold);
+}
+
+bool band_pass(float freq) {
+    return (!low_pass(freq) && !high_pass(freq));
+}
+
 void oscillatorCallback(void *userdata, Uint8 *stream, int len) {
     wave_function func;
+
+    filter_function filter_func;
 
     switch (current_oscillator) {
         case SINE:
@@ -120,16 +173,34 @@ void oscillatorCallback(void *userdata, Uint8 *stream, int len) {
             func = &sawtooth;
             break;
     }
+
+    switch (current_filter) {
+        case NONE:
+            filter_func = &none;
+            break;
+        case LOW_PASS:
+            filter_func = &low_pass;
+            break;
+        case HIGH_PASS:
+            filter_func = &high_pass;
+            break;
+        case BAND_PASS:
+            filter_func = &band_pass;
+            break;
+    }
+
     float sample;
     for (int i = 0; i < len; i++) {
         stream[i] = 0;
         for (int j = 0; j < keyboard_length; j++) {
-            sample = (*func)(phase, BASE_FREQ * OCTAVE_STEP(octave) * SEMITONE_STEP(j)) * // Get wave amplitude.
+            float altered_freq = BASE_FREQ * OCTAVE_STEP(octave) * SEMITONE_STEP(j);
+            sample = (*func)(phase, altered_freq) * // Get wave amplitude.
                 get_amplitude(phase, j) * // Apply envelope.
                 volume * DYNAMIC_RANGE; // Apply volume and dynamic range.
-
-
-            stream[i] += sample;
+            
+            if ((*filter_func)(altered_freq)) {
+                stream[i] += sample;
+            }
         }
         phase++;
     }

@@ -5,6 +5,22 @@
 
 typedef enum {SINE, TRIANGLE, SQUARE, SAWTOOTH} OscillatorType;
 
+typedef enum { NONE, LOW_PASS, HIGH_PASS, BAND_PASS } FilterType;
+
+FilterType current_filter;
+
+bool none(float freq);
+
+bool low_pass(float freq);
+
+bool high_pass(float freq);
+
+bool band_pass(float freq);
+
+typedef bool (*filter_function)(float);
+
+void filter_adjust(bool up);
+
 float get_volume(void);
 
 void volume_set(float step);
