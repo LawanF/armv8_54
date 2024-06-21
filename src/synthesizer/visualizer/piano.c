@@ -6,13 +6,13 @@
 #define BLACK_KEYS 10
 #define PIANO_MARGIN 2
 
-bool is_white[] = {
+static bool is_white[] = {
     true, false, true, true, false, true, false, true, true, false, true, false, // First octave.
     true, false, true, true, false, true, false, true, true, false, true, false, // Second octave.
     true // High A.
 };
 
-void generate_key(WINDOW *win, int x, int width, int height) {
+static void generate_key(WINDOW *win, int x, int width, int height) {
     for (int y = PIANO_MARGIN; y < PIANO_MARGIN + height; y++) {
         for (int w = 0; w < width; w++) {
             mvwprintw(win, y, x + w, " ");

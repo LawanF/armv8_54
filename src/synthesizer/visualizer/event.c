@@ -1,6 +1,6 @@
 #include <ncurses.h>
-#include "event.h"
-#include "init_audio.h"
+#include "../headers/event.h"
+#include "../headers/audio_window.h"
 
 int handle_event(SDL_Event event) {
     if (event.type == SDL_QUIT) return 0;
