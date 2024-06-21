@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include "headers/emulate.h"
 #include "headers/execute.h"
 #include "headers/decode.h"
 #include "headers/fetch.h"
