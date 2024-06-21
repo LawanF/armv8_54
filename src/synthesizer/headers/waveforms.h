@@ -5,6 +5,10 @@
 
 typedef enum {SINE, TRIANGLE, SQUARE, SAWTOOTH} OscillatorType;
 
+float get_volume(void);
+
+void volume_set(float step);
+
 OscillatorType current_oscillator;
 
 typedef float (*wave_function)(float, float);
@@ -20,7 +24,5 @@ float triangle(float phase, float freq);
 float sawtooth(float phase, float freq);
 
 void oscillatorCallback(void *userdata, Uint8 *stream, int len);
-
-void volume_adjust(float step);
 
 #endif

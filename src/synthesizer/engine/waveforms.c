@@ -7,9 +7,19 @@
 
 static float volume = 0.2;
 
+void volume_set(float value) {
+    volume = value;
+}
+
+float get_volume(void) {
+    return volume;
+}
+
 OscillatorType current_oscillator = SINE;
 
 static int phase = 0; // Global so that is continuous over calls. 
+static int acc = 0;
+static float lambda = 0.01;
 
 int get_phase(void) {
     return phase;
@@ -60,8 +70,4 @@ void oscillatorCallback(void *userdata, Uint8 *stream, int len) {
         }
         phase++;
     }
-}
-
-void volume_adjust(float step) {
-    volume += step;
 }

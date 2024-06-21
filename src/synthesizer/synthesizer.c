@@ -3,6 +3,7 @@
 #include <stdbool.h>
 #include "headers/format.h"
 #include "headers/keyboard.h"
+#include "headers/settings.h"
 #include "headers/waveforms.h"
 
 // Macros for the window.
@@ -80,10 +81,16 @@ int main(void) {
                         current_oscillator = SAWTOOTH;
                         break;
                     case SDLK_UP:
-                        volume_adjust(VOLUME_STEP);
+                        setting_adjust(true);
                         break;
                     case SDLK_DOWN:
-                        volume_adjust(-VOLUME_STEP);
+                        setting_adjust(false);
+                        break;
+                    case SDLK_LEFT:
+                        setting_left();
+                        break;
+                    case SDLK_RIGHT:
+                        setting_right();
                         break;
                     default:
                         break;

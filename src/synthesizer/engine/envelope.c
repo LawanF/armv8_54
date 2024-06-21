@@ -5,9 +5,9 @@
 
 #define DEFAULT_ATTACK 0.1f
 #define DEFAULT_DECAY 0.6f
-#define DEFAULT_RELEASE 2.0f
+#define DEFAULT_RELEASE 0.3f
 #define DEFAULT_START_AMPLITUDE 1.0f
-#define DEFAULT_SUSTAIN_AMPLITUDE 0.8f
+#define DEFAULT_SUSTAIN_AMPLITUDE 1.0f
 
 #define MINIMUM_AMPLITUDE 0.001f
 
@@ -20,27 +20,47 @@ struct adsr {
     float sustain_amplitude; 
 };
 
-struct adsr  _adsr = {DEFAULT_ATTACK, DEFAULT_DECAY, DEFAULT_RELEASE, DEFAULT_START_AMPLITUDE, DEFAULT_SUSTAIN_AMPLITUDE}; 
+struct adsr _adsr = {DEFAULT_ATTACK, DEFAULT_DECAY, DEFAULT_RELEASE, DEFAULT_START_AMPLITUDE, DEFAULT_SUSTAIN_AMPLITUDE}; 
 
 
-void attack_adjust(float step) {
-    _adsr.attack_time += step;
+void attack_set(float value) {
+    _adsr.attack_time = value;
 }
 
-void decay_adjust(float step) {
-    _adsr.decay_time += step;
+float get_attack(void) {
+    return _adsr.attack_time;
 }
 
-void release_adjust(float step) {
-    _adsr.release_time += step;
+void decay_set(float value) {
+    _adsr.decay_time = value;
 }
 
-void start_adjust(float step) {
-    _adsr.start_amplitude += step;
+float get_decay(void) {
+    return _adsr.decay_time;
 }
 
-void sustain_adjust(float step) {
-    _adsr.sustain_amplitude += step;
+void release_set(float value) {
+    _adsr.release_time = value;
+}
+
+float get_release(void) {
+    return _adsr.release_time;
+}
+
+void start_set(float value) {
+    _adsr.start_amplitude = value;
+}
+
+float get_start(void) {
+    return _adsr.start_amplitude;
+}
+
+void sustain_set(float value) {
+    _adsr.sustain_amplitude = value;
+}
+
+float get_sustain(void) {
+    return _adsr.sustain_amplitude;
 }
 
 // phase may loop around D:
