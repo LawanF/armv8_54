@@ -5,6 +5,7 @@
 #include "headers/parser.h"
 #include "headers/encode.h"
 #include "headers/instructions.h"
+#include "headers/assemble.h"
 
 #define FREE_TABLES() symtable_free(known_table); symtable_free(unknown_table);
 #define FAIL_RUNNING_PROGRAM() fclose(input_file); \
@@ -14,15 +15,7 @@
 #define MAX_NUM_INSTRUCTIONS 100
 #define SYMTABLE_LOAD_FACTOR 2.0
 
-typedef struct {
-    bool is_instruction;
-    union {
-        int32_t directive;
-        Instruction inst;
-    } data;
-} ProgramLine;
-
-int main(int argc, char **argv) {
+int run_assembler(int argc, char **argv) {
     // Ensure both input and output filenames are provided
     if (argc != 3) {
         fprintf(stderr, "usage: ./assemble [input_file] [output_file]\n");
@@ -136,4 +129,8 @@ int main(int argc, char **argv) {
     fclose(output_file);
 
     return EXIT_SUCCESS;
+}
+
+int main(int argc, char **argv) {
+    return run_assembler(argc, argv);
 }
