@@ -63,31 +63,39 @@ float get_sustain(void) {
     return _adsr.sustain_amplitude;
 }
 
+float get_ads(float phase, int index) {
+    float trigger_on_time = get_trigger_on_time(index);
+    float lifetime = (phase - trigger_on_time) / SAMPLE_RATE;
+    float res_amplitude;
+    if (lifetime < _adsr.attack_time) {
+            // ATTACK
+            res_amplitude = _adsr.start_amplitude * (lifetime / _adsr.attack_time);
+    } else if (lifetime < _adsr.attack_time + _adsr.decay_time) {
+            // DECAY    
+            res_amplitude = _adsr.start_amplitude - (_adsr.start_amplitude - _adsr.sustain_amplitude) * ((lifetime - _adsr.attack_time) / _adsr.decay_time);
+    } else {
+            res_amplitude = _adsr.sustain_amplitude;
+    }
+
+    return res_amplitude;
+}
+
 // phase may loop around D:
 float get_amplitude(float phase, int index) {
     NoteState note_on = get_note_on(index);
-    float trigger_on_time = get_trigger_on_time(index);
     float trigger_off_time; // Might not be defined just yet.
-    float lifetime = (phase - trigger_on_time) / SAMPLE_RATE;
     float deathtime;
+    float trigger_off_amplitude;
     float res_amplitude;
     if (note_on == ON) {
         // ADS
-
-        if (lifetime < _adsr.attack_time) {
-            // ATTACK
-            res_amplitude = _adsr.start_amplitude * (lifetime / _adsr.attack_time);
-        } else if (lifetime < _adsr.attack_time + _adsr.decay_time) {
-            // DECAY    
-            res_amplitude = _adsr.start_amplitude - (_adsr.start_amplitude - _adsr.sustain_amplitude) * ((lifetime - _adsr.attack_time) / _adsr.decay_time);
-        } else {
-            res_amplitude = _adsr.sustain_amplitude;
-        }
+        res_amplitude = get_ads(phase, index);
     } else if (note_on == OFF) {
         // RELEASE
         trigger_off_time = get_trigger_off_time(index);
         deathtime = (phase - trigger_off_time) / SAMPLE_RATE;
-        res_amplitude = (deathtime / _adsr.release_time) * (- _adsr.sustain_amplitude) + _adsr.sustain_amplitude;
+        trigger_off_amplitude = get_ads(trigger_off_time, index);
+        res_amplitude = (deathtime / _adsr.release_time) * (- trigger_off_amplitude) + trigger_off_amplitude;
     } else {
         // Note not initialised. 
         res_amplitude = 0.0f;
