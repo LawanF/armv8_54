@@ -24,7 +24,11 @@ static void initialise(void) {
     init_machine_state();
 }
 
-int main(int argc, char **argv) {
+/*
+    Runs the emulator, taking the command line arguments.
+    Returns 0 upon successful termination.
+*/
+int run_emulator(int argc, char **argv) {
     // Check number of arguments.
     if (argc > 3 || argc == 1) {
         fprintf(stderr, "usage: ./emulate [input_file] [optional_output_file]");
@@ -50,4 +54,8 @@ int main(int argc, char **argv) {
     }
 
     return 0;
+}
+
+int main(int argc, char **argv) {
+    return run_emulator(argc, argv);
 }
