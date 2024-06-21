@@ -3,8 +3,9 @@
 #define KEYBOARD_LENGTH sizeof(keyboard) / sizeof(keyboard[0])
 
 // Array for keyboard layout.
-const SDL_Keycode keyboard[] = {SDLK_a, SDLK_w, SDLK_s, SDLK_d, SDLK_r, SDLK_f, 
-    SDLK_t, SDLK_g, SDLK_h, SDLK_u, SDLK_j, SDLK_i, SDLK_k, SDLK_o, SDLK_l, SDLK_SEMICOLON};
+const SDL_Keycode keyboard[] = {SDLK_z, SDLK_s, SDLK_x, SDLK_c, SDLK_f, SDLK_v, SDLK_g, SDLK_b, SDLK_n, SDLK_j, SDLK_m, SDLK_k, // First octave.
+    SDLK_q, SDLK_2, SDLK_w, SDLK_e, SDLK_4, SDLK_r, SDLK_5, SDLK_t, SDLK_y, SDLK_7, SDLK_u, SDLK_8, // Second octave.
+    SDLK_i}; // High note.
 
 // Storing key trigger on and off times.
 note notes[KEYBOARD_LENGTH];
