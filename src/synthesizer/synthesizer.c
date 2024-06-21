@@ -64,22 +64,11 @@ int main(void) {
                 if (index != -1) {
                     set_trigger_on_time(index, get_phase());
                     set_note_on(index, ON);
+                    break;
                 }
 
                 // Switch case for settings.
                 switch (sym) {
-                    case SDLK_1:
-                        current_oscillator = SINE;
-                        break;
-                    case SDLK_2:
-                        current_oscillator = TRIANGLE;
-                        break;
-                    case SDLK_3:
-                        current_oscillator = SQUARE;
-                        break;
-                    case SDLK_4:
-                        current_oscillator = SAWTOOTH;
-                        break;
                     case SDLK_UP:
                         setting_adjust(true);
                         break;

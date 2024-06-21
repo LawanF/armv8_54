@@ -9,7 +9,11 @@ float get_volume(void);
 
 void volume_set(float step);
 
+void octave_adjust(bool up);
+
 OscillatorType current_oscillator;
+
+void oscillator_adjust(bool up);
 
 typedef float (*wave_function)(float, float);
 
