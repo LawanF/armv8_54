@@ -8,7 +8,7 @@ LDFLAGS ?= -lm -lSDL2 -lncurses
 
 .PHONY: all clean
 
-all: synthesizer visualize
+all: synthesize visualize
 
 INPUT_DEPS := input
 INPUT_SRC := $(wildcard $(INPUT_DEPS)/*?.c)
@@ -22,10 +22,15 @@ VISUALIZER_DEPS := visualizer
 VISUALIZER_SRC := $(wildcard $(VISUALIZER_DEPS)/*?.c)
 VISUALIZER_OBJ := $(subst %.c, %.o, $(VISUALIZER_SRC))
 
-synthesizer: synthesizer.o $(INPUT_OBJ) $(ENGINE_OBJ)
+synthesize: synthesizer.o engine/envelope.o input/keyboard.o input/settings.o engine/waveforms.o
+synthesizer.o: synthesizer.c
+engine/envelope.o: engine/envelope.c
+engine/waveforms.o: engine/waveforms.c
+input/keyboard.o: input/keyboard.c
+input/settings.o: input/settings.c
 
 visualize: visualizer.o $(VISUALIZER_OBJ) $(ENGINE_OBJ) $(INPUT_OBJ)
 
 clean:
-	$(RM) *.o synthesizer visualize
+	$(RM) **/*.o *.o synthesize visualize
 	

@@ -7,7 +7,7 @@ typedef enum {SINE, TRIANGLE, SQUARE, SAWTOOTH} OscillatorType;
 
 typedef enum { NONE, LOW_PASS, HIGH_PASS, BAND_PASS } FilterType;
 
-FilterType current_filter;
+extern FilterType current_filter;
 
 bool none(float freq);
 
@@ -27,7 +27,7 @@ void volume_set(float step);
 
 void octave_adjust(bool up);
 
-OscillatorType current_oscillator;
+extern OscillatorType current_oscillator;
 
 void oscillator_adjust(bool up);
 

@@ -12,7 +12,7 @@ typedef struct {
     NoteState note_on;
 } note;
 
-const int keyboard_length;
+extern const int keyboard_length;
 
 int keyboard_find(SDL_Keycode sym);
 

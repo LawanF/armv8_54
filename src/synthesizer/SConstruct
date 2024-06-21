@@ -4,3 +4,4 @@ env = Environment(CC = "gcc",
 env.Program("visualize", ["visualizer.c", "visualizer/window.c",
     "visualizer/init_audio.c", "input/keyboard.c",
     "visualizer/event.c"])
+env.Program("synthesize", ["synthesizer.c", "engine/envelope.c", "input/keyboard.c", "input/settings.c", "engine/waveforms.c"])
