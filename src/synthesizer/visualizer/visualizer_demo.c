@@ -4,10 +4,11 @@
 
 #include <SDL2/SDL.h>
 #include <stdbool.h>
-#include "visualizer/init_audio.h"
-#include "visualizer/window.h"
-#include "visualizer/event.h"
+#include "../headers/audio_window.h"
+#include "../headers/window.h"
+#include "../headers/event.h"
 
+/*
 int main(void) {
     init_audio();
     init_window();
@@ -25,3 +26,4 @@ int main(void) {
     end_window();
     return EXIT_SUCCESS;
 }
+*/

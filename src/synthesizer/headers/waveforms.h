@@ -2,6 +2,7 @@
 #define WAVEFORMS_H
 
 #include <SDL2/SDL.h>
+#include <stdbool.h>
 
 typedef enum {SINE, TRIANGLE, SQUARE, SAWTOOTH} OscillatorType;
 

@@ -1,6 +1,6 @@
 #include <math.h>
-#include "init_audio.h"
-#include "constants.h"
+#include "../headers/audio_window.h"
+#include "../headers/constants.h"
 #include "../headers/format.h"
 #include "../headers/waveforms.h"
 
