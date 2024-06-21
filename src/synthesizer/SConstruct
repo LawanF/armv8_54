@@ -1,0 +1,6 @@
+env = Environment(CC = "gcc",
+	CCFLAGS=["-Wall", "-g"],
+	LIBS=["m", "ncurses", "SDL2"])
+env.Program("visualize", ["visualizer.c", "visualizer/window.c",
+    "visualizer/init_audio.c", "input/keyboard.c",
+    "visualizer/event.c"])
