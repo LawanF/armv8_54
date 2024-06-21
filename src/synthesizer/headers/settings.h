@@ -2,10 +2,10 @@
 #define SETTINGS_H
 
 #define VOLUME_MAX 1.0f
-#define ATTACK_MAX 1.0f
-#define DECAY_MAX 1.0f
+#define ATTACK_MAX 20.0f
+#define DECAY_MAX 20.0f
 #define SUSTAIN_MAX 1.0f
-#define RELEASE_MAX 1.0f
+#define RELEASE_MAX 20.0f
 
 #define VOLUME_STEP 0.01f
 #define ATTACK_STEP 0.01f
