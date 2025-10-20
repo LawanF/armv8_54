@@ -1,4 +1,4 @@
-**Synthesizer**
+### Extension – Synthesizer
 
 A virtual synthesizer with keyboard input and numerous adjustable wave settings
 
