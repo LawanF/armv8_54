@@ -1,3 +1,10 @@
+### Emulator and Assembler
+
+**Usage:**
+- Git clone repository.
+- Run `make all`
+- Run `./assemble` for assembler or `./emulate` for emulator.
+
 ### Extension – Synthesizer
 
 A virtual synthesizer with keyboard input and numerous adjustable wave settings
