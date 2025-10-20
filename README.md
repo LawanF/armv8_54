@@ -3,7 +3,7 @@
 **Usage:**
 - Git clone repository.
 - Run `make all`
-- Run `./assemble` for assembler or `./emulate` for emulator.
+- Run `./assemble` for the assembler or `./emulate` for the emulator.
 
 ### Extension – Synthesizer
 
