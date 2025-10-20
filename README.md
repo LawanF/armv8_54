@@ -2,6 +2,7 @@
 
 **Usage:**
 - Git clone repository.
+- Run `cd src/`
 - Run `make all`
 - Run `./assemble` for the assembler or `./emulate` for the emulator.
 
@@ -11,6 +12,7 @@ A virtual synthesizer with keyboard input and numerous adjustable wave settings
 
 **Installation:**
 - Git clone repository.
+- Run `cd src/`
 - Run `make all`.
 - Run `./synthesizer to start synthesizer`
 
