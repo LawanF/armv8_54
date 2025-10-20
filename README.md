@@ -1,19 +1,19 @@
 ### Emulator and Assembler
 
 **Usage:**
-- Git clone repository.
+- Git clone repository
 - Run `cd src/`
 - Run `make all`
-- Run `./assemble` for the assembler or `./emulate` for the emulator.
+- Run `./assemble` for the assembler or `./emulate` for the emulator
 
 ### Extension – Synthesizer
 
 A virtual synthesizer with keyboard input and numerous adjustable wave settings
 
 **Installation:**
-- Git clone repository.
+- Git clone repository
 - Run `cd src/`
-- Run `make all`.
+- Run `make all`
 - Run `./synthesizer to start synthesizer`
 
 
